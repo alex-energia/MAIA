@@ -1,17 +1,10 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 from core.evaluador_integral import EvaluadorIntegral
 from chat_maia import preguntar_maia
-from TTS.api import TTS
 import os
 
 app = Flask(__name__)
-
 evaluador = EvaluadorIntegral()
-
-# ===============================
-# MOTOR DE VOZ (XTTS)
-# ===============================
-tts = TTS("tts_models/es/css10/vits", gpu=False)
 
 # ===============================
 # INTERFAZ PRINCIPAL (Evaluador)
@@ -59,7 +52,7 @@ def maia():
 
     try:
         riesgo = float(riesgo)
-    except:
+    except (TypeError, ValueError):
         return "Error: riesgo inválido."
 
     resultado = evaluador.evaluar(tecnologia, capacidad, pais, riesgo)
@@ -71,8 +64,9 @@ def maia():
 
     return resultado_html
 
+
 # ===============================
-# CHAT INTELIGENTE MAIA + VOZ
+# CHAT INTELIGENTE MAIA (SIN VOZ)
 # ===============================
 @app.route("/chat", methods=["GET", "POST"])
 def chat():
@@ -96,41 +90,22 @@ def chat():
     if not pregunta:
         return "No se recibió ninguna pregunta."
 
-    # Generar respuesta MAIA
     respuesta = preguntar_maia(pregunta)
-
-    # Generar audio con voz femenina
-    audio_path = "respuesta_maia.wav"
-
-    tts.tts_to_file(
-        text=respuesta,
-        file_path=audio_path
-    )
 
     return f"""
     <h2>Respuesta MAIA</h2>
     <div style='white-space: pre-wrap; font-family: Arial;'>
         {respuesta}
     </div>
-
     <br><br>
-    <audio controls autoplay>
-        <source src="/audio" type="audio/wav">
-    </audio>
-
-    <br><a href="/chat">Hacer otra pregunta</a>
+    <a href="/chat">Hacer otra pregunta</a>
     <br><a href="/">Volver</a>
     """
 
-# ===============================
-# SERVIR AUDIO
-# ===============================
-@app.route("/audio")
-def audio():
-    return send_file("respuesta_maia.wav", mimetype="audio/wav")
 
 # ===============================
 # EJECUCIÓN
 # ===============================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)

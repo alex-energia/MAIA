@@ -129,7 +129,6 @@ torchaudio==2.1.2
 tqdm==4.67.3
 trainer==0.0.36
 transformers==5.2.0
-TTS==0.22.0
 typeguard==4.5.1
 typer==0.24.1
 typer-slim==0.24.0

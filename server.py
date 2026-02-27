@@ -6,9 +6,6 @@ import os
 app = Flask(__name__)
 evaluador = EvaluadorIntegral()
 
-# ===============================
-# INTERFAZ PRINCIPAL (Evaluador)
-# ===============================
 @app.route("/")
 def home():
     return """
@@ -33,9 +30,6 @@ def home():
     <a href="/chat">Ir al Chat Inteligente MAIA</a>
     """
 
-# ===============================
-# PROCESAMIENTO EVALUADOR
-# ===============================
 @app.route("/maia", methods=["POST"])
 def maia():
     if request.is_json:
@@ -64,10 +58,6 @@ def maia():
 
     return resultado_html
 
-
-# ===============================
-# CHAT INTELIGENTE MAIA (SIN VOZ)
-# ===============================
 @app.route("/chat", methods=["GET", "POST"])
 def chat():
     if request.method == "GET":
@@ -102,10 +92,6 @@ def chat():
     <br><a href="/">Volver</a>
     """
 
-
-# ===============================
-# EJECUCIÓN
-# ===============================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

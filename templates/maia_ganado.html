@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAIA GANADO</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    margin-top: 30px;
+}
+
+.container {
+    background-color: #2a2a2a;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    margin-top: 20px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background-color: #2563eb;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.resultado {
+    margin-top: 20px;
+    background-color: #333;
+    padding: 15px;
+    border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🐄 MAIA GANADO</h1>
+
+<div class="container">
+
+    <label>Imagen del ganado</label>
+    <input type="file" id="imagen">
+
+    <label>Edad (meses)</label>
+    <input type="number" id="edad" placeholder="Ej: 18">
+
+    <label>Raza</label>
+    <select id="raza">
+        <option value="brahman">Brahman</option>
+        <option value="angus">Angus</option>
+        <option value="holstein">Holstein</option>
+        <option value="cebu">Cebú</option>
+    </select>
+
+    <button onclick="calcularPeso()">Calcular Peso</button>
+
+    <div id="resultado" class="resultado" style="display:none;"></div>
+
+</div>
+
+<script>
+async function calcularPeso() {
+
+    const edad = document.getElementById("edad").value;
+    const raza = document.getElementById("raza").value;
+
+    if (!edad) {
+        alert("Ingrese la edad");
+        return;
+    }
+
+    const response = await fetch("/calcular_ganado", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            edad: parseInt(edad),
+            raza: raza
+        })
+    });
+
+    const data = await response.json();
+
+    const resultadoDiv = document.getElementById("resultado");
+    resultadoDiv.style.display = "block";
+
+    if (data.error) {
+        resultadoDiv.innerHTML = `<b>Error:</b> ${data.error}`;
+    } else {
+        resultadoDiv.innerHTML = `
+            <b>Peso estimado:</b> ${data.peso_estimado} kg <br>
+            <b>Intervalo de confianza:</b> ± ${data.intervalo_confianza} kg <br>
+            <b>Rango:</b> ${data.rango_inferior} kg - ${data.rango_superior} kg
+        `;
+    }
+}
+</script>
+
+</body>
+</html>

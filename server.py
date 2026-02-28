@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from chat_maia import preguntar_maia
 from maia_ganado import estimar_peso
 from maia_plantas import diagnosticar_planta
+from maia_traductor import traducir_texto
 
 app = Flask(__name__)
 
@@ -47,10 +48,20 @@ def calcular_ganado():
 
 @app.route("/diagnostico_plantas", methods=["POST"])
 def diagnostico_plantas():
-
-    # Por ahora no usamos imagen real (v1 simulada)
     resultado = diagnosticar_planta()
+    return jsonify(resultado)
 
+# ==============================
+# MAIA TRADUCTOR
+# ==============================
+
+@app.route("/traducir", methods=["POST"])
+def traducir():
+    data = request.get_json()
+    texto = data.get("texto")
+    idioma_destino = data.get("idioma_destino")
+
+    resultado = traducir_texto(texto, idioma_destino)
     return jsonify(resultado)
 
 # ==============================

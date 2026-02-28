@@ -1,16 +1,21 @@
 from flask import Flask, render_template, request, jsonify
 from chat_maia import preguntar_maia
 from maia_ganado import estimar_peso
+from maia_plantas import diagnosticar_planta
 
 app = Flask(__name__)
 
 # ==============================
-# RUTA PRINCIPAL (CHAT)
+# RUTA PRINCIPAL
 # ==============================
 
 @app.route("/")
 def home():
     return render_template("index.html")
+
+# ==============================
+# CHAT NORMAL
+# ==============================
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -23,10 +28,6 @@ def chat():
 # MAIA GANADO
 # ==============================
 
-@app.route("/maia_ganado")
-def pantalla_ganado():
-    return render_template("maia_ganado.html")
-
 @app.route("/calcular_ganado", methods=["POST"])
 def calcular_ganado():
     data = request.get_json()
@@ -37,6 +38,18 @@ def calcular_ganado():
         edad_meses=edad,
         raza=raza
     )
+
+    return jsonify(resultado)
+
+# ==============================
+# MAIA PLANTAS
+# ==============================
+
+@app.route("/diagnostico_plantas", methods=["POST"])
+def diagnostico_plantas():
+
+    # Por ahora no usamos imagen real (v1 simulada)
+    resultado = diagnosticar_planta()
 
     return jsonify(resultado)
 

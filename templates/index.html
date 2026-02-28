@@ -21,7 +21,8 @@ body {
     background-color: #111;
 }
 
-.topbar button {
+.topbar-buttons button {
+    margin-left: 10px;
     padding: 8px 15px;
     border-radius: 8px;
     border: none;
@@ -46,6 +47,7 @@ body {
     margin-top: 15px;
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 input[type="text"] {
@@ -69,7 +71,7 @@ button.send {
 }
 
 .upload-btn {
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
 }
 </style>
@@ -79,7 +81,11 @@ button.send {
 
 <div class="topbar">
     <h2>🤖 MAIA</h2>
-    <button onclick="activarGanado()">🐄 MAIA GANADO</button>
+    <div class="topbar-buttons">
+        <button onclick="activarGanado()">🐄 MAIA GANADO</button>
+        <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
+        <button onclick="volverChat()">🏠 Inicio</button>
+    </div>
 </div>
 
 <div class="container">
@@ -96,7 +102,6 @@ button.send {
     <!-- MODULO GANADO -->
     <div id="moduloGanado" class="hidden">
         <h3>🐄 MAIA GANADO</h3>
-
         <div id="chatGanado" class="chat-box"></div>
 
         <div class="input-area">
@@ -104,9 +109,22 @@ button.send {
                 ➕
                 <input type="file" id="archivoGanado" hidden>
             </label>
-            <input type="text" id="mensajeGanado" placeholder="Edad (meses) y raza... Ej: 18 brahman">
+            <input type="text" id="mensajeGanado" placeholder="Ej: 18 brahman">
             <button class="send" onclick="enviarGanado()">Calcular</button>
-            <button class="send" onclick="volverChat()">Volver</button>
+        </div>
+    </div>
+
+    <!-- MODULO PLANTAS -->
+    <div id="moduloPlantas" class="hidden">
+        <h3>🌿 MAIA PLANTAS</h3>
+        <div id="chatPlantas" class="chat-box"></div>
+
+        <div class="input-area">
+            <label class="upload-btn">
+                ➕
+                <input type="file" id="archivoPlanta" hidden>
+            </label>
+            <button class="send" onclick="enviarPlantas()">Diagnosticar</button>
         </div>
     </div>
 
@@ -117,13 +135,24 @@ button.send {
 // ===== CAMBIO DE MODULO =====
 
 function activarGanado() {
-    document.getElementById("chatNormal").classList.add("hidden");
+    ocultarTodo();
     document.getElementById("moduloGanado").classList.remove("hidden");
 }
 
+function activarPlantas() {
+    ocultarTodo();
+    document.getElementById("moduloPlantas").classList.remove("hidden");
+}
+
 function volverChat() {
-    document.getElementById("moduloGanado").classList.add("hidden");
+    ocultarTodo();
     document.getElementById("chatNormal").classList.remove("hidden");
+}
+
+function ocultarTodo() {
+    document.getElementById("chatNormal").classList.add("hidden");
+    document.getElementById("moduloGanado").classList.add("hidden");
+    document.getElementById("moduloPlantas").classList.add("hidden");
 }
 
 // ===== CHAT NORMAL =====
@@ -149,7 +178,6 @@ async function enviarMensaje() {
 // ===== GANADO =====
 
 async function enviarGanado() {
-
     const texto = document.getElementById("mensajeGanado").value;
     if (!texto) return;
 
@@ -176,6 +204,26 @@ async function enviarGanado() {
             "chatGanado"
         );
     }
+}
+
+// ===== PLANTAS =====
+
+async function enviarPlantas() {
+
+    agregarMensaje("Analizando planta...", "chatPlantas");
+
+    const response = await fetch("/diagnostico_plantas", {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    agregarMensaje(
+        "Diagnóstico: " + data.diagnostico + "\n" +
+        "Confianza: " + data.nivel_confianza + "%\n" +
+        "Recomendación: " + data.recomendacion,
+        "chatPlantas"
+    );
 }
 
 // ===== UTIL =====

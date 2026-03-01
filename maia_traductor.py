@@ -1,25 +1,13 @@
-# ==============================
-# MAIA TRADUCTOR PRO v1
-# ==============================
-
-from googletrans import Translator
-
-translator = Translator()
+from deep_translator import GoogleTranslator
 
 def traducir_texto(texto, idioma_destino="es"):
-    """
-    Traduce automáticamente cualquier idioma al idioma destino.
-    Detecta idioma origen automáticamente.
-    """
-
     try:
-        resultado = translator.translate(texto, dest=idioma_destino)
+        traduccion = GoogleTranslator(source="auto", target=idioma_destino).translate(texto)
 
         return {
             "texto_original": texto,
-            "idioma_origen": resultado.src,
             "idioma_destino": idioma_destino,
-            "traduccion": resultado.text
+            "traduccion": traduccion
         }
 
     except Exception as e:

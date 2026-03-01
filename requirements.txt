@@ -3,4 +3,4 @@ gunicorn
 setuptools
 wheel
 groq==0.4.2
-googletrans==4.0.0-rc1
+deep-translator

@@ -12,7 +12,6 @@ body {
     background-color: #1e1e1e;
     color: white;
 }
-
 .topbar {
     display: flex;
     justify-content: space-between;
@@ -20,7 +19,6 @@ body {
     padding: 15px 25px;
     background-color: #111;
 }
-
 .topbar-buttons button {
     margin-left: 10px;
     padding: 8px 15px;
@@ -30,11 +28,9 @@ body {
     background-color: #2563eb;
     color: white;
 }
-
 .container {
     padding: 20px;
 }
-
 .chat-box {
     height: 60vh;
     overflow-y: auto;
@@ -42,21 +38,24 @@ body {
     padding: 15px;
     border-radius: 12px;
 }
-
 .input-area {
     margin-top: 15px;
     display: flex;
     gap: 10px;
     align-items: center;
 }
-
 input[type="text"] {
     flex: 1;
     padding: 12px;
     border-radius: 10px;
     border: none;
 }
-
+textarea {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+}
 button.send {
     padding: 12px 20px;
     border-radius: 10px;
@@ -65,11 +64,9 @@ button.send {
     color: white;
     cursor: pointer;
 }
-
 .hidden {
     display: none;
 }
-
 .upload-btn {
     font-size: 22px;
     cursor: pointer;
@@ -84,6 +81,7 @@ button.send {
     <div class="topbar-buttons">
         <button onclick="activarGanado()">🐄 MAIA GANADO</button>
         <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
+        <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
         <button onclick="volverChat()">🏠 Inicio</button>
     </div>
 </div>
@@ -103,7 +101,6 @@ button.send {
     <div id="moduloGanado" class="hidden">
         <h3>🐄 MAIA GANADO</h3>
         <div id="chatGanado" class="chat-box"></div>
-
         <div class="input-area">
             <label class="upload-btn">
                 ➕
@@ -118,7 +115,6 @@ button.send {
     <div id="moduloPlantas" class="hidden">
         <h3>🌿 MAIA PLANTAS</h3>
         <div id="chatPlantas" class="chat-box"></div>
-
         <div class="input-area">
             <label class="upload-btn">
                 ➕
@@ -128,112 +124,56 @@ button.send {
         </div>
     </div>
 
+    <!-- MODULO TRADUCTOR -->
+    <div id="moduloTraductor" class="hidden">
+        <h3>🌍 MAIA TRADUCTOR</h3>
+        <div class="chat-box">
+            <textarea id="textoTraducir" rows="4" placeholder="Escribe el texto aquí..."></textarea>
+            <br><br>
+            <select id="idiomaDestino">
+                <option value="en">Inglés</option>
+                <option value="es">Español</option>
+                <option value="fr">Francés</option>
+                <option value="pt">Portugués</option>
+                <option value="de">Alemán</option>
+            </select>
+            <br><br>
+            <button class="send" onclick="traducirTexto()">Traducir</button>
+            <br><br>
+            <p id="resultadoTraduccion"></p>
+        </div>
+    </div>
+
 </div>
 
 <script>
 
 // ===== CAMBIO DE MODULO =====
-
-function activarGanado() {
-    ocultarTodo();
-    document.getElementById("moduloGanado").classList.remove("hidden");
-}
-
-function activarPlantas() {
-    ocultarTodo();
-    document.getElementById("moduloPlantas").classList.remove("hidden");
-}
-
-function volverChat() {
-    ocultarTodo();
-    document.getElementById("chatNormal").classList.remove("hidden");
-}
+function activarGanado() { ocultarTodo(); document.getElementById("moduloGanado").classList.remove("hidden"); }
+function activarPlantas() { ocultarTodo(); document.getElementById("moduloPlantas").classList.remove("hidden"); }
+function activarTraductor() { ocultarTodo(); document.getElementById("moduloTraductor").classList.remove("hidden"); }
+function volverChat() { ocultarTodo(); document.getElementById("chatNormal").classList.remove("hidden"); }
 
 function ocultarTodo() {
     document.getElementById("chatNormal").classList.add("hidden");
     document.getElementById("moduloGanado").classList.add("hidden");
     document.getElementById("moduloPlantas").classList.add("hidden");
+    document.getElementById("moduloTraductor").classList.add("hidden");
 }
 
-// ===== CHAT NORMAL =====
+// ===== TRADUCTOR =====
+async function traducirTexto() {
+    const texto = document.getElementById("textoTraducir").value;
+    const idioma = document.getElementById("idiomaDestino").value;
 
-async function enviarMensaje() {
-    const mensajeInput = document.getElementById("mensaje");
-    const mensaje = mensajeInput.value;
-    if (!mensaje) return;
-
-    agregarMensaje("Tú: " + mensaje, "chatBox");
-    mensajeInput.value = "";
-
-    const response = await fetch("/chat", {
+    const response = await fetch("/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pregunta: mensaje })
+        body: JSON.stringify({ texto: texto, idioma_destino: idioma })
     });
 
     const data = await response.json();
-    agregarMensaje("MAIA: " + data.respuesta, "chatBox");
-}
-
-// ===== GANADO =====
-
-async function enviarGanado() {
-    const texto = document.getElementById("mensajeGanado").value;
-    if (!texto) return;
-
-    const partes = texto.split(" ");
-    const edad = parseInt(partes[0]);
-    const raza = partes[1];
-
-    agregarMensaje("Datos: " + texto, "chatGanado");
-
-    const response = await fetch("/calcular_ganado", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ edad: edad, raza: raza })
-    });
-
-    const data = await response.json();
-
-    if (data.error) {
-        agregarMensaje("Error: " + data.error, "chatGanado");
-    } else {
-        agregarMensaje(
-            "Peso estimado: " + data.peso_estimado + " kg\n" +
-            "Rango: " + data.rango_inferior + " - " + data.rango_superior + " kg",
-            "chatGanado"
-        );
-    }
-}
-
-// ===== PLANTAS =====
-
-async function enviarPlantas() {
-
-    agregarMensaje("Analizando planta...", "chatPlantas");
-
-    const response = await fetch("/diagnostico_plantas", {
-        method: "POST"
-    });
-
-    const data = await response.json();
-
-    agregarMensaje(
-        "Diagnóstico: " + data.diagnostico + "\n" +
-        "Confianza: " + data.nivel_confianza + "%\n" +
-        "Recomendación: " + data.recomendacion,
-        "chatPlantas"
-    );
-}
-
-// ===== UTIL =====
-
-function agregarMensaje(texto, idBox) {
-    const box = document.getElementById(idBox);
-    const p = document.createElement("p");
-    p.innerText = texto;
-    box.appendChild(p);
-    box.scrollTop = box.scrollHeight;
+    document.getElementById("resultadoTraduccion").innerText = data.traduccion;
 }
 
 </script>

@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MAIA</title>
-
 <style>
 body {
     margin: 0;
@@ -82,6 +81,10 @@ button.send {
         <button onclick="activarGanado()">🐄 MAIA GANADO</button>
         <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
         <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
+
+        <!-- BOTON NUEVO -->
+        <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
+
         <button onclick="volverChat()">🏠 Inicio</button>
     </div>
 </div>
@@ -144,6 +147,16 @@ button.send {
         </div>
     </div>
 
+    <!-- MODULO PROYECTOS (NUEVO) -->
+    <div id="moduloProyectos" class="hidden">
+        <h3>📁 MAIA PROYECTOS</h3>
+        <div class="chat-box">
+            <p>Gestión de proyectos activa.</p>
+            <br>
+            <a href="/proyectos" style="color:#2563eb;">Ir al módulo completo de Proyectos</a>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -152,6 +165,7 @@ button.send {
 function activarGanado() { ocultarTodo(); document.getElementById("moduloGanado").classList.remove("hidden"); }
 function activarPlantas() { ocultarTodo(); document.getElementById("moduloPlantas").classList.remove("hidden"); }
 function activarTraductor() { ocultarTodo(); document.getElementById("moduloTraductor").classList.remove("hidden"); }
+function activarProyectos() { ocultarTodo(); document.getElementById("moduloProyectos").classList.remove("hidden"); }
 function volverChat() { ocultarTodo(); document.getElementById("chatNormal").classList.remove("hidden"); }
 
 function ocultarTodo() {
@@ -159,6 +173,7 @@ function ocultarTodo() {
     document.getElementById("moduloGanado").classList.add("hidden");
     document.getElementById("moduloPlantas").classList.add("hidden");
     document.getElementById("moduloTraductor").classList.add("hidden");
+    document.getElementById("moduloProyectos").classList.add("hidden");
 }
 
 // ===== TRADUCTOR =====

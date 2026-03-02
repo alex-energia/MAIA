@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Proyectos - MAIA</title>
+</head>
+<body>
+
+    <h1>Lista de Proyectos</h1>
+
+    <a href="/proyectos/nuevo">Crear Nuevo Proyecto</a>
+
+    <br><br>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Sector</th>
+            <th>Moneda</th>
+            <th>CAPEX</th>
+            <th>Ingresos</th>
+            <th>Fecha</th>
+        </tr>
+
+        {% for p in proyectos %}
+        <tr>
+            <td>{{ p[0] }}</td>
+            <td>{{ p[1] }}</td>
+            <td>{{ p[2] }}</td>
+            <td>{{ p[5] }}</td>
+            <td>{{ p[7] }}</td>
+            <td>{{ p[9] }}</td>
+            <td>{{ p[11] }}</td>
+        </tr>
+        {% endfor %}
+
+    </table>
+
+</body>
+</html>

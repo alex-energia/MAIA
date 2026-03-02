@@ -4,12 +4,18 @@ from maia_ganado import estimar_peso
 from maia_plantas import diagnosticar_planta
 from maia_traductor import traducir_texto
 
+# 👉 IMPORTAMOS MAIA PROYECTOS
+from proyectos import proyectos_bp, init_db
+
 app = Flask(__name__)
+
+# 👉 REGISTRAMOS MAIA PROYECTOS
+app.register_blueprint(proyectos_bp)
+init_db()
 
 # ==============================
 # RUTA PRINCIPAL
 # ==============================
-
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -17,7 +23,6 @@ def home():
 # ==============================
 # CHAT NORMAL
 # ==============================
-
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
@@ -28,7 +33,6 @@ def chat():
 # ==============================
 # MAIA GANADO
 # ==============================
-
 @app.route("/calcular_ganado", methods=["POST"])
 def calcular_ganado():
     data = request.get_json()
@@ -45,7 +49,6 @@ def calcular_ganado():
 # ==============================
 # MAIA PLANTAS
 # ==============================
-
 @app.route("/diagnostico_plantas", methods=["POST"])
 def diagnostico_plantas():
     resultado = diagnosticar_planta()
@@ -54,7 +57,6 @@ def diagnostico_plantas():
 # ==============================
 # MAIA TRADUCTOR
 # ==============================
-
 @app.route("/traducir", methods=["POST"])
 def traducir():
     data = request.get_json()
@@ -67,6 +69,5 @@ def traducir():
 # ==============================
 # RUN SERVER
 # ==============================
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)

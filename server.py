@@ -6,7 +6,7 @@ from maia_plantas import diagnosticar_planta
 from maia_traductor import traducir_texto
 
 # 👉 IMPORTAMOS MAIA PROYECTOS
-from proyectos import proyectos_bp, init_db, obtener_proyecto_por_id
+from proyectos import proyectos_bp, init_db
 
 app = Flask(__name__)
 
@@ -66,18 +66,6 @@ def traducir():
 
     resultado = traducir_texto(texto, idioma_destino)
     return jsonify(resultado)
-
-# ==============================
-# DASHBOARD FINANCIERO PROYECTO
-# ==============================
-@app.route("/proyectos/<int:proyecto_id>/dashboard")
-def dashboard_proyecto(proyecto_id):
-    proyecto = obtener_proyecto_por_id(proyecto_id)
-
-    if not proyecto:
-        return "Proyecto no encontrado", 404
-
-    return render_template("proyecto_dashboard.html", proyecto=proyecto)
 
 # ==============================
 # RUN SERVER

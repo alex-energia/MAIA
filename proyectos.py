@@ -6,14 +6,12 @@ proyectos_bp = Blueprint('proyectos', __name__, template_folder='templates')
 
 DB_NAME = "maia.db"
 
-
 # =========================
 # CREAR BASE DE DATOS
 # =========================
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,10 +28,8 @@ def init_db():
             fecha_creacion TEXT
         )
     """)
-
     conn.commit()
     conn.close()
-
 
 # =========================
 # LISTAR PROYECTOS
@@ -42,14 +38,10 @@ def init_db():
 def listar_proyectos():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-
     cursor.execute("SELECT * FROM proyectos ORDER BY id DESC")
     proyectos = cursor.fetchall()
-
     conn.close()
-
     return render_template("proyectos_lista.html", proyectos=proyectos)
-
 
 # =========================
 # CREAR PROYECTO
@@ -57,7 +49,6 @@ def listar_proyectos():
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
 def nuevo_proyecto():
     if request.method == "POST":
-
         nombre = request.form["nombre"]
         sector = request.form["sector"]
         pais = request.form["pais"]
@@ -71,7 +62,6 @@ def nuevo_proyecto():
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-
         cursor.execute("""
             INSERT INTO proyectos
             (nombre, sector, pais, ciudad, moneda, horizonte,
@@ -83,10 +73,28 @@ def nuevo_proyecto():
             capex, opex, ingresos,
             tasa_descuento, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
-
         conn.commit()
         conn.close()
 
         return redirect(url_for("proyectos.listar_proyectos"))
 
     return render_template("proyectos_form.html")
+
+# ==============================
+# DASHBOARD FINANCIERO PROYECTO
+# ==============================
+@proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
+def dashboard_proyecto(proyecto_id):
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM proyectos WHERE id = ?", (proyecto_id,))
+    proyecto = cursor.fetchone()
+
+    conn.close()
+
+    if not proyecto:
+        return "Proyecto no encontrado", 404
+
+    return render_template("proyecto_dashboard.html", proyecto=proyecto)

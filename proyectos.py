@@ -97,4 +97,37 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    return render_template("proyecto_dashboard.html", proyecto=proyecto)
+    # =========================
+    # CALCULOS FINANCIEROS
+    # =========================
+    horizonte = int(proyecto["horizonte"])
+    capex = float(proyecto["capex_inicial"])
+    opex = float(proyecto["opex_anual"])
+    ingresos = float(proyecto["ingresos_anuales"])
+    tasa = float(proyecto["tasa_descuento"]) / 100
+
+    flujo_anual = ingresos - opex
+
+    # VAN
+    van = -capex
+    for año in range(1, horizonte + 1):
+        van += flujo_anual / ((1 + tasa) ** año)
+
+    # Payback simple
+    acumulado = -capex
+    payback = None
+    for año in range(1, horizonte + 1):
+        acumulado += flujo_anual
+        if acumulado >= 0 and payback is None:
+            payback = año
+
+    genera_valor = "Sí" if van > 0 else "No"
+
+    return render_template(
+        "proyecto_dashboard.html",
+        proyecto=proyecto,
+        flujo_anual=flujo_anual,
+        van=round(van, 2),
+        payback=payback,
+        genera_valor=genera_valor
+    )

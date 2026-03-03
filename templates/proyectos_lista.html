@@ -20,6 +20,7 @@
             <th>CAPEX</th>
             <th>Ingresos</th>
             <th>Fecha</th>
+            <th>Acciones</th>
         </tr>
 
         {% for p in proyectos %}
@@ -31,6 +32,11 @@
             <td>{{ p[7] }}</td>
             <td>{{ p[9] }}</td>
             <td>{{ p[11] }}</td>
+            <td>
+                <a href="/proyectos/{{ p[0] }}/dashboard">
+                    Ver Dashboard
+                </a>
+            </td>
         </tr>
         {% endfor %}
 

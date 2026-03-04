@@ -12,6 +12,8 @@ DB_NAME = "maia.db"
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
+
+    # Tabla principal de proyectos
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +30,18 @@ def init_db():
             fecha_creacion TEXT
         )
     """)
+
+    # NUEVA TABLA: Costos base por sector y país
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS costos_base (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sector TEXT,
+            pais TEXT,
+            capex_base REAL,
+            opex_pct REAL
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -62,6 +76,7 @@ def nuevo_proyecto():
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
+
         cursor.execute("""
             INSERT INTO proyectos
             (nombre, sector, pais, ciudad, moneda, horizonte,
@@ -73,6 +88,7 @@ def nuevo_proyecto():
             capex, opex, ingresos,
             tasa_descuento, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
+
         conn.commit()
         conn.close()
 

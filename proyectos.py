@@ -81,19 +81,20 @@ def listar_proyectos():
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
 def nuevo_proyecto():
     if request.method == "POST":
-        nombre = request.form["nombre"]
-        sector = request.form["sector"]
-        pais = request.form["pais"]
-        ciudad = request.form["ciudad"]
-        moneda = request.form["moneda"]
-        horizonte = request.form["horizonte"]
-        ingresos = request.form["ingresos"]
-        tasa_descuento = request.form["tasa_descuento"]
+
+        nombre = request.form.get("nombre", "")
+        sector = request.form.get("sector", "")
+        pais = request.form.get("pais", "")
+        ciudad = request.form.get("ciudad", "")
+        moneda = request.form.get("moneda", "")
+        horizonte = int(request.form.get("horizonte", 0))
+        ingresos = float(request.form.get("ingresos", 0) or 0)
+        tasa_descuento = float(request.form.get("tasa_descuento", 0) or 0)
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
-        # 🔎 Buscar costos base
+        # 🔎 Buscar costos base automáticos
         cursor.execute("""
             SELECT capex_base, opex_pct
             FROM costos_base
@@ -103,11 +104,11 @@ def nuevo_proyecto():
         costo_base = cursor.fetchone()
 
         if costo_base:
-            capex = costo_base[0]
-            opex = capex * costo_base[1]
+            capex = float(costo_base[0])
+            opex = float(capex * costo_base[1])
         else:
-            capex = request.form["capex"]
-            opex = request.form["opex"]
+            capex = float(request.form.get("capex", 0) or 0)
+            opex = float(request.form.get("opex", 0) or 0)
 
         cursor.execute("""
             INSERT INTO proyectos
@@ -146,11 +147,12 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    horizonte = int(proyecto["horizonte"])
-    capex = float(proyecto["capex_inicial"])
-    opex = float(proyecto["opex_anual"])
-    ingresos = float(proyecto["ingresos_anuales"])
-    tasa = float(proyecto["tasa_descuento"]) / 100
+    # Conversión segura (evita error float '')
+    horizonte = int(proyecto["horizonte"] or 0)
+    capex = float(proyecto["capex_inicial"] or 0)
+    opex = float(proyecto["opex_anual"] or 0)
+    ingresos = float(proyecto["ingresos_anuales"] or 0)
+    tasa = float(proyecto["tasa_descuento"] or 0) / 100
 
     flujo_anual = ingresos - opex
 
@@ -172,7 +174,7 @@ def dashboard_proyecto(proyecto_id):
     return render_template(
         "proyecto_dashboard.html",
         proyecto=proyecto,
-        flujo_anual=flujo_anual,
+        flujo_anual=round(flujo_anual, 2),
         van=round(van, 2),
         payback=payback,
         genera_valor=genera_valor

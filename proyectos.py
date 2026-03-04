@@ -42,6 +42,22 @@ def init_db():
         )
     """)
 
+    # Insertar datos base si la tabla está vacía
+    cursor.execute("SELECT COUNT(*) FROM costos_base")
+    total = cursor.fetchone()[0]
+
+    if total == 0:
+        cursor.executemany("""
+            INSERT INTO costos_base (sector, pais, capex_base, opex_pct)
+            VALUES (?, ?, ?, ?)
+        """, [
+            ("Energía Solar", "Colombia", 1000000, 0.05),
+            ("Minería", "Colombia", 5000000, 0.08),
+            ("Infraestructura", "Colombia", 3000000, 0.06),
+            ("Energía Solar", "Perú", 1200000, 0.05),
+            ("Minería", "Perú", 6000000, 0.09)
+        ])
+
     conn.commit()
     conn.close()
 

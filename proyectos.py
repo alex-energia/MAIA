@@ -3,7 +3,6 @@ import sqlite3
 from datetime import datetime
 
 proyectos_bp = Blueprint('proyectos', __name__, template_folder='templates')
-
 DB_NAME = "maia.db"
 
 # =========================
@@ -13,7 +12,9 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # Tabla principal
+    # =========================
+    # TABLA PROYECTOS
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +32,9 @@ def init_db():
         )
     """)
 
-    # Tabla costos base
+    # =========================
+    # TABLA COSTOS BASE
+    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_base (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +45,6 @@ def init_db():
         )
     """)
 
-    # Insertar datos base si está vacía
     cursor.execute("SELECT COUNT(*) FROM costos_base")
     total = cursor.fetchone()[0]
 
@@ -57,6 +59,25 @@ def init_db():
             ("Energía Solar", "Perú", 1200000, 0.05),
             ("Minería", "Perú", 6000000, 0.09)
         ])
+
+    # =========================
+    # TABLA NEXUS (Motor Universal)
+    # =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS nexus (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            proyecto_id INTEGER,
+            tipo_proyecto TEXT,
+            perfil_financiero TEXT,
+            inversion_estructural REAL,
+            ingresos_estimados REAL,
+            opex_estimado REAL,
+            horizonte INTEGER,
+            tasa_descuento REAL,
+            creado_en TEXT,
+            FOREIGN KEY (proyecto_id) REFERENCES proyectos(id)
+        )
+    """)
 
     conn.commit()
     conn.close()
@@ -80,8 +101,8 @@ def listar_proyectos():
 # =========================
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
 def nuevo_proyecto():
-    if request.method == "POST":
 
+    if request.method == "POST":
         nombre = request.form.get("nombre", "")
         sector = request.form.get("sector", "")
         pais = request.form.get("pais", "")
@@ -94,7 +115,6 @@ def nuevo_proyecto():
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
-        # 🔎 Buscar costos base automáticos
         cursor.execute("""
             SELECT capex_base, opex_pct
             FROM costos_base
@@ -119,7 +139,8 @@ def nuevo_proyecto():
         """, (
             nombre, sector, pais, ciudad, moneda, horizonte,
             capex, opex, ingresos,
-            tasa_descuento, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            tasa_descuento,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
 
         conn.commit()
@@ -135,19 +156,18 @@ def nuevo_proyecto():
 # ==============================
 @proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
 def dashboard_proyecto(proyecto_id):
+
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM proyectos WHERE id = ?", (proyecto_id,))
     proyecto = cursor.fetchone()
-
     conn.close()
 
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    # Conversión segura (evita error float '')
     horizonte = int(proyecto["horizonte"] or 0)
     capex = float(proyecto["capex_inicial"] or 0)
     opex = float(proyecto["opex_anual"] or 0)
@@ -156,12 +176,10 @@ def dashboard_proyecto(proyecto_id):
 
     flujo_anual = ingresos - opex
 
-    # VAN
     van = -capex
     for año in range(1, horizonte + 1):
         van += flujo_anual / ((1 + tasa) ** año)
 
-    # Payback
     acumulado = -capex
     payback = None
     for año in range(1, horizonte + 1):

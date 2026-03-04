@@ -13,7 +13,7 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # Tabla principal de proyectos
+    # Tabla principal
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +31,7 @@ def init_db():
         )
     """)
 
-    # NUEVA TABLA: Costos base por sector y país
+    # Tabla costos base
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_base (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +42,7 @@ def init_db():
         )
     """)
 
-    # Insertar datos base si la tabla está vacía
+    # Insertar datos base si está vacía
     cursor.execute("SELECT COUNT(*) FROM costos_base")
     total = cursor.fetchone()[0]
 
@@ -61,6 +61,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 # =========================
 # LISTAR PROYECTOS
 # =========================
@@ -72,6 +73,7 @@ def listar_proyectos():
     proyectos = cursor.fetchall()
     conn.close()
     return render_template("proyectos_lista.html", proyectos=proyectos)
+
 
 # =========================
 # CREAR PROYECTO
@@ -85,13 +87,27 @@ def nuevo_proyecto():
         ciudad = request.form["ciudad"]
         moneda = request.form["moneda"]
         horizonte = request.form["horizonte"]
-        capex = request.form["capex"]
-        opex = request.form["opex"]
         ingresos = request.form["ingresos"]
         tasa_descuento = request.form["tasa_descuento"]
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
+
+        # 🔎 Buscar costos base
+        cursor.execute("""
+            SELECT capex_base, opex_pct
+            FROM costos_base
+            WHERE sector = ? AND pais = ?
+        """, (sector, pais))
+
+        costo_base = cursor.fetchone()
+
+        if costo_base:
+            capex = costo_base[0]
+            opex = capex * costo_base[1]
+        else:
+            capex = request.form["capex"]
+            opex = request.form["opex"]
 
         cursor.execute("""
             INSERT INTO proyectos
@@ -112,6 +128,7 @@ def nuevo_proyecto():
 
     return render_template("proyectos_form.html")
 
+
 # ==============================
 # DASHBOARD FINANCIERO PROYECTO
 # ==============================
@@ -129,9 +146,6 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    # =========================
-    # CALCULOS FINANCIEROS
-    # =========================
     horizonte = int(proyecto["horizonte"])
     capex = float(proyecto["capex_inicial"])
     opex = float(proyecto["opex_anual"])
@@ -145,7 +159,7 @@ def dashboard_proyecto(proyecto_id):
     for año in range(1, horizonte + 1):
         van += flujo_anual / ((1 + tasa) ** año)
 
-    # Payback simple
+    # Payback
     acumulado = -capex
     payback = None
     for año in range(1, horizonte + 1):

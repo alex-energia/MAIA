@@ -9,7 +9,6 @@ DB_NAME = "maia.db"
 # =========================
 # CREAR BASE DE DATOS
 # =========================
-
 def init_db():
 
     conn = sqlite3.connect(DB_NAME)
@@ -18,7 +17,6 @@ def init_db():
     # =========================
     # TABLA PROYECTOS
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +26,8 @@ def init_db():
             ciudad TEXT,
             moneda TEXT,
             horizonte INTEGER,
+            capacidad REAL,
+            unidad TEXT,
             capex_inicial REAL,
             opex_anual REAL,
             ingresos_anuales REAL,
@@ -39,7 +39,6 @@ def init_db():
     # =========================
     # TABLA COSTOS BASE
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_base (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,18 +59,20 @@ def init_db():
             VALUES (?, ?, ?, ?)
         """, [
 
-            ("Energía Solar", "Colombia", 1000000, 0.05),
-            ("Minería", "Colombia", 5000000, 0.08),
-            ("Infraestructura", "Colombia", 3000000, 0.06),
-            ("Energía Solar", "Perú", 1200000, 0.05),
-            ("Minería", "Perú", 6000000, 0.09)
+            ("Energia Solar", "Colombia", 1000000, 0.05),
+            ("Hidroelectrico", "Colombia", 2500000, 0.04),
+            ("Eolico", "Colombia", 1500000, 0.05),
+            ("Nuclear", "Colombia", 8000000, 0.03),
+            ("Agricola", "Colombia", 8000, 0.10),
+            ("Mineria", "Colombia", 50000, 0.08),
+            ("Infraestructura", "Colombia", 2000000, 0.06),
+            ("Inmobiliario", "Colombia", 1200, 0.07)
 
         ])
 
     # =========================
-    # TABLA NEXUS (Motor Universal)
+    # TABLA NEXUS
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS nexus (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,7 +92,6 @@ def init_db():
     # =========================
     # TABLA COSTOS POR CAPACIDAD
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_capacidad (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,7 +129,6 @@ def init_db():
 # =========================
 # LISTAR PROYECTOS
 # =========================
-
 @proyectos_bp.route("/proyectos")
 def listar_proyectos():
 
@@ -148,7 +147,6 @@ def listar_proyectos():
 # =========================
 # CREAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
 def nuevo_proyecto():
 
@@ -160,49 +158,52 @@ def nuevo_proyecto():
         ciudad = request.form.get("ciudad", "")
         moneda = request.form.get("moneda", "")
         horizonte = int(request.form.get("horizonte", 0))
-        ingresos = float(request.form.get("ingresos", 0) or 0)
-        tasa_descuento = float(request.form.get("tasa_descuento", 0) or 0)
 
-        # =========================
-        # CAPACIDAD DEL PROYECTO
-        # =========================
-
-        try:
-            capacidad = float(request.form.get("capacidad", 0) or 0)
-        except:
-            capacidad = 0
+        capacidad = float(request.form.get("capacidad", 0) or 0)
+        unidad = request.form.get("unidad", "")
 
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
-        # buscar costo base por sector y país
+        # =========================
+        # CAPEX SEGÚN CAPACIDAD
+        # =========================
         cursor.execute("""
-            SELECT capex_base, opex_pct
-            FROM costos_base
-            WHERE sector = ? AND pais = ?
-        """, (sector, pais))
+            SELECT costo_unitario
+            FROM costos_capacidad
+            WHERE tipo_proyecto = ?
+        """, (sector,))
 
-        costo_base = cursor.fetchone()
+        costo = cursor.fetchone()
 
-        if costo_base:
-
-            capex = float(costo_base[0])
-            opex = capex * float(costo_base[1])
-
+        if costo:
+            costo_unitario = float(costo[0])
+            capex = capacidad * costo_unitario
         else:
+            capex = 0
 
-            capex = float(request.form.get("capex", 0) or 0)
-            opex = float(request.form.get("opex", 0) or 0)
+        # =========================
+        # OPEX AUTOMATICO
+        # =========================
+        opex = capex * 0.05
+
+        # =========================
+        # INGRESOS AUTOMATICOS (NEXUS)
+        # =========================
+        ingresos = capex * 0.20
+
+        # =========================
+        # TASA DESCUENTO AUTOMATICA
+        # =========================
+        tasa_descuento = 10
 
         cursor.execute("""
-
             INSERT INTO proyectos
             (nombre, sector, pais, ciudad, moneda, horizonte,
+             capacidad, unidad,
              capex_inicial, opex_anual, ingresos_anuales,
              tasa_descuento, fecha_creacion)
-
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
 
             nombre,
@@ -211,6 +212,8 @@ def nuevo_proyecto():
             ciudad,
             moneda,
             horizonte,
+            capacidad,
+            unidad,
             capex,
             opex,
             ingresos,
@@ -228,14 +231,14 @@ def nuevo_proyecto():
 
 
 # ==============================
-# DASHBOARD FINANCIERO PROYECTO
+# DASHBOARD FINANCIERO
 # ==============================
-
 @proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
 def dashboard_proyecto(proyecto_id):
 
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
+
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM proyectos WHERE id = ?", (proyecto_id,))
@@ -247,20 +250,21 @@ def dashboard_proyecto(proyecto_id):
         return "Proyecto no encontrado", 404
 
     horizonte = int(proyecto["horizonte"] or 0)
+
     capex = float(proyecto["capex_inicial"] or 0)
     opex = float(proyecto["opex_anual"] or 0)
     ingresos = float(proyecto["ingresos_anuales"] or 0)
+
     tasa = float(proyecto["tasa_descuento"] or 0) / 100
 
     flujo_anual = ingresos - opex
 
-    # VAN
     van = -capex
 
     for año in range(1, horizonte + 1):
+
         van += flujo_anual / ((1 + tasa) ** año)
 
-    # PAYBACK
     acumulado = -capex
     payback = None
 

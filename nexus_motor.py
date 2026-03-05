@@ -68,3 +68,47 @@ def modelo_financiero(sector, capacidad):
         "opex": opex,
         "ingresos": ingresos
     }
+
+
+# ==============================
+# ANEXO NEXUS
+# CALCULO FLUJO NETO
+# ==============================
+
+def flujo_neto(ingresos, opex):
+
+    return ingresos - opex
+
+
+# ==============================
+# CALCULO VAN
+# ==============================
+
+def calcular_van(capex, flujo, horizonte, tasa):
+
+    van = -capex
+
+    for año in range(1, horizonte + 1):
+
+        van += flujo / ((1 + tasa) ** año)
+
+    return van
+
+
+# ==============================
+# CALCULO PAYBACK
+# ==============================
+
+def calcular_payback(capex, flujo):
+
+    acumulado = -capex
+
+    for año in range(1, 50):
+
+        acumulado += flujo
+
+        if acumulado >= 0:
+
+            return año
+
+    return None

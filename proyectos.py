@@ -10,7 +10,6 @@ DB_NAME = "maia.db"
 # CREAR BASE DE DATOS
 # =========================
 def init_db():
-
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -51,18 +50,15 @@ def init_db():
     total = cursor.fetchone()[0]
 
     if total == 0:
-
         cursor.executemany("""
             INSERT INTO costos_base (sector, pais, capex_base, opex_pct)
             VALUES (?, ?, ?, ?)
         """, [
-
             ("Energía Solar", "Colombia", 1000000, 0.05),
             ("Minería", "Colombia", 5000000, 0.08),
             ("Infraestructura", "Colombia", 3000000, 0.06),
             ("Energía Solar", "Perú", 1200000, 0.05),
             ("Minería", "Perú", 6000000, 0.09)
-
         ])
 
     # =========================
@@ -84,8 +80,44 @@ def init_db():
         )
     """)
 
+    # =========================
+    # TABLA COSTOS POR CAPACIDAD (ANEXO NEXUS)
+    # =========================
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS costos_capacidad (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo_proyecto TEXT,
+            costo_unitario REAL,
+            unidad TEXT
+        )
+    """)
+
+    cursor.execute("SELECT COUNT(*) FROM costos_capacidad")
+    total_cap = cursor.fetchone()[0]
+
+    if total_cap == 0:
+        cursor.executemany("""
+            INSERT INTO costos_capacidad (tipo_proyecto, costo_unitario, unidad)
+            VALUES (?, ?, ?)
+        """, [
+
+            ("Energia Solar", 1000000, "MW"),
+            ("Hidroelectrico", 2500000, "MW"),
+            ("Eolico", 1500000, "MW"),
+            ("Nuclear", 8000000, "MW"),
+
+            ("Agricola", 8000, "Hectareas"),
+            ("Mineria", 50000, "Toneladas/año"),
+
+            ("Infraestructura", 2000000, "Kilometros"),
+
+            ("Inmobiliario", 1200, "m2")
+
+        ])
+
     conn.commit()
     conn.close()
+
 
 # =========================
 # LISTAR PROYECTOS
@@ -97,12 +129,12 @@ def listar_proyectos():
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM proyectos ORDER BY id DESC")
-
     proyectos = cursor.fetchall()
 
     conn.close()
 
     return render_template("proyectos_lista.html", proyectos=proyectos)
+
 
 # =========================
 # CREAR PROYECTO
@@ -121,13 +153,11 @@ def nuevo_proyecto():
         horizonte = int(request.form.get("horizonte", 0))
 
         ingresos = float(request.form.get("ingresos", 0) or 0)
-
         tasa_descuento = float(request.form.get("tasa_descuento", 0) or 0)
 
         # =========================
         # NEXUS - CAPACIDAD PROYECTO
         # =========================
-
         try:
             capacidad = float(request.form.get("capacidad", 0) or 0)
         except:
@@ -185,6 +215,7 @@ def nuevo_proyecto():
 
     return render_template("proyectos_form.html")
 
+
 # ==============================
 # DASHBOARD FINANCIERO PROYECTO
 # ==============================
@@ -193,19 +224,19 @@ def dashboard_proyecto(proyecto_id):
 
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
+
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM proyectos WHERE id = ?", (proyecto_id,))
-
     proyecto = cursor.fetchone()
 
     conn.close()
 
     if not proyecto:
-
         return "Proyecto no encontrado", 404
 
     horizonte = int(proyecto["horizonte"] or 0)
+
     capex = float(proyecto["capex_inicial"] or 0)
     opex = float(proyecto["opex_anual"] or 0)
     ingresos = float(proyecto["ingresos_anuales"] or 0)
@@ -217,11 +248,9 @@ def dashboard_proyecto(proyecto_id):
     van = -capex
 
     for año in range(1, horizonte + 1):
-
         van += flujo_anual / ((1 + tasa) ** año)
 
     acumulado = -capex
-
     payback = None
 
     for año in range(1, horizonte + 1):
@@ -229,19 +258,15 @@ def dashboard_proyecto(proyecto_id):
         acumulado += flujo_anual
 
         if acumulado >= 0 and payback is None:
-
             payback = año
 
     genera_valor = "Sí" if van > 0 else "No"
 
     return render_template(
-
         "proyecto_dashboard.html",
-
         proyecto=proyecto,
         flujo_anual=round(flujo_anual, 2),
         van=round(van, 2),
         payback=payback,
         genera_valor=genera_valor
-
     )

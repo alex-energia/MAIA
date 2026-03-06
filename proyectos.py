@@ -1,12 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 import sqlite3
 from datetime import datetime
-from nexus_motor import modelo_financiero
+from nexus_motor import modelo_financiero, evaluar_proyecto
 
 proyectos_bp = Blueprint('proyectos', __name__, template_folder='templates')
 
 DB_NAME = "maia.db"
-
 
 # =========================
 # CREAR BASE DE DATOS
@@ -36,37 +35,6 @@ def init_db():
         )
     """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS costos_base (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sector TEXT,
-            pais TEXT,
-            capex_base REAL,
-            opex_pct REAL
-        )
-    """)
-
-    cursor.execute("SELECT COUNT(*) FROM costos_base")
-    total = cursor.fetchone()[0]
-
-    if total == 0:
-
-        cursor.executemany("""
-            INSERT INTO costos_base (sector, pais, capex_base, opex_pct)
-            VALUES (?, ?, ?, ?)
-        """, [
-
-            ("Energia Solar", "Colombia", 1000000, 0.05),
-            ("Hidroelectrico", "Colombia", 2500000, 0.04),
-            ("Eolico", "Colombia", 1500000, 0.05),
-            ("Nuclear", "Colombia", 8000000, 0.03),
-            ("Agricola", "Colombia", 8000, 0.10),
-            ("Mineria", "Colombia", 50000, 0.08),
-            ("Infraestructura", "Colombia", 2000000, 0.06),
-            ("Inmobiliario", "Colombia", 1200, 0.07)
-
-        ])
-
     conn.commit()
     conn.close()
 
@@ -82,6 +50,7 @@ def listar_proyectos():
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM proyectos ORDER BY id DESC")
+
     proyectos = cursor.fetchall()
 
     conn.close()
@@ -121,12 +90,11 @@ def nuevo_proyecto():
         cursor.execute("""
             INSERT INTO proyectos
             (nombre, sector, pais, ciudad, moneda,
-            horizonte, capacidad, unidad,
-            capex_inicial, opex_anual, ingresos_anuales,
-            tasa_descuento, fecha_creacion)
+             horizonte, capacidad, unidad,
+             capex_inicial, opex_anual, ingresos_anuales,
+             tasa_descuento, fecha_creacion)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-
             nombre,
             sector,
             pais,
@@ -140,7 +108,6 @@ def nuevo_proyecto():
             ingresos,
             tasa_descuento,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         ))
 
         conn.commit()
@@ -170,45 +137,38 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    try:
+    sector = proyecto["sector"]
+    capacidad = proyecto["capacidad"]
 
-        horizonte = int(proyecto["horizonte"] or 0)
-        capex = float(proyecto["capex_inicial"] or 0)
-        opex = float(proyecto["opex_anual"] or 0)
-        ingresos = float(proyecto["ingresos_anuales"] or 0)
-        tasa = float(proyecto["tasa_descuento"] or 10) / 100
+    horizonte = int(proyecto["horizonte"] or 0)
+    capex = float(proyecto["capex_inicial"] or 0)
+    opex = float(proyecto["opex_anual"] or 0)
+    ingresos = float(proyecto["ingresos_anuales"] or 0)
 
-        flujo_anual = ingresos - opex
+    flujo_anual = ingresos - opex
 
-        van = -capex
+    # ==============================
+    # INTELIGENCIA MAIA
+    # ==============================
 
-        for año in range(1, horizonte + 1):
-            van += flujo_anual / ((1 + tasa) ** año)
+    evaluacion_maia = evaluar_proyecto(sector, capacidad)
 
-        acumulado = -capex
-        payback = None
+    van = evaluacion_maia["van"]
+    tir = evaluacion_maia["tir"]
+    payback = evaluacion_maia["payback"]
+    evaluacion = evaluacion_maia["evaluacion"]
+    recomendacion = evaluacion_maia["recomendacion"]
 
-        for año in range(1, horizonte + 1):
-            acumulado += flujo_anual
-            if acumulado >= 0 and payback is None:
-                payback = año
-
-        genera_valor = "Sí" if van > 0 else "No"
-
-    except Exception:
-
-        flujo_anual = 0
-        van = 0
-        payback = None
-        genera_valor = "Error en cálculo"
+    genera_valor = "Sí" if van > 0 else "No"
 
     return render_template(
-
         "proyecto_dashboard.html",
         proyecto=proyecto,
         flujo_anual=round(flujo_anual, 2),
         van=round(van, 2),
+        tir=round(tir, 4) if tir else None,
         payback=payback,
+        evaluacion=evaluacion,
+        recomendacion=recomendacion,
         genera_valor=genera_valor
-
     )

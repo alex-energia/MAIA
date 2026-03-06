@@ -1,10 +1,5 @@
-# =========================================
-# NEXUS MOTOR FINANCIERO
-# Modelo financiero simplificado de proyectos
-# =========================================
-
 # ==============================
-# CAPEX
+# NEXUS MOTOR FINANCIERO
 # ==============================
 
 def calcular_capex(sector, capacidad):
@@ -21,6 +16,7 @@ def calcular_capex(sector, capacidad):
     }
 
     costo_unitario = costos.get(sector, 100000)
+
     return capacidad * costo_unitario
 
 
@@ -29,6 +25,7 @@ def calcular_capex(sector, capacidad):
 # ==============================
 
 def calcular_opex(capex):
+
     return capex * 0.05
 
 
@@ -50,17 +47,20 @@ def calcular_ingresos(sector, capacidad):
     }
 
     precio = precios.get(sector, 100)
+
     return capacidad * precio * 1000
 
 
 # ==============================
-# MODELO BASE
+# MODELO COMPLETO
 # ==============================
 
 def modelo_financiero(sector, capacidad):
 
     capex = calcular_capex(sector, capacidad)
+
     opex = calcular_opex(capex)
+
     ingresos = calcular_ingresos(sector, capacidad)
 
     return {
@@ -78,11 +78,12 @@ def calcular_flujo_caja(capex, ingresos, opex, horizonte=20):
 
     flujo = []
 
-    # inversión inicial
     flujo.append(-capex)
 
-    for _ in range(horizonte):
+    for i in range(horizonte):
+
         flujo_anual = ingresos - opex
+
         flujo.append(flujo_anual)
 
     return flujo
@@ -97,6 +98,7 @@ def calcular_van(flujo, tasa=0.10):
     van = 0
 
     for i, f in enumerate(flujo):
+
         van += f / ((1 + tasa) ** i)
 
     return van
@@ -115,13 +117,14 @@ def calcular_payback(flujo):
         acumulado += f
 
         if acumulado >= 0:
+
             return i
 
     return None
 
 
 # ==============================
-# TIR (Método Newton-Raphson)
+# TIR (aproximada)
 # ==============================
 
 def calcular_tir(flujo, intentos=1000):
@@ -138,14 +141,17 @@ def calcular_tir(flujo, intentos=1000):
             van += f / (1 + tasa) ** t
 
             if t != 0:
+
                 derivada -= t * f / (1 + tasa) ** (t + 1)
 
         if derivada == 0:
+
             return None
 
         nueva_tasa = tasa - van / derivada
 
         if abs(nueva_tasa - tasa) < 0.00001:
+
             return nueva_tasa
 
         tasa = nueva_tasa
@@ -168,12 +174,12 @@ def analisis_financiero(sector, capacidad):
     flujo = calcular_flujo_caja(capex, ingresos, opex)
 
     van = calcular_van(flujo)
+
     tir = calcular_tir(flujo)
+
     payback = calcular_payback(flujo)
 
     return {
-        "sector": sector,
-        "capacidad": capacidad,
         "capex": capex,
         "opex": opex,
         "ingresos": ingresos,
@@ -184,21 +190,39 @@ def analisis_financiero(sector, capacidad):
 
 
 # ==============================
-# EJEMPLO DE EJECUCIÓN
+# INTELIGENCIA MAIA
 # ==============================
 
-if __name__ == "__main__":
+def evaluar_proyecto(sector, capacidad):
 
-    sector = "Energia Solar"
-    capacidad = 100
+    analisis = analisis_financiero(sector, capacidad)
 
-    resultado = analisis_financiero(sector, capacidad)
+    van = analisis["van"]
+    tir = analisis["tir"]
+    payback = analisis["payback"]
 
-    print("\n===== ANALISIS FINANCIERO =====")
+    evaluacion = "Indefinido"
+    recomendacion = ""
 
-    for clave, valor in resultado.items():
+    if van > 0 and tir and tir > 0.12:
 
-        if isinstance(valor, float):
-            print(f"{clave}: {valor:,.2f}")
-        else:
-            print(f"{clave}: {valor}")
+        evaluacion = "Proyecto Viable"
+        recomendacion = "Alta prioridad de inversion"
+
+    elif van > 0:
+
+        evaluacion = "Proyecto Aceptable"
+        recomendacion = "Revisar estructura financiera"
+
+    else:
+
+        evaluacion = "Proyecto No Viable"
+        recomendacion = "No recomendado para inversion"
+
+    return {
+        "van": van,
+        "tir": tir,
+        "payback": payback,
+        "evaluacion": evaluacion,
+        "recomendacion": recomendacion
+    }

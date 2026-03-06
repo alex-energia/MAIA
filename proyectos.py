@@ -1,16 +1,18 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 import sqlite3
 from datetime import datetime
+
 from nexus_motor import modelo_financiero
+from nexus_motor import analisis_financiero
 
 proyectos_bp = Blueprint('proyectos', __name__, template_folder='templates')
 
 DB_NAME = "maia.db"
 
+
 # =========================
 # CREAR BASE DE DATOS
 # =========================
-
 def init_db():
 
     conn = sqlite3.connect(DB_NAME)
@@ -19,10 +21,8 @@ def init_db():
     # =========================
     # TABLA PROYECTOS
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
-
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT,
             sector TEXT,
@@ -37,39 +37,30 @@ def init_db():
             ingresos_anuales REAL,
             tasa_descuento REAL,
             fecha_creacion TEXT
-
         )
     """)
 
     # =========================
     # TABLA COSTOS BASE
     # =========================
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_base (
-
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sector TEXT,
             pais TEXT,
             capex_base REAL,
             opex_pct REAL
-
         )
     """)
 
     cursor.execute("SELECT COUNT(*) FROM costos_base")
-
     total = cursor.fetchone()[0]
 
     if total == 0:
-
         cursor.executemany("""
-
             INSERT INTO costos_base (sector, pais, capex_base, opex_pct)
             VALUES (?, ?, ?, ?)
-
         """, [
-
             ("Energia Solar", "Colombia", 1000000, 0.05),
             ("Hidroelectrico", "Colombia", 2500000, 0.04),
             ("Eolico", "Colombia", 1500000, 0.05),
@@ -78,17 +69,13 @@ def init_db():
             ("Mineria", "Colombia", 50000, 0.08),
             ("Infraestructura", "Colombia", 2000000, 0.06),
             ("Inmobiliario", "Colombia", 1200, 0.07)
-
         ])
 
     # =========================
     # TABLA NEXUS
     # =========================
-
     cursor.execute("""
-
         CREATE TABLE IF NOT EXISTS nexus (
-
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             proyecto_id INTEGER,
             tipo_proyecto TEXT,
@@ -100,9 +87,7 @@ def init_db():
             tasa_descuento REAL,
             creado_en TEXT,
             FOREIGN KEY (proyecto_id) REFERENCES proyectos(id)
-
         )
-
     """)
 
     conn.commit()
@@ -112,9 +97,7 @@ def init_db():
 # =========================
 # LISTAR PROYECTOS
 # =========================
-
 @proyectos_bp.route("/proyectos")
-
 def listar_proyectos():
 
     conn = sqlite3.connect(DB_NAME)
@@ -132,9 +115,7 @@ def listar_proyectos():
 # =========================
 # CREAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
-
 def nuevo_proyecto():
 
     if request.method == "POST":
@@ -144,7 +125,6 @@ def nuevo_proyecto():
         pais = request.form.get("pais", "")
         ciudad = request.form.get("ciudad", "")
         moneda = request.form.get("moneda", "")
-
         horizonte = int(request.form.get("horizonte", 0))
         capacidad = float(request.form.get("capacidad", 0) or 0)
         unidad = request.form.get("unidad", "")
@@ -161,20 +141,26 @@ def nuevo_proyecto():
 
         tasa_descuento = 10
 
+        # =========================
+        # ANALISIS FINANCIERO V2
+        # =========================
+
+        analisis = analisis_financiero(sector, capacidad)
+
+        van = analisis["van"]
+        tir = analisis["tir"]
+        payback = analisis["payback"]
+
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
         cursor.execute("""
-
             INSERT INTO proyectos
-
             (nombre, sector, pais, ciudad, moneda,
              horizonte, capacidad, unidad,
              capex_inicial, opex_anual, ingresos_anuales,
              tasa_descuento, fecha_creacion)
-
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
         """, (
 
             nombre,
@@ -204,9 +190,7 @@ def nuevo_proyecto():
 # ==============================
 # DASHBOARD FINANCIERO
 # ==============================
-
 @proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
-
 def dashboard_proyecto(proyecto_id):
 
     conn = sqlite3.connect(DB_NAME)
@@ -226,7 +210,6 @@ def dashboard_proyecto(proyecto_id):
     capex = float(proyecto["capex_inicial"] or 0)
     opex = float(proyecto["opex_anual"] or 0)
     ingresos = float(proyecto["ingresos_anuales"] or 0)
-
     tasa = float(proyecto["tasa_descuento"] or 0) / 100
 
     flujo_anual = ingresos - opex
@@ -238,7 +221,6 @@ def dashboard_proyecto(proyecto_id):
         van += flujo_anual / ((1 + tasa) ** año)
 
     acumulado = -capex
-
     payback = None
 
     for año in range(1, horizonte + 1):
@@ -246,7 +228,6 @@ def dashboard_proyecto(proyecto_id):
         acumulado += flujo_anual
 
         if acumulado >= 0 and payback is None:
-
             payback = año
 
     genera_valor = "Sí" if van > 0 else "No"
@@ -254,7 +235,6 @@ def dashboard_proyecto(proyecto_id):
     return render_template(
 
         "proyecto_dashboard.html",
-
         proyecto=proyecto,
         flujo_anual=round(flujo_anual, 2),
         van=round(van, 2),

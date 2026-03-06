@@ -7,16 +7,16 @@ proyectos_bp = Blueprint('proyectos', __name__, template_folder='templates')
 
 DB_NAME = "maia.db"
 
+
 # =========================
 # CREAR BASE DE DATOS
 # =========================
+
 def init_db():
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
-    # =========================
-    # TABLA PROYECTOS
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS proyectos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,9 +36,6 @@ def init_db():
         )
     """)
 
-    # =========================
-    # TABLA COSTOS BASE
-    # =========================
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS costos_base (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,10 +50,12 @@ def init_db():
     total = cursor.fetchone()[0]
 
     if total == 0:
+
         cursor.executemany("""
             INSERT INTO costos_base (sector, pais, capex_base, opex_pct)
             VALUES (?, ?, ?, ?)
         """, [
+
             ("Energia Solar", "Colombia", 1000000, 0.05),
             ("Hidroelectrico", "Colombia", 2500000, 0.04),
             ("Eolico", "Colombia", 1500000, 0.05),
@@ -65,26 +64,8 @@ def init_db():
             ("Mineria", "Colombia", 50000, 0.08),
             ("Infraestructura", "Colombia", 2000000, 0.06),
             ("Inmobiliario", "Colombia", 1200, 0.07)
-        ])
 
-    # =========================
-    # TABLA NEXUS
-    # =========================
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS nexus (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            proyecto_id INTEGER,
-            tipo_proyecto TEXT,
-            perfil_financiero TEXT,
-            inversion_estructural REAL,
-            ingresos_estimados REAL,
-            opex_estimado REAL,
-            horizonte INTEGER,
-            tasa_descuento REAL,
-            creado_en TEXT,
-            FOREIGN KEY (proyecto_id) REFERENCES proyectos(id)
-        )
-    """)
+        ])
 
     conn.commit()
     conn.close()
@@ -93,8 +74,10 @@ def init_db():
 # =========================
 # LISTAR PROYECTOS
 # =========================
+
 @proyectos_bp.route("/proyectos")
 def listar_proyectos():
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
@@ -109,6 +92,7 @@ def listar_proyectos():
 # =========================
 # CREAR PROYECTO
 # =========================
+
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET", "POST"])
 def nuevo_proyecto():
 
@@ -119,18 +103,15 @@ def nuevo_proyecto():
         pais = request.form.get("pais", "")
         ciudad = request.form.get("ciudad", "")
         moneda = request.form.get("moneda", "")
-        horizonte = int(request.form.get("horizonte", 0) or 0)
+        horizonte = int(request.form.get("horizonte", 0))
         capacidad = float(request.form.get("capacidad", 0) or 0)
         unidad = request.form.get("unidad", "")
 
-        # =========================
-        # MOTOR NEXUS
-        # =========================
         modelo = modelo_financiero(sector, capacidad)
 
-        capex = modelo.get("capex", 0)
-        opex = modelo.get("opex", 0)
-        ingresos = modelo.get("ingresos", 0)
+        capex = modelo["capex"]
+        opex = modelo["opex"]
+        ingresos = modelo["ingresos"]
 
         tasa_descuento = 10
 
@@ -140,11 +121,12 @@ def nuevo_proyecto():
         cursor.execute("""
             INSERT INTO proyectos
             (nombre, sector, pais, ciudad, moneda,
-             horizonte, capacidad, unidad,
-             capex_inicial, opex_anual, ingresos_anuales,
-             tasa_descuento, fecha_creacion)
+            horizonte, capacidad, unidad,
+            capex_inicial, opex_anual, ingresos_anuales,
+            tasa_descuento, fecha_creacion)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
+
             nombre,
             sector,
             pais,
@@ -158,6 +140,7 @@ def nuevo_proyecto():
             ingresos,
             tasa_descuento,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         ))
 
         conn.commit()
@@ -171,6 +154,7 @@ def nuevo_proyecto():
 # ==============================
 # DASHBOARD FINANCIERO
 # ==============================
+
 @proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
 def dashboard_proyecto(proyecto_id):
 
@@ -186,42 +170,45 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado", 404
 
-    horizonte = int(proyecto["horizonte"] or 0)
-    capex = float(proyecto["capex_inicial"] or 0)
-    opex = float(proyecto["opex_anual"] or 0)
-    ingresos = float(proyecto["ingresos_anuales"] or 0)
-    tasa = float(proyecto["tasa_descuento"] or 0) / 100
+    try:
 
-    flujo_anual = ingresos - opex
+        horizonte = int(proyecto["horizonte"] or 0)
+        capex = float(proyecto["capex_inicial"] or 0)
+        opex = float(proyecto["opex_anual"] or 0)
+        ingresos = float(proyecto["ingresos_anuales"] or 0)
+        tasa = float(proyecto["tasa_descuento"] or 10) / 100
 
-    # ==============================
-    # VAN
-    # ==============================
-    van = -capex
+        flujo_anual = ingresos - opex
 
-    for año in range(1, horizonte + 1):
-        van += flujo_anual / ((1 + tasa) ** año)
+        van = -capex
 
-    # ==============================
-    # PAYBACK
-    # ==============================
-    acumulado = -capex
-    payback = None
+        for año in range(1, horizonte + 1):
+            van += flujo_anual / ((1 + tasa) ** año)
 
-    for año in range(1, horizonte + 1):
+        acumulado = -capex
+        payback = None
 
-        acumulado += flujo_anual
+        for año in range(1, horizonte + 1):
+            acumulado += flujo_anual
+            if acumulado >= 0 and payback is None:
+                payback = año
 
-        if acumulado >= 0 and payback is None:
-            payback = año
+        genera_valor = "Sí" if van > 0 else "No"
 
-    genera_valor = "Sí" if van > 0 else "No"
+    except Exception:
+
+        flujo_anual = 0
+        van = 0
+        payback = None
+        genera_valor = "Error en cálculo"
 
     return render_template(
+
         "proyecto_dashboard.html",
         proyecto=proyecto,
         flujo_anual=round(flujo_anual, 2),
         van=round(van, 2),
         payback=payback,
         genera_valor=genera_valor
+
     )

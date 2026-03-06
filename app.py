@@ -1,5 +1,6 @@
 from flask import Flask
 from proyectos import proyectos_bp, init_db
+import os
 
 app = Flask(__name__)
 
@@ -24,4 +25,5 @@ def home():
 # EJECUTAR APP
 # =========================
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)

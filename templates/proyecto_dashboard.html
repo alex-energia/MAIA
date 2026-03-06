@@ -9,36 +9,33 @@
 
 <h1>Dashboard Financiero</h1>
 
-<h2>{{ proyecto["nombre"] }}</h2>
+<h2>{{ proyecto["nombre"] if proyecto else "" }}</h2>
 
-<p><strong>Sector:</strong> {{ proyecto["sector"] }}</p>
-<p><strong>País:</strong> {{ proyecto["pais"] }}</p>
-<p><strong>Ciudad:</strong> {{ proyecto["ciudad"] }}</p>
-<p><strong>Moneda:</strong> {{ proyecto["moneda"] }}</p>
+<p><strong>Sector:</strong> {{ proyecto["sector"] if proyecto else "" }}</p>
+<p><strong>País:</strong> {{ proyecto["pais"] if proyecto else "" }}</p>
+<p><strong>Ciudad:</strong> {{ proyecto["ciudad"] if proyecto else "" }}</p>
+<p><strong>Moneda:</strong> {{ proyecto["moneda"] if proyecto else "" }}</p>
 
 <hr>
 
 <h3>Resultados Financieros</h3>
 
-<p><strong>CAPEX:</strong> {{ proyecto["capex_inicial"] }}</p>
-<p><strong>OPEX:</strong> {{ proyecto["opex_anual"] }}</p>
+<p><strong>CAPEX:</strong> {{ proyecto["capex_inicial"] if proyecto else 0 }}</p>
 
-<p><strong>Flujo Neto Anual:</strong> {{ flujo_anual }}</p>
-<p><strong>VAN:</strong> {{ van }}</p>
+<p><strong>OPEX:</strong> {{ proyecto["opex_anual"] if proyecto else 0 }}</p>
 
-<p><strong>Payback:</strong>
-{% if payback %}
-{{ payback }} años
-{% else %}
-No recupera inversión
-{% endif %}
-</p>
+<p><strong>Flujo Neto Anual:</strong> {{ flujo_anual if flujo_anual else 0 }}</p>
 
-<p><strong>¿Genera Valor?:</strong> {{ genera_valor }}</p>
+<p><strong>VAN:</strong> {{ van if van else 0 }}</p>
+
+<p><strong>Payback:</strong> {{ payback if payback else "No recuperado" }}</p>
+
+<p><strong>¿Genera Valor?:</strong> {{ genera_valor if genera_valor else "No evaluado" }}</p>
 
 <br>
 
 <a href="/proyectos">Volver a proyectos</a>
 
 </body>
+
 </html>

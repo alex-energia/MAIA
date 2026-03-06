@@ -121,9 +121,10 @@ def nuevo_proyecto():
 # ==============================
 # DASHBOARD FINANCIERO
 # ==============================
-
 @proyectos_bp.route("/proyectos/<int:proyecto_id>/dashboard")
 def dashboard_proyecto(proyecto_id):
+
+    from nexus_motor import evaluar_proyecto
 
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
@@ -140,12 +141,24 @@ def dashboard_proyecto(proyecto_id):
     sector = proyecto["sector"]
     capacidad = proyecto["capacidad"]
 
-    horizonte = int(proyecto["horizonte"] or 0)
-    capex = float(proyecto["capex_inicial"] or 0)
-    opex = float(proyecto["opex_anual"] or 0)
-    ingresos = float(proyecto["ingresos_anuales"] or 0)
+    analisis = evaluar_proyecto(sector, capacidad)
+
+    capex = proyecto["capex_inicial"]
+    opex = proyecto["opex_anual"]
+    ingresos = proyecto["ingresos_anuales"]
 
     flujo_anual = ingresos - opex
+
+    return render_template(
+        "proyecto_dashboard.html",
+        proyecto=proyecto,
+        flujo_anual=round(flujo_anual, 2),
+        van=round(analisis["van"], 2),
+        tir=round(analisis["tir"], 4) if analisis["tir"] else None,
+        payback=analisis["payback"],
+        evaluacion=analisis["evaluacion"],
+        recomendacion=analisis["recomendacion"]
+    )
 
     # ==============================
     # INTELIGENCIA MAIA

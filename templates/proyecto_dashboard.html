@@ -1,34 +1,44 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Dashboard Proyecto</title>
 </head>
+
 <body>
 
-    <h1>Dashboard Financiero</h1>
+<h1>Dashboard Financiero</h1>
 
-    <h2>{{ proyecto["nombre"] }}</h2>
+<h2>{{ proyecto["nombre"] }}</h2>
 
-    <p><strong>Sector:</strong> {{ proyecto["sector"] }}</p>
-    <p><strong>País:</strong> {{ proyecto["pais"] }}</p>
-    <p><strong>Ciudad:</strong> {{ proyecto["ciudad"] }}</p>
-    <p><strong>Moneda:</strong> {{ proyecto["moneda"] }}</p>
+<p><strong>Sector:</strong> {{ proyecto["sector"] }}</p>
+<p><strong>País:</strong> {{ proyecto["pais"] }}</p>
+<p><strong>Ciudad:</strong> {{ proyecto["ciudad"] }}</p>
+<p><strong>Moneda:</strong> {{ proyecto["moneda"] }}</p>
 
-    <hr>
+<hr>
 
-    <h3>Resultados Financieros</h3>
+<h3>Resultados Financieros</h3>
 
-    <!-- 🔽 NUEVO: Mostrar CAPEX y OPEX -->
-    <p><strong>CAPEX:</strong> {{ proyecto["capex_inicial"] }}</p>
-    <p><strong>OPEX:</strong> {{ proyecto["opex_anual"] }}</p>
+<p><strong>CAPEX:</strong> {{ proyecto["capex_inicial"] }}</p>
+<p><strong>OPEX:</strong> {{ proyecto["opex_anual"] }}</p>
 
-    <p><strong>Flujo Neto Anual:</strong> {{ flujo_anual }}</p>
-    <p><strong>VAN:</strong> {{ van }}</p>
-    <p><strong>Payback:</strong> {{ payback }}</p>
-    <p><strong>¿Genera Valor?:</strong> {{ genera_valor }}</p>
+<p><strong>Flujo Neto Anual:</strong> {{ flujo_anual }}</p>
+<p><strong>VAN:</strong> {{ van }}</p>
 
-    <br>
-    <a href="/proyectos">Volver a proyectos</a>
+<p><strong>Payback:</strong>
+{% if payback %}
+{{ payback }} años
+{% else %}
+No recupera inversión
+{% endif %}
+</p>
+
+<p><strong>¿Genera Valor?:</strong> {{ genera_valor }}</p>
+
+<br>
+
+<a href="/proyectos">Volver a proyectos</a>
 
 </body>
 </html>

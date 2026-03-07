@@ -1,6 +1,11 @@
-from flask import Blueprint, render_template, request, redirect
+from flask import Blueprint, render_template, request, redirect, jsonify
 import sqlite3
 import random
+import os
+import pdfplumber
+import pandas as pd
+from docx import Document
+from PIL import Image
 
 # =========================
 # BLUEPRINT
@@ -9,6 +14,10 @@ import random
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
+UPLOAD_FOLDER = "uploads"
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 
 # =========================
@@ -188,272 +197,116 @@ def dashboard_proyecto(proyecto_id):
 
     flujo_anual = ingresos - opex
 
-
     flujos = [-capex]
 
     for i in range(vida):
         flujos.append(flujo_anual)
-
 
     van = 0
 
     for i,f in enumerate(flujos):
         van += f / ((1+tasa)**i)
 
-
-    tir = None
-
-    try:
-
-        r = 0.1
-
-        for i in range(100):
-
-            van_temp = 0
-            dvan = 0
-
-            for t,f in enumerate(flujos):
-
-                van_temp += f / ((1+r)**t)
-
-                if t > 0:
-                    dvan += -t*f/((1+r)**(t+1))
-
-            r = r - van_temp/dvan
-
-        tir = r
-
-    except:
-
-        tir = None
-
-
-    acumulado = 0
-    payback = None
-
-    for i,f in enumerate(flujos):
-
-        acumulado += f
-
-        if acumulado > 0:
-
-            payback = i
-            break
-
-
-    if van > 0:
-
-        evaluacion = "Proyecto rentable"
-        recomendacion = "Invertir"
-
-    else:
-
-        evaluacion = "Proyecto no rentable"
-        recomendacion = "No invertir"
-
-
-    capex_detallado = desglose_capex(capex)
-    opex_detallado = desglose_opex(opex)
-
-
-    valor_generado = generar_valor(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
-
-
-    indicadores_financieros = motor_financiero_avanzado(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
-
-
-    sensibilidad = analisis_sensibilidad(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
-
-
-    riesgo = simulacion_montecarlo(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
-
-
-    # NUEVO
-    escenarios_financiacion = escenarios_apalancamiento(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
-
-
-    energia = motor_energia_maia(
-        capex,
-        opex,
-        vida,
-        tasa
-    )
-
-
     return render_template(
-
         "proyecto_dashboard.html",
-
         proyecto=proyecto,
         flujo_anual=round(flujo_anual,2),
-        van=round(van,2),
-        tir=round(tir,4) if tir else None,
-        payback=payback,
-        evaluacion=evaluacion,
-        recomendacion=recomendacion,
-        flujos=flujos,
-        capex_detallado=capex_detallado,
-        opex_detallado=opex_detallado,
-        valor_generado=valor_generado,
-        indicadores_financieros=indicadores_financieros,
-        sensibilidad=sensibilidad,
-        riesgo=riesgo,
-        escenarios_financiacion=escenarios_financiacion,
-        energia=energia
+        van=round(van,2)
     )
 
 
 # ============================================================
-# ESCENARIOS APALANCAMIENTO
+# CHAT MAIA SOBRE PROYECTO
 # ============================================================
 
-def escenarios_apalancamiento(capex, ingresos, opex, vida, tasa):
+@proyectos_bp.route("/proyectos/<int:proyecto_id>/chat", methods=["POST"])
+def chat_maia_proyecto(proyecto_id):
 
-    escenarios = [
+    pregunta = request.json.get("pregunta","").lower()
 
-        {"nombre":"70% deuda / 30% equity","deuda":0.7},
-        {"nombre":"80% deuda / 20% equity","deuda":0.8},
-        {"nombre":"100% equity","deuda":0.0}
+    conn = get_db()
 
-    ]
+    proyecto = conn.execute(
+        "SELECT * FROM proyectos WHERE id=?",
+        (proyecto_id,)
+    ).fetchone()
 
-    resultados = []
+    conn.close()
 
-    for e in escenarios:
+    if not proyecto:
+        return jsonify({"respuesta":"Proyecto no encontrado"})
 
-        deuda = capex * e["deuda"]
-        equity = capex - deuda
+    capex = proyecto["capex_inicial"]
+    opex = proyecto["opex_anual"]
+    ingresos = proyecto["ingresos_anuales"]
 
-        flujo = ingresos - opex
+    flujo = ingresos - opex
 
-        van = 0
+    if "capex" in pregunta:
+        return jsonify({"respuesta":f"El CAPEX del proyecto es {capex}"})
 
-        for i in range(1,vida+1):
-            van += flujo/((1+tasa)**i)
+    if "opex" in pregunta:
+        return jsonify({"respuesta":f"El OPEX anual es {opex}"})
 
-        van -= capex
+    if "flujo" in pregunta:
+        return jsonify({"respuesta":f"El flujo anual es {flujo}"})
 
-        roe = flujo/equity if equity != 0 else 0
+    if "rentable" in pregunta:
 
-        resultados.append({
+        if flujo > 0:
+            return jsonify({"respuesta":"El proyecto genera flujo positivo"})
+        else:
+            return jsonify({"respuesta":"El proyecto genera flujo negativo"})
 
-            "escenario":e["nombre"],
-            "deuda":round(deuda,2),
-            "equity":round(equity,2),
-            "van":round(van,2),
-            "roe":round(roe,4)
-
-        })
-
-    return resultados
-
-
-# ============================================================
-# PRECIO MINIMO KWH
-# ============================================================
-
-def precio_minimo_kwh(capex, opex, produccion_kwh, vida, tasa):
-
-    precio = 0.01
-
-    while precio < 1:
-
-        ingresos = produccion_kwh * precio
-        flujo = ingresos - opex
-
-        van = 0
-
-        for i in range(1,vida+1):
-            van += flujo/((1+tasa)**i)
-
-        van -= capex
-
-        if van >= 0:
-            return round(precio,4)
-
-        precio += 0.001
-
-    return None
+    return jsonify({"respuesta":"Puedo responder preguntas sobre CAPEX, OPEX, flujo y rentabilidad"})
 
 
 # ============================================================
-# LCOE
+# SUBIR DOCUMENTOS
 # ============================================================
 
-def calcular_lcoe(capex, opex, produccion_kwh, vida, tasa):
+@proyectos_bp.route("/proyectos/<int:proyecto_id>/upload", methods=["POST"])
+def subir_documento(proyecto_id):
 
-    costo_total = capex
-    energia_total = 0
+    archivo = request.files["file"]
 
-    for i in range(1,vida+1):
+    ruta = os.path.join(UPLOAD_FOLDER, archivo.filename)
 
-        costo_total += opex/((1+tasa)**i)
-        energia_total += produccion_kwh/((1+tasa)**i)
+    archivo.save(ruta)
 
-    if energia_total == 0:
-        return None
-
-    return round(costo_total/energia_total,4)
+    return jsonify({"mensaje":"Archivo subido correctamente"})
 
 
 # ============================================================
-# MOTOR ENERGIA MAIA
+# ANALISIS DOCUMENTOS
 # ============================================================
 
-def motor_energia_maia(capex, opex, vida, tasa):
+def analizar_documento(ruta):
 
-    produccion_anual_kwh = 1000000
+    texto = ""
 
-    precio_minimo = precio_minimo_kwh(
-        capex,
-        opex,
-        produccion_anual_kwh,
-        vida,
-        tasa
-    )
+    if ruta.endswith(".pdf"):
 
-    lcoe = calcular_lcoe(
-        capex,
-        opex,
-        produccion_anual_kwh,
-        vida,
-        tasa
-    )
+        with pdfplumber.open(ruta) as pdf:
 
-    return {
+            for pagina in pdf.pages:
+                texto += pagina.extract_text() or ""
 
-        "produccion_anual_kwh":produccion_anual_kwh,
-        "precio_minimo_kwh":precio_minimo,
-        "lcoe":lcoe
+    elif ruta.endswith(".docx"):
 
-    }
+        doc = Document(ruta)
+
+        for p in doc.paragraphs:
+            texto += p.text
+
+    elif ruta.endswith(".xlsx"):
+
+        df = pd.read_excel(ruta)
+
+        texto += df.to_string()
+
+    elif ruta.endswith(".jpg") or ruta.endswith(".png"):
+
+        texto = "Imagen cargada correctamente"
+
+    return texto[:5000]

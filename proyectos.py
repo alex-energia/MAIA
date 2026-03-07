@@ -5,23 +5,30 @@ import random
 # =========================
 # BLUEPRINT
 # =========================
+
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
 
+
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
+
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # =========================
 # CREAR TABLA
 # =========================
+
 def init_db():
+
     conn = get_db()
+
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,13 +40,17 @@ def init_db():
         tasa_descuento REAL
     )
     """)
+
     conn.commit()
     conn.close()
+
 
 # =========================
 # DESGLOSE CAPEX
 # =========================
+
 def desglose_capex(capex):
+
     return [
         {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
         {"actividad":"Equipos","valor":round(capex*0.40,2)},
@@ -48,10 +59,13 @@ def desglose_capex(capex):
         {"actividad":"Contingencia","valor":round(capex*0.10,2)}
     ]
 
+
 # =========================
 # DESGLOSE OPEX
 # =========================
+
 def desglose_opex(opex):
+
     return [
         {"actividad":"Operación","valor":round(opex*0.35,2)},
         {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
@@ -60,17 +74,22 @@ def desglose_opex(opex):
         {"actividad":"Regulación","valor":round(opex*0.10,2)}
     ]
 
+
 # =========================
 # MOTOR GENERACION VALOR
 # =========================
+
 def generar_valor(capex, ingresos, opex, vida, tasa):
 
     flujo_operativo = ingresos - opex
+
     valor_ingresos = ingresos * vida
     valor_costos = opex * vida
+
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
     van = 0
+
     for i in range(1, vida+1):
         van += flujo_operativo / ((1+tasa)**i)
 
@@ -88,9 +107,11 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
 
     return valor
 
+
 # =========================
 # LISTA PROYECTOS
 # =========================
+
 @proyectos_bp.route("/proyectos")
 def lista_proyectos():
 
@@ -107,9 +128,11 @@ def lista_proyectos():
         proyectos=proyectos
     )
 
+
 # =========================
 # CREAR PROYECTO
 # =========================
+
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET","POST"])
 def nuevo_proyecto():
 
@@ -137,9 +160,11 @@ def nuevo_proyecto():
 
     return render_template("nuevo_proyecto.html")
 
+
 # =========================
 # DASHBOARD PROYECTO
 # =========================
+
 @proyectos_bp.route("/proyectos/<int:proyecto_id>")
 def dashboard_proyecto(proyecto_id):
 
@@ -163,27 +188,23 @@ def dashboard_proyecto(proyecto_id):
 
     flujo_anual = ingresos - opex
 
-    # =========================
-    # FLUJOS
-    # =========================
+
     flujos = [-capex]
 
     for i in range(vida):
         flujos.append(flujo_anual)
 
-    # =========================
-    # VAN
-    # =========================
+
     van = 0
+
     for i,f in enumerate(flujos):
         van += f / ((1+tasa)**i)
 
-    # =========================
-    # TIR
-    # =========================
+
     tir = None
 
     try:
+
         r = 0.1
 
         for i in range(100):
@@ -203,11 +224,10 @@ def dashboard_proyecto(proyecto_id):
         tir = r
 
     except:
+
         tir = None
 
-    # =========================
-    # PAYBACK
-    # =========================
+
     acumulado = 0
     payback = None
 
@@ -216,12 +236,11 @@ def dashboard_proyecto(proyecto_id):
         acumulado += f
 
         if acumulado > 0:
+
             payback = i
             break
 
-    # =========================
-    # EVALUACION
-    # =========================
+
     if van > 0:
 
         evaluacion = "Proyecto rentable"
@@ -232,15 +251,11 @@ def dashboard_proyecto(proyecto_id):
         evaluacion = "Proyecto no rentable"
         recomendacion = "No invertir"
 
-    # =========================
-    # DESGLOSE COSTOS
-    # =========================
+
     capex_detallado = desglose_capex(capex)
     opex_detallado = desglose_opex(opex)
 
-    # =========================
-    # GENERACION DE VALOR
-    # =========================
+
     valor_generado = generar_valor(
         capex,
         ingresos,
@@ -249,9 +264,7 @@ def dashboard_proyecto(proyecto_id):
         tasa
     )
 
-    # =========================
-    # INDICADORES FINANCIEROS AVANZADOS
-    # =========================
+
     indicadores_financieros = motor_financiero_avanzado(
         capex,
         ingresos,
@@ -260,9 +273,6 @@ def dashboard_proyecto(proyecto_id):
         tasa
     )
 
-    # ============================================================
-    # ANEXO 1 - ANALISIS DE SENSIBILIDAD
-    # ============================================================
 
     sensibilidad = analisis_sensibilidad(
         capex,
@@ -272,9 +282,6 @@ def dashboard_proyecto(proyecto_id):
         tasa
     )
 
-    # ============================================================
-    # ANEXO 2 - SIMULACION MONTE CARLO
-    # ============================================================
 
     riesgo = simulacion_montecarlo(
         capex,
@@ -284,9 +291,25 @@ def dashboard_proyecto(proyecto_id):
         tasa
     )
 
-    # =========================
-    # RENDER
-    # =========================
+
+    # NUEVO
+    escenarios_financiacion = escenarios_apalancamiento(
+        capex,
+        ingresos,
+        opex,
+        vida,
+        tasa
+    )
+
+
+    energia = motor_energia_maia(
+        capex,
+        opex,
+        vida,
+        tasa
+    )
+
+
     return render_template(
 
         "proyecto_dashboard.html",
@@ -304,93 +327,34 @@ def dashboard_proyecto(proyecto_id):
         valor_generado=valor_generado,
         indicadores_financieros=indicadores_financieros,
         sensibilidad=sensibilidad,
-        riesgo=riesgo
-
+        riesgo=riesgo,
+        escenarios_financiacion=escenarios_financiacion,
+        energia=energia
     )
 
-# ============================================================
-# MOTOR FINANCIERO AVANZADO MAIA
-# ============================================================
-
-def motor_financiero_avanzado(
-    capex,
-    ingresos,
-    opex,
-    vida,
-    tasa,
-    deuda=0,
-    equity=None,
-    tasa_impuesto=0.30,
-    costo_deuda=0.08,
-    costo_equity=0.12
-):
-
-    if equity is None:
-        equity = capex - deuda
-
-    flujo_operativo = ingresos - opex
-    depreciacion = capex / vida if vida != 0 else 0
-
-    ebitda = flujo_operativo
-    ebit = ebitda - depreciacion
-
-    impuestos = ebit * tasa_impuesto if ebit > 0 else 0
-    utilidad_neta = ebit - impuestos
-
-    roi = ((flujo_operativo * vida) - capex) / capex if capex != 0 else 0
-    roa = utilidad_neta / capex if capex != 0 else 0
-    roe = utilidad_neta / equity if equity != 0 else 0
-    roic = ebit / capex if capex != 0 else 0
-
-    margen_ebitda = ebitda / ingresos if ingresos != 0 else 0
-    margen_operativo = ebit / ingresos if ingresos != 0 else 0
-    margen_neto = utilidad_neta / ingresos if ingresos != 0 else 0
-
-    total_capital = deuda + equity if (deuda + equity) != 0 else 1
-
-    wacc = (
-        (equity / total_capital) * costo_equity +
-        (deuda / total_capital) * costo_deuda * (1 - tasa_impuesto)
-    )
-
-    van = 0
-    for i in range(1, vida + 1):
-        van += flujo_operativo / ((1 + tasa) ** i)
-
-    van -= capex
-
-    indicadores = {
-        "EBITDA": round(ebitda,2),
-        "EBIT": round(ebit,2),
-        "Utilidad Neta": round(utilidad_neta,2),
-        "ROI": round(roi,4),
-        "ROA": round(roa,4),
-        "ROE": round(roe,4),
-        "ROIC": round(roic,4),
-        "Margen EBITDA": round(margen_ebitda,4),
-        "Margen Operativo": round(margen_operativo,4),
-        "Margen Neto": round(margen_neto,4),
-        "WACC": round(wacc,4),
-        "VAN Financiero": round(van,2)
-    }
-
-    return indicadores
 
 # ============================================================
-# ANALISIS DE SENSIBILIDAD
+# ESCENARIOS APALANCAMIENTO
 # ============================================================
 
-def analisis_sensibilidad(capex, ingresos, opex, vida, tasa):
+def escenarios_apalancamiento(capex, ingresos, opex, vida, tasa):
 
-    variaciones = [-0.2,-0.1,0,0.1,0.2]
+    escenarios = [
+
+        {"nombre":"70% deuda / 30% equity","deuda":0.7},
+        {"nombre":"80% deuda / 20% equity","deuda":0.8},
+        {"nombre":"100% equity","deuda":0.0}
+
+    ]
 
     resultados = []
 
-    for v in variaciones:
+    for e in escenarios:
 
-        ingresos_mod = ingresos * (1+v)
+        deuda = capex * e["deuda"]
+        equity = capex - deuda
 
-        flujo = ingresos_mod - opex
+        flujo = ingresos - opex
 
         van = 0
 
@@ -399,29 +363,33 @@ def analisis_sensibilidad(capex, ingresos, opex, vida, tasa):
 
         van -= capex
 
+        roe = flujo/equity if equity != 0 else 0
+
         resultados.append({
 
-            "escenario": f"Ingresos {int(v*100)}%",
-            "van": round(van,2)
+            "escenario":e["nombre"],
+            "deuda":round(deuda,2),
+            "equity":round(equity,2),
+            "van":round(van,2),
+            "roe":round(roe,4)
 
         })
 
     return resultados
 
+
 # ============================================================
-# SIMULACION MONTE CARLO
+# PRECIO MINIMO KWH
 # ============================================================
 
-def simulacion_montecarlo(capex, ingresos, opex, vida, tasa, simulaciones=100):
+def precio_minimo_kwh(capex, opex, produccion_kwh, vida, tasa):
 
-    vans = []
+    precio = 0.01
 
-    for _ in range(simulaciones):
+    while precio < 1:
 
-        ingresos_rand = ingresos * random.uniform(0.8,1.2)
-        opex_rand = opex * random.uniform(0.9,1.1)
-
-        flujo = ingresos_rand - opex_rand
+        ingresos = produccion_kwh * precio
+        flujo = ingresos - opex
 
         van = 0
 
@@ -430,17 +398,62 @@ def simulacion_montecarlo(capex, ingresos, opex, vida, tasa, simulaciones=100):
 
         van -= capex
 
-        vans.append(van)
+        if van >= 0:
+            return round(precio,4)
 
-    promedio = sum(vans)/len(vans)
-    positivos = len([v for v in vans if v>0])
+        precio += 0.001
 
-    probabilidad = positivos/len(vans)
+    return None
+
+
+# ============================================================
+# LCOE
+# ============================================================
+
+def calcular_lcoe(capex, opex, produccion_kwh, vida, tasa):
+
+    costo_total = capex
+    energia_total = 0
+
+    for i in range(1,vida+1):
+
+        costo_total += opex/((1+tasa)**i)
+        energia_total += produccion_kwh/((1+tasa)**i)
+
+    if energia_total == 0:
+        return None
+
+    return round(costo_total/energia_total,4)
+
+
+# ============================================================
+# MOTOR ENERGIA MAIA
+# ============================================================
+
+def motor_energia_maia(capex, opex, vida, tasa):
+
+    produccion_anual_kwh = 1000000
+
+    precio_minimo = precio_minimo_kwh(
+        capex,
+        opex,
+        produccion_anual_kwh,
+        vida,
+        tasa
+    )
+
+    lcoe = calcular_lcoe(
+        capex,
+        opex,
+        produccion_anual_kwh,
+        vida,
+        tasa
+    )
 
     return {
 
-        "van_promedio": round(promedio,2),
-        "probabilidad_van_positivo": round(probabilidad,3),
-        "simulaciones": simulaciones
+        "produccion_anual_kwh":produccion_anual_kwh,
+        "precio_minimo_kwh":precio_minimo,
+        "lcoe":lcoe
 
     }

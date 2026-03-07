@@ -5,3 +5,8 @@ wheel
 groq==0.4.2
 httpx==0.24.1
 deep-translator
+pdfplumber
+python-docx
+pandas
+pillow
+

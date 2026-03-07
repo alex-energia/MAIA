@@ -2,9 +2,8 @@ from flask import Blueprint, render_template, request, redirect
 import sqlite3
 
 # =========================
-# IMPORTAR DESGLOSE COSTOS
+# BLUEPRINT
 # =========================
-from costos_detallados import desglose_capex, desglose_opex
 
 proyectos_bp = Blueprint("proyectos", __name__)
 
@@ -22,13 +21,16 @@ def get_db():
 
 
 # =========================
-# CREAR TABLA SI NO EXISTE
+# CREAR TABLA
 # =========================
 
 def init_db():
+
     conn = get_db()
+
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
         capex_inicial REAL,
@@ -36,24 +38,121 @@ def init_db():
         ingresos_anuales REAL,
         vida_util INTEGER,
         tasa_descuento REAL
+
     )
     """)
+
     conn.commit()
     conn.close()
 
 
 # =========================
-# LISTA DE PROYECTOS
+# DESGLOSE CAPEX
+# =========================
+
+def desglose_capex(capex):
+
+    return [
+
+        {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
+        {"actividad":"Equipos","valor":round(capex*0.40,2)},
+        {"actividad":"Construcción","valor":round(capex*0.25,2)},
+        {"actividad":"Permisos","valor":round(capex*0.10,2)},
+        {"actividad":"Contingencia","valor":round(capex*0.10,2)}
+
+    ]
+
+
+# =========================
+# DESGLOSE OPEX
+# =========================
+
+def desglose_opex(opex):
+
+    return [
+
+        {"actividad":"Operación","valor":round(opex*0.35,2)},
+        {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
+        {"actividad":"Administración","valor":round(opex*0.15,2)},
+        {"actividad":"Logística","valor":round(opex*0.15,2)},
+        {"actividad":"Regulación","valor":round(opex*0.10,2)}
+
+    ]
+
+
+# =========================
+# MOTOR GENERACION VALOR
+# =========================
+
+def generar_valor(capex, ingresos, opex, vida, tasa):
+
+    flujo_operativo = ingresos - opex
+
+    valor_ingresos = ingresos * vida
+    valor_costos = opex * vida
+
+    eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
+
+
+    van = 0
+
+    for i in range(1, vida+1):
+        van += flujo_operativo / ((1+tasa)**i)
+
+    van -= capex
+
+
+    valor = [
+
+        {
+        "driver":"Ingresos operacionales totales",
+        "valor":round(valor_ingresos,2)
+        },
+
+        {
+        "driver":"Costos operacionales totales",
+        "valor":round(valor_costos,2)
+        },
+
+        {
+        "driver":"Flujo operativo anual",
+        "valor":round(flujo_operativo,2)
+        },
+
+        {
+        "driver":"Eficiencia del capital",
+        "valor":round(eficiencia_capital,3)
+        },
+
+        {
+        "driver":"Valor presente del proyecto",
+        "valor":round(van,2)
+        }
+
+    ]
+
+    return valor
+
+
+# =========================
+# LISTA PROYECTOS
 # =========================
 
 @proyectos_bp.route("/proyectos")
 def lista_proyectos():
 
     conn = get_db()
-    proyectos = conn.execute("SELECT * FROM proyectos").fetchall()
+
+    proyectos = conn.execute(
+        "SELECT * FROM proyectos"
+    ).fetchall()
+
     conn.close()
 
-    return render_template("proyectos.html", proyectos=proyectos)
+    return render_template(
+        "proyectos.html",
+        proyectos=proyectos
+    )
 
 
 # =========================
@@ -68,8 +167,7 @@ def nuevo_proyecto():
         nombre = request.form["nombre"]
         capex = float(request.form["capex"])
         opex = float(request.form["opex"])
-        ingresos = float(request.form["ingresos"]
-)
+        ingresos = float(request.form["ingresos"])
         vida = int(request.form["vida"])
         tasa = float(request.form["tasa"])
 
@@ -108,17 +206,19 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado"
 
+
     capex = proyecto["capex_inicial"]
     opex = proyecto["opex_anual"]
     ingresos = proyecto["ingresos_anuales"]
     vida = proyecto["vida_util"]
     tasa = proyecto["tasa_descuento"]
 
+
     flujo_anual = ingresos - opex
 
 
     # =========================
-    # CALCULO FLUJOS
+    # FLUJOS
     # =========================
 
     flujos = [-capex]
@@ -138,7 +238,7 @@ def dashboard_proyecto(proyecto_id):
 
 
     # =========================
-    # TIR (aproximacion simple)
+    # TIR
     # =========================
 
     tir = None
@@ -188,9 +288,12 @@ def dashboard_proyecto(proyecto_id):
     # =========================
 
     if van > 0:
+
         evaluacion = "Proyecto rentable"
         recomendacion = "Invertir"
+
     else:
+
         evaluacion = "Proyecto no rentable"
         recomendacion = "No invertir"
 
@@ -204,11 +307,26 @@ def dashboard_proyecto(proyecto_id):
 
 
     # =========================
-    # RENDER DASHBOARD
+    # GENERACION DE VALOR
+    # =========================
+
+    valor_generado = generar_valor(
+        capex,
+        ingresos,
+        opex,
+        vida,
+        tasa
+    )
+
+
+    # =========================
+    # RENDER
     # =========================
 
     return render_template(
+
         "proyecto_dashboard.html",
+
         proyecto=proyecto,
         flujo_anual=round(flujo_anual,2),
         van=round(van,2),
@@ -218,5 +336,7 @@ def dashboard_proyecto(proyecto_id):
         recomendacion=recomendacion,
         flujos=flujos,
         capex_detallado=capex_detallado,
-        opex_detallado=opex_detallado
+        opex_detallado=opex_detallado,
+        valor_generado=valor_generado
+
     )

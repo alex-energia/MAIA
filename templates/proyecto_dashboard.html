@@ -36,29 +36,21 @@ background:#f4f4f4;
 
 </head>
 
-
 <body>
 
 <h1>Evaluación MAIA</h1>
 
 <h2>{{ proyecto["nombre"] }}</h2>
 
-
 <h3>Indicadores Financieros</h3>
 
 <p><b>Flujo anual:</b> {{ flujo_anual }}</p>
-
 <p><b>VAN:</b> {{ van }}</p>
-
 <p><b>TIR:</b> {{ tir }}</p>
-
 <p><b>Payback:</b> {{ payback }} años</p>
 
 <p><b>Resultado:</b> {{ evaluacion }}</p>
-
 <p><b>Recomendación:</b> {{ recomendacion }}</p>
-
-
 
 <h2>Generación de Valor del Proyecto</h2>
 
@@ -80,8 +72,6 @@ background:#f4f4f4;
 
 </table>
 
-
-
 <h2>CAPEX Detallado</h2>
 
 <table>
@@ -101,8 +91,6 @@ background:#f4f4f4;
 {% endfor %}
 
 </table>
-
-
 
 <h2>OPEX Detallado</h2>
 
@@ -124,7 +112,29 @@ background:#f4f4f4;
 
 </table>
 
+<!-- ===================================================== -->
+<!-- INDICADORES FINANCIEROS AVANZADOS (ANEXO) -->
+<!-- ===================================================== -->
 
+<h2>Indicadores Financieros Avanzados</h2>
+
+<table>
+
+<tr>
+<th>Indicador</th>
+<th>Valor</th>
+</tr>
+
+{% for nombre, valor in indicadores_financieros.items() %}
+
+<tr>
+<td>{{ nombre }}</td>
+<td>{{ valor }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
 
 </body>
 

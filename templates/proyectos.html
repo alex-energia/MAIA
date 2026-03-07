@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>MAIA - Proyectos</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+}
+
+table{
+border-collapse:collapse;
+width:60%;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+}
+
+th{
+background:#f4f4f4;
+}
+
+a{
+text-decoration:none;
+color:blue;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>Proyectos MAIA</h1>
+
+<br>
+
+<a href="/proyectos/nuevo">Crear nuevo proyecto</a>
+
+<br><br>
+
+<table>
+
+<tr>
+
+<th>ID</th>
+<th>Nombre</th>
+<th>Ver</th>
+
+</tr>
+
+{% for p in proyectos %}
+
+<tr>
+
+<td>{{ p["id"] }}</td>
+
+<td>{{ p["nombre"] }}</td>
+
+<td>
+<a href="/proyectos/{{ p['id'] }}">Abrir</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+</body>
+
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>MAIA - Nuevo Proyecto</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+}
+
+input{
+padding:6px;
+width:200px;
+margin-bottom:10px;
+}
+
+button{
+padding:8px 15px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<h1>Crear Nuevo Proyecto</h1>
+
+<form method="POST">
+
+<p>Nombre del proyecto</p>
+<input type="text" name="nombre" required>
+
+<p>CAPEX</p>
+<input type="number" step="any" name="capex" required>
+
+<p>OPEX anual</p>
+<input type="number" step="any" name="opex" required>
+
+<p>Ingresos anuales</p>
+<input type="number" step="any" name="ingresos" required>
+
+<p>Vida útil (años)</p>
+<input type="number" name="vida" required>
+
+<p>Tasa de descuento</p>
+<input type="number" step="any" name="tasa" required>
+
+<br><br>
+
+<button type="submit">Crear proyecto</button>
+
+</form>
+
+<br>
+
+<a href="/proyectos">Volver a proyectos</a>
+
+</body>
+
+</html>

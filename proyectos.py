@@ -9,7 +9,6 @@ proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
 
-
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
@@ -19,18 +18,14 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-
 # =========================
 # CREAR TABLA
 # =========================
 
 def init_db():
-
     conn = get_db()
-
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
-
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
         capex_inicial REAL,
@@ -38,13 +33,10 @@ def init_db():
         ingresos_anuales REAL,
         vida_util INTEGER,
         tasa_descuento REAL
-
     )
     """)
-
     conn.commit()
     conn.close()
-
 
 # =========================
 # DESGLOSE CAPEX
@@ -62,7 +54,6 @@ def desglose_capex(capex):
 
     ]
 
-
 # =========================
 # DESGLOSE OPEX
 # =========================
@@ -79,7 +70,6 @@ def desglose_opex(opex):
 
     ]
 
-
 # =========================
 # MOTOR GENERACION VALOR
 # =========================
@@ -89,18 +79,18 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
     flujo_operativo = ingresos - opex
 
     valor_ingresos = ingresos * vida
+
     valor_costos = opex * vida
 
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
-
     van = 0
 
     for i in range(1, vida+1):
+
         van += flujo_operativo / ((1+tasa)**i)
 
     van -= capex
-
 
     valor = [
 
@@ -133,12 +123,12 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
 
     return valor
 
-
 # =========================
 # LISTA PROYECTOS
 # =========================
 
 @proyectos_bp.route("/proyectos")
+
 def lista_proyectos():
 
     conn = get_db()
@@ -154,12 +144,12 @@ def lista_proyectos():
         proyectos=proyectos
     )
 
-
 # =========================
 # CREAR PROYECTO
 # =========================
 
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET","POST"])
+
 def nuevo_proyecto():
 
     if request.method == "POST":
@@ -174,24 +164,27 @@ def nuevo_proyecto():
         conn = get_db()
 
         conn.execute("""
+
         INSERT INTO proyectos
         (nombre,capex_inicial,opex_anual,ingresos_anuales,vida_util,tasa_descuento)
         VALUES (?,?,?,?,?,?)
+
         """,(nombre,capex,opex,ingresos,vida,tasa))
 
         conn.commit()
+
         conn.close()
 
         return redirect("/proyectos")
 
     return render_template("nuevo_proyecto.html")
 
-
 # =========================
 # DASHBOARD PROYECTO
 # =========================
 
 @proyectos_bp.route("/proyectos/<int:proyecto_id>")
+
 def dashboard_proyecto(proyecto_id):
 
     conn = get_db()
@@ -204,8 +197,8 @@ def dashboard_proyecto(proyecto_id):
     conn.close()
 
     if not proyecto:
-        return "Proyecto no encontrado"
 
+        return "Proyecto no encontrado"
 
     capex = proyecto["capex_inicial"]
     opex = proyecto["opex_anual"]
@@ -213,9 +206,7 @@ def dashboard_proyecto(proyecto_id):
     vida = proyecto["vida_util"]
     tasa = proyecto["tasa_descuento"]
 
-
     flujo_anual = ingresos - opex
-
 
     # =========================
     # FLUJOS
@@ -224,8 +215,8 @@ def dashboard_proyecto(proyecto_id):
     flujos = [-capex]
 
     for i in range(vida):
-        flujos.append(flujo_anual)
 
+        flujos.append(flujo_anual)
 
     # =========================
     # VAN
@@ -234,8 +225,8 @@ def dashboard_proyecto(proyecto_id):
     van = 0
 
     for i,f in enumerate(flujos):
-        van += f / ((1+tasa)**i)
 
+        van += f / ((1+tasa)**i)
 
     # =========================
     # TIR
@@ -257,6 +248,7 @@ def dashboard_proyecto(proyecto_id):
                 van_temp += f / ((1+r)**t)
 
                 if t > 0:
+
                     dvan += -t*f/((1+r)**(t+1))
 
             r = r - van_temp/dvan
@@ -264,14 +256,15 @@ def dashboard_proyecto(proyecto_id):
         tir = r
 
     except:
-        tir = None
 
+        tir = None
 
     # =========================
     # PAYBACK
     # =========================
 
     acumulado = 0
+
     payback = None
 
     for i,f in enumerate(flujos):
@@ -279,9 +272,10 @@ def dashboard_proyecto(proyecto_id):
         acumulado += f
 
         if acumulado > 0:
-            payback = i
-            break
 
+            payback = i
+
+            break
 
     # =========================
     # EVALUACION
@@ -297,14 +291,13 @@ def dashboard_proyecto(proyecto_id):
         evaluacion = "Proyecto no rentable"
         recomendacion = "No invertir"
 
-
     # =========================
     # DESGLOSE COSTOS
     # =========================
 
     capex_detallado = desglose_capex(capex)
-    opex_detallado = desglose_opex(opex)
 
+    opex_detallado = desglose_opex(opex)
 
     # =========================
     # GENERACION DE VALOR
@@ -318,6 +311,17 @@ def dashboard_proyecto(proyecto_id):
         tasa
     )
 
+    # =========================
+    # INDICADORES FINANCIEROS AVANZADOS
+    # =========================
+
+    indicadores_financieros = motor_financiero_avanzado(
+        capex,
+        ingresos,
+        opex,
+        vida,
+        tasa
+    )
 
     # =========================
     # RENDER
@@ -337,6 +341,118 @@ def dashboard_proyecto(proyecto_id):
         flujos=flujos,
         capex_detallado=capex_detallado,
         opex_detallado=opex_detallado,
-        valor_generado=valor_generado
+        valor_generado=valor_generado,
+        indicadores_financieros=indicadores_financieros
 
     )
+
+# ============================================================
+# MOTOR FINANCIERO AVANZADO MAIA
+# ============================================================
+
+def motor_financiero_avanzado(
+    capex,
+    ingresos,
+    opex,
+    vida,
+    tasa,
+    deuda=0,
+    equity=None,
+    tasa_impuesto=0.30,
+    costo_deuda=0.08,
+    costo_equity=0.12
+):
+
+    if equity is None:
+        equity = capex - deuda
+
+    flujo_operativo = ingresos - opex
+
+    depreciacion = capex / vida if vida != 0 else 0
+
+    ebitda = flujo_operativo
+
+    ebit = ebitda - depreciacion
+
+    impuestos = ebit * tasa_impuesto if ebit > 0 else 0
+
+    utilidad_neta = ebit - impuestos
+
+    roi = ((flujo_operativo * vida) - capex) / capex if capex != 0 else 0
+
+    roa = utilidad_neta / capex if capex != 0 else 0
+
+    roe = utilidad_neta / equity if equity != 0 else 0
+
+    roic = ebit / capex if capex != 0 else 0
+
+    margen_ebitda = ebitda / ingresos if ingresos != 0 else 0
+
+    margen_operativo = ebit / ingresos if ingresos != 0 else 0
+
+    margen_neto = utilidad_neta / ingresos if ingresos != 0 else 0
+
+    total_capital = deuda + equity if (deuda + equity) != 0 else 1
+
+    wacc = (
+        (equity / total_capital) * costo_equity +
+        (deuda / total_capital) * costo_deuda * (1 - tasa_impuesto)
+    )
+
+    van = 0
+
+    for i in range(1, vida + 1):
+
+        van += flujo_operativo / ((1 + tasa) ** i)
+
+    van -= capex
+
+    indice_rentabilidad = (van + capex) / capex if capex != 0 else 0
+
+    relacion_bc = (flujo_operativo * vida) / capex if capex != 0 else 0
+
+    acumulado = -capex
+
+    payback_desc = None
+
+    for i in range(1, vida + 1):
+
+        flujo_desc = flujo_operativo / ((1 + tasa) ** i)
+
+        acumulado += flujo_desc
+
+        if acumulado > 0:
+
+            payback_desc = i
+            break
+
+    flujo_caja_operativo = flujo_operativo
+
+    flujo_caja_libre = flujo_operativo - depreciacion
+
+    rotacion_activos = ingresos / capex if capex != 0 else 0
+
+    indicadores = {
+
+        "EBITDA": round(ebitda,2),
+        "EBIT": round(ebit,2),
+        "Utilidad Neta": round(utilidad_neta,2),
+        "ROI": round(roi,4),
+        "ROA": round(roa,4),
+        "ROE": round(roe,4),
+        "ROIC": round(roic,4),
+        "Margen EBITDA": round(margen_ebitda,4),
+        "Margen Operativo": round(margen_operativo,4),
+        "Margen Neto": round(margen_neto,4),
+        "WACC": round(wacc,4),
+        "Indice de Rentabilidad": round(indice_rentabilidad,4),
+        "Relacion Beneficio/Costo": round(relacion_bc,4),
+        "Payback Descontado": payback_desc,
+        "Flujo Caja Operativo": round(flujo_caja_operativo,2),
+        "Flujo Caja Libre": round(flujo_caja_libre,2),
+        "Rotacion de Activos": round(rotacion_activos,4),
+        "VAN Financiero": round(van,2)
+
+    }
+
+    return indicadores

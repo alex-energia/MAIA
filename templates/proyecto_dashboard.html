@@ -1,49 +1,103 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Dashboard Proyecto</title>
+
+<title>MAIA - Evaluación Proyecto</title>
+
+<style>
+
+body{
+font-family:Arial;
+margin:40px;
+}
+
+h1{
+color:#2c3e50;
+}
+
+table{
+border-collapse:collapse;
+width:60%;
+margin-bottom:30px;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+text-align:left;
+}
+
+th{
+background:#f4f4f4;
+}
+
+</style>
+
 </head>
 
 <body>
 
-    <h1>Dashboard Financiero</h1>
+<h1>Evaluación MAIA</h1>
 
-    <h2>{{ proyecto["nombre"] }}</h2>
+<h2>{{ proyecto["nombre"] }}</h2>
 
-    <p><strong>Sector:</strong> {{ proyecto["sector"] }}</p>
-    <p><strong>País:</strong> {{ proyecto["pais"] }}</p>
-    <p><strong>Ciudad:</strong> {{ proyecto["ciudad"] }}</p>
-    <p><strong>Moneda:</strong> {{ proyecto["moneda"] }}</p>
+<h3>Indicadores Financieros</h3>
 
-    <hr>
+<p><b>Flujo anual:</b> {{ flujo_anual }}</p>
 
-    <h3>Resultados Financieros</h3>
+<p><b>VAN:</b> {{ van }}</p>
 
-    <p><strong>CAPEX:</strong> {{ proyecto["capex_inicial"] }}</p>
-    <p><strong>OPEX:</strong> {{ proyecto["opex_anual"] }}</p>
+<p><b>TIR:</b> {{ tir }}</p>
 
-    <p><strong>Flujo Neto Anual:</strong> {{ flujo_anual }}</p>
+<p><b>Payback:</b> {{ payback }} años</p>
 
-    <p><strong>VAN:</strong> {{ van }}</p>
+<p><b>Resultado:</b> {{ evaluacion }}</p>
 
-    <p><strong>TIR:</strong> {{ tir }}</p>
+<p><b>Recomendación:</b> {{ recomendacion }}</p>
 
-    <p><strong>Payback:</strong> {{ payback }}</p>
 
-    <p><strong>¿Genera Valor?:</strong> {{ genera_valor }}</p>
+<h2>CAPEX Detallado</h2>
 
-    <hr>
+<table>
 
-    <h3>Evaluación MAIA</h3>
+<tr>
+<th>Actividad</th>
+<th>Valor</th>
+</tr>
 
-    <p><strong>Resultado:</strong> {{ evaluacion }}</p>
+{% for item in capex_detallado %}
 
-    <p><strong>Recomendación:</strong> {{ recomendacion }}</p>
+<tr>
+<td>{{ item["actividad"] }}</td>
+<td>{{ item["valor"] }}</td>
+</tr>
 
-    <br>
+{% endfor %}
 
-    <a href="/proyectos">Volver a proyectos</a>
+</table>
+
+
+
+<h2>OPEX Detallado</h2>
+
+<table>
+
+<tr>
+<th>Actividad</th>
+<th>Valor</th>
+</tr>
+
+{% for item in opex_detallado %}
+
+<tr>
+<td>{{ item["actividad"] }}</td>
+<td>{{ item["valor"] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
 
 </body>
 </html>

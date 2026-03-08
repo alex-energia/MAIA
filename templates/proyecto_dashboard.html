@@ -5,11 +5,18 @@
 
 <title>MAIA - Evaluación Proyecto</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
-body{font-family:Arial;margin:40px;}
+body{
+font-family:Arial;
+margin:40px;
+}
 
-h1{color:#2c3e50;}
+h1{
+color:#2c3e50;
+}
 
 table{
 border-collapse:collapse;
@@ -27,6 +34,10 @@ th{
 background:#f4f4f4;
 }
 
+canvas{
+margin-bottom:40px;
+}
+
 </style>
 
 </head>
@@ -36,6 +47,7 @@ background:#f4f4f4;
 <h1>Evaluación MAIA</h1>
 
 <h2>{{ proyecto["nombre"] }}</h2>
+
 
 <h3>Indicadores Financieros</h3>
 
@@ -178,6 +190,84 @@ Probabilidad de que el proyecto sea rentable:
 
 
 <!-- ===================================================== -->
+<!-- GRAFICAS FINANCIERAS -->
+<!-- ===================================================== -->
+
+<h2>Análisis Gráfico del Proyecto</h2>
+
+<canvas id="montecarloChart"></canvas>
+
+<canvas id="sensIngresos"></canvas>
+
+<canvas id="sensCapex"></canvas>
+
+
+<script>
+
+const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }}
+
+new Chart(document.getElementById("montecarloChart"),{
+
+type:"bar",
+
+data:{
+labels:["Probabilidad rentable","Riesgo"],
+datasets:[{
+label:"Monte Carlo",
+data:[prob,100-prob]
+}]
+}
+
+})
+
+
+const van = {{ van }}
+
+new Chart(document.getElementById("sensIngresos"),{
+
+type:"line",
+
+data:{
+labels:["-20%","-10%","Base","+10%","+20%"],
+datasets:[{
+label:"VAN vs Ingresos",
+data:[
+van*0.6,
+van*0.8,
+van,
+van*1.2,
+van*1.4
+]
+}]
+}
+
+})
+
+
+new Chart(document.getElementById("sensCapex"),{
+
+type:"line",
+
+data:{
+labels:["-20%","-10%","Base","+10%","+20%"],
+datasets:[{
+label:"VAN vs CAPEX",
+data:[
+van*1.4,
+van*1.2,
+van,
+van*0.8,
+van*0.6
+]
+}]
+}
+
+})
+
+</script>
+
+
+<!-- ===================================================== -->
 <!-- CHAT MAIA PROYECTOS -->
 <!-- ===================================================== -->
 
@@ -221,26 +311,26 @@ let chat = document.getElementById("chat-box")
 
 let div = document.createElement("div")
 
-if(quien === "usuario"){
-div.innerHTML = "<b>Tú:</b> " + texto
-}
-else{
-div.innerHTML = "<b>MAIA:</b> " + texto
+if(quien==="usuario"){
+div.innerHTML="<b>Tú:</b> "+texto
+}else{
+div.innerHTML="<b>MAIA:</b> "+texto
 }
 
-div.style.marginBottom = "8px"
+div.style.marginBottom="8px"
 
 chat.appendChild(div)
 
-chat.scrollTop = chat.scrollHeight
+chat.scrollTop=chat.scrollHeight
+
 }
 
 
 function enviarPregunta(){
 
-let input = document.getElementById("pregunta")
+let input=document.getElementById("pregunta")
 
-let texto = input.value
+let texto=input.value
 
 if(!texto){return}
 
@@ -261,9 +351,7 @@ body:JSON.stringify({pregunta:texto})
 .then(r=>r.json())
 
 .then(data=>{
-
 agregarMensaje(data.respuesta,"maia")
-
 })
 
 input.value=""
@@ -273,9 +361,9 @@ input.value=""
 
 document.getElementById("archivo").addEventListener("change",function(){
 
-let archivo = this.files[0]
+let archivo=this.files[0]
 
-let formData = new FormData()
+let formData=new FormData()
 
 formData.append("file",archivo)
 

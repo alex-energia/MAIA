@@ -8,11 +8,14 @@ from maia_traductor import traducir_texto
 # 👉 IMPORTAMOS MAIA PROYECTOS
 from proyectos import proyectos_bp, init_db
 
+
 app = Flask(__name__)
 
 # 👉 REGISTRAMOS MAIA PROYECTOS
 app.register_blueprint(proyectos_bp)
+
 init_db()
+
 
 # ==============================
 # RUTA PRINCIPAL
@@ -21,22 +24,30 @@ init_db()
 def home():
     return render_template("index.html")
 
+
 # ==============================
 # CHAT NORMAL
 # ==============================
 @app.route("/chat", methods=["POST"])
 def chat():
+
     data = request.get_json()
+
     pregunta = data.get("pregunta")
+
     respuesta = preguntar_maia(pregunta)
+
     return jsonify({"respuesta": respuesta})
+
 
 # ==============================
 # MAIA GANADO
 # ==============================
 @app.route("/calcular_ganado", methods=["POST"])
 def calcular_ganado():
+
     data = request.get_json()
+
     edad = data.get("edad")
     raza = data.get("raza")
 
@@ -47,25 +58,33 @@ def calcular_ganado():
 
     return jsonify(resultado)
 
+
 # ==============================
 # MAIA PLANTAS
 # ==============================
 @app.route("/diagnostico_plantas", methods=["POST"])
 def diagnostico_plantas():
+
     resultado = diagnosticar_planta()
+
     return jsonify(resultado)
+
 
 # ==============================
 # MAIA TRADUCTOR
 # ==============================
 @app.route("/traducir", methods=["POST"])
 def traducir():
+
     data = request.get_json()
+
     texto = data.get("texto")
     idioma_destino = data.get("idioma_destino")
 
     resultado = traducir_texto(texto, idioma_destino)
+
     return jsonify(resultado)
+
 
 # ==============================
 # RUN SERVER

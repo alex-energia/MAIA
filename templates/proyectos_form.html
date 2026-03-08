@@ -2,49 +2,7 @@
 <html lang="es">
 
 <head>
-
 <title>Nuevo Proyecto</title>
-
-<style>
-
-body{
-font-family: Arial;
-background:#1e1e1e;
-color:white;
-padding:40px;
-}
-
-form{
-background:#2a2a2a;
-padding:30px;
-border-radius:10px;
-max-width:500px;
-}
-
-input, select{
-width:100%;
-padding:10px;
-margin-top:5px;
-margin-bottom:15px;
-border-radius:6px;
-border:none;
-}
-
-button{
-background:#2563eb;
-color:white;
-padding:12px 20px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-}
-
-a{
-color:#60a5fa;
-}
-
-</style>
-
 </head>
 
 <body>
@@ -53,14 +11,14 @@ color:#60a5fa;
 
 <form method="POST">
 
-<label>Nombre del proyecto</label>
+<label>Nombre del proyecto</label><br>
 <input type="text" name="nombre" required>
+<br><br>
 
-<label>Tipo de proyecto</label>
+<label>Tipo de proyecto</label><br>
 <select name="sector" required>
 
 <option value="">Seleccionar</option>
-
 <option value="Solar">Energía Solar</option>
 <option value="Hidro">Hidroeléctrico</option>
 <option value="Eolico">Eólico</option>
@@ -71,16 +29,19 @@ color:#60a5fa;
 
 </select>
 
+<br><br>
 
-<label>País</label>
+<label>País</label><br>
 <input type="text" name="pais" required>
 
+<br><br>
 
-<label>Ciudad</label>
+<label>Ciudad</label><br>
 <input type="text" name="ciudad">
 
+<br><br>
 
-<label>Moneda</label>
+<label>Moneda</label><br>
 <select name="moneda">
 
 <option value="USD">USD</option>
@@ -89,16 +50,19 @@ color:#60a5fa;
 
 </select>
 
+<br><br>
 
-<label>Horizonte del proyecto (años)</label>
-<input type="number" name="horizonte" min="1" required>
+<label>Horizonte del proyecto (años)</label><br>
+<input type="number" name="horizonte" required>
 
+<br><br>
 
-<label>Capacidad del proyecto</label>
-<input type="number" name="capacidad" min="1" required>
+<label>Capacidad del proyecto</label><br>
+<input type="number" name="capacidad" required>
 
+<br><br>
 
-<label>Unidad</label>
+<label>Unidad</label><br>
 <select name="unidad">
 
 <option value="MW">MW</option>
@@ -108,6 +72,7 @@ color:#60a5fa;
 
 </select>
 
+<br><br>
 
 <button type="submit">Crear Proyecto</button>
 

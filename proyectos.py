@@ -139,6 +139,23 @@ def lista_proyectos():
 
 
 # =========================
+# LIMPIAR PROYECTOS
+# =========================
+
+@proyectos_bp.route("/proyectos/limpiar")
+def limpiar_proyectos():
+
+    conn = get_db()
+
+    conn.execute("DELETE FROM proyectos")
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/proyectos")
+
+
+# =========================
 # CREAR PROYECTO
 # =========================
 
@@ -207,11 +224,88 @@ def dashboard_proyecto(proyecto_id):
     for i,f in enumerate(flujos):
         van += f / ((1+tasa)**i)
 
+    # TIR simple
+
+    tir = None
+    try:
+
+        r = 0.1
+
+        for _ in range(100):
+
+            van_temp = 0
+            dvan = 0
+
+            for t,f in enumerate(flujos):
+
+                van_temp += f / ((1+r)**t)
+
+                if t > 0:
+                    dvan += -t*f/((1+r)**(t+1))
+
+            r = r - van_temp/dvan
+
+        tir = r
+
+    except:
+        tir = None
+
+
+    # PAYBACK
+
+    acumulado = 0
+    payback = None
+
+    for i,f in enumerate(flujos):
+
+        acumulado += f
+
+        if acumulado > 0:
+            payback = i
+            break
+
+
+    if van > 0:
+        evaluacion = "Proyecto rentable"
+        recomendacion = "Invertir"
+    else:
+        evaluacion = "Proyecto no rentable"
+        recomendacion = "No invertir"
+
+
+    capex_detallado = desglose_capex(capex)
+    opex_detallado = desglose_opex(opex)
+
+    valor_generado = generar_valor(
+        capex,
+        ingresos,
+        opex,
+        vida,
+        tasa
+    )
+
+    indicadores_financieros = {
+        "Margen operativo": round((ingresos-opex)/ingresos,3) if ingresos else 0,
+        "Rentabilidad del proyecto": round(van/capex,3) if capex else 0
+    }
+
+
     return render_template(
+
         "proyecto_dashboard.html",
+
         proyecto=proyecto,
         flujo_anual=round(flujo_anual,2),
-        van=round(van,2)
+        van=round(van,2),
+        tir=round(tir,4) if tir else None,
+        payback=payback,
+        evaluacion=evaluacion,
+        recomendacion=recomendacion,
+        valor_generado=valor_generado,
+        capex_detallado=capex_detallado,
+        opex_detallado=opex_detallado,
+        indicadores_financieros=indicadores_financieros
+
     )
 
 
@@ -269,6 +363,9 @@ def chat_maia_proyecto(proyecto_id):
 def subir_documento(proyecto_id):
 
     archivo = request.files["file"]
+
+    if not archivo:
+        return jsonify({"mensaje":"No se recibió archivo"})
 
     ruta = os.path.join(UPLOAD_FOLDER, archivo.filename)
 

@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>MAIA</title>
+
 <style>
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     background-color: #1e1e1e;
     color: white;
 }
+
 .topbar {
     display: flex;
     justify-content: space-between;
@@ -18,6 +23,7 @@ body {
     padding: 15px 25px;
     background-color: #111;
 }
+
 .topbar-buttons button {
     margin-left: 10px;
     padding: 8px 15px;
@@ -27,9 +33,11 @@ body {
     background-color: #2563eb;
     color: white;
 }
+
 .container {
     padding: 20px;
 }
+
 .chat-box {
     height: 60vh;
     overflow-y: auto;
@@ -37,24 +45,28 @@ body {
     padding: 15px;
     border-radius: 12px;
 }
+
 .input-area {
     margin-top: 15px;
     display: flex;
     gap: 10px;
     align-items: center;
 }
+
 input[type="text"] {
     flex: 1;
     padding: 12px;
     border-radius: 10px;
     border: none;
 }
+
 textarea {
     flex: 1;
     padding: 12px;
     border-radius: 10px;
     border: none;
 }
+
 button.send {
     padding: 12px 20px;
     border-radius: 10px;
@@ -63,132 +75,295 @@ button.send {
     color: white;
     cursor: pointer;
 }
+
 .hidden {
     display: none;
 }
+
 .upload-btn {
     font-size: 22px;
     cursor: pointer;
 }
+
 </style>
+
 </head>
 
 <body>
 
 <div class="topbar">
+
     <h2>🤖 MAIA</h2>
+
     <div class="topbar-buttons">
+
         <button onclick="activarGanado()">🐄 MAIA GANADO</button>
+
         <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
+
         <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
 
-        <!-- BOTON NUEVO -->
         <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
 
         <button onclick="volverChat()">🏠 Inicio</button>
+
     </div>
+
 </div>
+
 
 <div class="container">
 
     <!-- CHAT NORMAL -->
+
     <div id="chatNormal">
+
         <div id="chatBox" class="chat-box"></div>
+
         <div class="input-area">
+
             <input type="text" id="mensaje" placeholder="Escribe tu mensaje...">
+
             <button class="send" onclick="enviarMensaje()">Enviar</button>
+
         </div>
+
     </div>
+
 
     <!-- MODULO GANADO -->
+
     <div id="moduloGanado" class="hidden">
+
         <h3>🐄 MAIA GANADO</h3>
+
         <div id="chatGanado" class="chat-box"></div>
+
         <div class="input-area">
+
             <label class="upload-btn">
+
                 ➕
+
                 <input type="file" id="archivoGanado" hidden>
+
             </label>
+
             <input type="text" id="mensajeGanado" placeholder="Ej: 18 brahman">
+
             <button class="send" onclick="enviarGanado()">Calcular</button>
+
         </div>
+
     </div>
+
 
     <!-- MODULO PLANTAS -->
+
     <div id="moduloPlantas" class="hidden">
+
         <h3>🌿 MAIA PLANTAS</h3>
+
         <div id="chatPlantas" class="chat-box"></div>
+
         <div class="input-area">
+
             <label class="upload-btn">
+
                 ➕
+
                 <input type="file" id="archivoPlanta" hidden>
+
             </label>
+
             <button class="send" onclick="enviarPlantas()">Diagnosticar</button>
+
         </div>
+
     </div>
 
+
     <!-- MODULO TRADUCTOR -->
+
     <div id="moduloTraductor" class="hidden">
+
         <h3>🌍 MAIA TRADUCTOR</h3>
+
         <div class="chat-box">
+
             <textarea id="textoTraducir" rows="4" placeholder="Escribe el texto aquí..."></textarea>
+
             <br><br>
+
             <select id="idiomaDestino">
+
                 <option value="en">Inglés</option>
                 <option value="es">Español</option>
                 <option value="fr">Francés</option>
                 <option value="pt">Portugués</option>
                 <option value="de">Alemán</option>
+
             </select>
+
             <br><br>
+
             <button class="send" onclick="traducirTexto()">Traducir</button>
+
             <br><br>
+
             <p id="resultadoTraduccion"></p>
+
         </div>
+
     </div>
 
-    <!-- MODULO PROYECTOS (NUEVO) -->
+
+    <!-- MODULO PROYECTOS -->
+
     <div id="moduloProyectos" class="hidden">
+
         <h3>📁 MAIA PROYECTOS</h3>
+
         <div class="chat-box">
+
             <p>Gestión de proyectos activa.</p>
+
             <br>
+
             <a href="/proyectos" style="color:#2563eb;">Ir al módulo completo de Proyectos</a>
+
         </div>
+
     </div>
 
 </div>
 
+
 <script>
 
+
 // ===== CAMBIO DE MODULO =====
+
 function activarGanado() { ocultarTodo(); document.getElementById("moduloGanado").classList.remove("hidden"); }
+
 function activarPlantas() { ocultarTodo(); document.getElementById("moduloPlantas").classList.remove("hidden"); }
+
 function activarTraductor() { ocultarTodo(); document.getElementById("moduloTraductor").classList.remove("hidden"); }
+
 function activarProyectos() { ocultarTodo(); document.getElementById("moduloProyectos").classList.remove("hidden"); }
+
 function volverChat() { ocultarTodo(); document.getElementById("chatNormal").classList.remove("hidden"); }
 
-function ocultarTodo() {
-    document.getElementById("chatNormal").classList.add("hidden");
-    document.getElementById("moduloGanado").classList.add("hidden");
-    document.getElementById("moduloPlantas").classList.add("hidden");
-    document.getElementById("moduloTraductor").classList.add("hidden");
-    document.getElementById("moduloProyectos").classList.add("hidden");
+function ocultarTodo(){
+
+document.getElementById("chatNormal").classList.add("hidden");
+document.getElementById("moduloGanado").classList.add("hidden");
+document.getElementById("moduloPlantas").classList.add("hidden");
+document.getElementById("moduloTraductor").classList.add("hidden");
+document.getElementById("moduloProyectos").classList.add("hidden");
+
 }
 
+
+// ===== CHAT NORMAL =====
+
+async function enviarMensaje(){
+
+const mensaje = document.getElementById("mensaje").value
+
+const chatBox = document.getElementById("chatBox")
+
+chatBox.innerHTML += "<p><b>Tú:</b> "+mensaje+"</p>"
+
+const response = await fetch("/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({pregunta:mensaje})
+})
+
+const data = await response.json()
+
+chatBox.innerHTML += "<p><b>MAIA:</b> "+data.respuesta+"</p>"
+
+document.getElementById("mensaje").value=""
+
+chatBox.scrollTop = chatBox.scrollHeight
+
+}
+
+
+// ===== GANADO =====
+
+async function enviarGanado(){
+
+const texto = document.getElementById("mensajeGanado").value
+
+const partes = texto.split(" ")
+
+const edad = partes[0]
+
+const raza = partes[1]
+
+const chat = document.getElementById("chatGanado")
+
+const response = await fetch("/calcular_ganado",{
+
+method:"POST",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify({edad:edad,raza:raza})
+
+})
+
+const data = await response.json()
+
+chat.innerHTML += "<p>"+JSON.stringify(data)+"</p>"
+
+chat.scrollTop = chat.scrollHeight
+
+}
+
+
+// ===== PLANTAS =====
+
+async function enviarPlantas(){
+
+const chat = document.getElementById("chatPlantas")
+
+const response = await fetch("/diagnostico_plantas",{method:"POST"})
+
+const data = await response.json()
+
+chat.innerHTML += "<p>"+JSON.stringify(data)+"</p>"
+
+chat.scrollTop = chat.scrollHeight
+
+}
+
+
 // ===== TRADUCTOR =====
-async function traducirTexto() {
-    const texto = document.getElementById("textoTraducir").value;
-    const idioma = document.getElementById("idiomaDestino").value;
 
-    const response = await fetch("/traducir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: texto, idioma_destino: idioma })
-    });
+async function traducirTexto(){
 
-    const data = await response.json();
-    document.getElementById("resultadoTraduccion").innerText = data.traduccion;
+const texto = document.getElementById("textoTraducir").value
+
+const idioma = document.getElementById("idiomaDestino").value
+
+const response = await fetch("/traducir",{
+
+method:"POST",
+
+headers:{"Content-Type":"application/json"},
+
+body:JSON.stringify({texto:texto,idioma_destino:idioma})
+
+})
+
+const data = await response.json()
+
+document.getElementById("resultadoTraduccion").innerText = data.traduccion
+
 }
 
 </script>

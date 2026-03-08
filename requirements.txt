@@ -1,5 +1,6 @@
 flask
 gunicorn
+numpy
 setuptools
 wheel
 groq==0.4.2
@@ -9,4 +10,4 @@ pdfplumber
 python-docx
 pandas
 pillow
-
+numpy-financial

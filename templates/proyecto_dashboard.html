@@ -7,14 +7,9 @@
 
 <style>
 
-body{
-font-family:Arial;
-margin:40px;
-}
+body{font-family:Arial;margin:40px;}
 
-h1{
-color:#2c3e50;
-}
+h1{color:#2c3e50;}
 
 table{
 border-collapse:collapse;
@@ -46,8 +41,9 @@ background:#f4f4f4;
 
 <p><b>Flujo anual:</b> {{ flujo_anual }}</p>
 <p><b>VAN:</b> {{ van }}</p>
-<p><b>TIR:</b> {{ tir }}</p>
+<p><b>TIR:</b> {{ tir }} %</p>
 <p><b>Payback:</b> {{ payback }} años</p>
+
 <p><b>Resultado:</b> {{ evaluacion }}</p>
 <p><b>Recomendación:</b> {{ recomendacion }}</p>
 
@@ -73,7 +69,6 @@ background:#f4f4f4;
 </table>
 
 
-
 <h2>CAPEX Detallado</h2>
 
 <table>
@@ -93,7 +88,6 @@ background:#f4f4f4;
 {% endfor %}
 
 </table>
-
 
 
 <h2>OPEX Detallado</h2>
@@ -117,9 +111,8 @@ background:#f4f4f4;
 </table>
 
 
-
 <!-- ===================================================== -->
-<!-- INDICADORES FINANCIEROS AVANZADOS (ANEXO) -->
+<!-- INDICADORES FINANCIEROS AVANZADOS -->
 <!-- ===================================================== -->
 
 <h2>Indicadores Financieros Avanzados</h2>
@@ -143,18 +136,58 @@ background:#f4f4f4;
 </table>
 
 
+<!-- ===================================================== -->
+<!-- ESCENARIOS DE APALANCAMIENTO -->
+<!-- ===================================================== -->
+
+<h2>Escenarios de Apalancamiento</h2>
+
+<table>
+
+<tr>
+<th>Escenario</th>
+<th>Deuda</th>
+<th>Capital</th>
+<th>WACC</th>
+</tr>
+
+{% for nombre, esc in escenarios_apalancamiento.items() %}
+
+<tr>
+<td>{{ nombre }}</td>
+<td>{{ esc.deuda }}</td>
+<td>{{ esc.capital }}</td>
+<td>{{ esc.wacc }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
 
 <!-- ===================================================== -->
-<!-- CHAT MAIA PROYECTOS (ANEXO NUEVO) -->
+<!-- SIMULACION MONTE CARLO -->
+<!-- ===================================================== -->
+
+<h2>Simulación Monte Carlo</h2>
+
+<p>
+Probabilidad de que el proyecto sea rentable:
+<b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
+</p>
+
+
+<!-- ===================================================== -->
+<!-- CHAT MAIA PROYECTOS -->
 <!-- ===================================================== -->
 
 <h2>Chat con MAIA</h2>
 
 <div style="border:1px solid #ccc;padding:15px;width:60%;background:#fafafa;border-radius:8px;">
 
-<div id="chat-box" style="height:250px;overflow-y:auto;border:1px solid #ddd;padding:10px;margin-bottom:10px;background:white;">
+<div id="chat-box"
+style="height:250px;overflow-y:auto;border:1px solid #ddd;padding:10px;margin-bottom:10px;background:white;">
 </div>
-
 
 <div style="display:flex;gap:10px;">
 
@@ -180,7 +213,6 @@ Enviar
 </div>
 
 
-
 <script>
 
 function agregarMensaje(texto, quien){
@@ -191,7 +223,8 @@ let div = document.createElement("div")
 
 if(quien === "usuario"){
 div.innerHTML = "<b>Tú:</b> " + texto
-}else{
+}
+else{
 div.innerHTML = "<b>MAIA:</b> " + texto
 }
 
@@ -200,9 +233,7 @@ div.style.marginBottom = "8px"
 chat.appendChild(div)
 
 chat.scrollTop = chat.scrollHeight
-
 }
-
 
 
 function enviarPregunta(){
@@ -211,13 +242,11 @@ let input = document.getElementById("pregunta")
 
 let texto = input.value
 
-if(!texto){
-return
-}
+if(!texto){return}
 
 agregarMensaje(texto,"usuario")
 
-fetch("/proyectos/{{proyecto.id}}/chat",{
+fetch("/proyectos/{{ proyecto.id }}/chat",{
 
 method:"POST",
 
@@ -225,9 +254,7 @@ headers:{
 "Content-Type":"application/json"
 },
 
-body:JSON.stringify({
-pregunta:texto
-})
+body:JSON.stringify({pregunta:texto})
 
 })
 
@@ -244,7 +271,6 @@ input.value=""
 }
 
 
-
 document.getElementById("archivo").addEventListener("change",function(){
 
 let archivo = this.files[0]
@@ -253,10 +279,9 @@ let formData = new FormData()
 
 formData.append("file",archivo)
 
-fetch("/proyectos/{{proyecto.id}}/upload",{
+fetch("/proyectos/{{ proyecto.id }}/upload",{
 
 method:"POST",
-
 body:formData
 
 })
@@ -266,6 +291,7 @@ body:formData
 .then(data=>{
 
 agregarMensaje("Archivo subido: "+archivo.name,"usuario")
+
 agregarMensaje(data.mensaje,"maia")
 
 })
@@ -274,7 +300,6 @@ agregarMensaje(data.mensaje,"maia")
 
 </script>
 
-
-
 </body>
+
 </html>

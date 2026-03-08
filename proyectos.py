@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, jsonify
 import numpy as np
+import numpy_financial as npf
 import sqlite3
 import os
 import pdfplumber
@@ -122,7 +123,7 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
     # TIR
     try:
-        tir = np.irr(flujos)
+        tir = npf.irr(flujos)
     except:
         tir = None
 

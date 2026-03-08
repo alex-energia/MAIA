@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, jsonify
+import numpy as np
 import sqlite3
 import os
 import pdfplumber
@@ -8,6 +9,7 @@ from docx import Document
 # =========================
 # BLUEPRINT
 # =========================
+
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
@@ -19,6 +21,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
+
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -27,8 +30,11 @@ def get_db():
 # =========================
 # CREAR TABLA
 # =========================
+
 def init_db():
+
     conn = get_db()
+
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,13 +46,16 @@ def init_db():
         tasa_descuento REAL
     )
     """)
+
     conn.commit()
     conn.close()
 
 # =========================
 # DESGLOSE CAPEX
 # =========================
+
 def desglose_capex(capex):
+
     return [
         {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
         {"actividad":"Equipos","valor":round(capex*0.40,2)},
@@ -58,7 +67,9 @@ def desglose_capex(capex):
 # =========================
 # DESGLOSE OPEX
 # =========================
+
 def desglose_opex(opex):
+
     return [
         {"actividad":"Operación","valor":round(opex*0.35,2)},
         {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
@@ -70,13 +81,12 @@ def desglose_opex(opex):
 # =========================
 # MOTOR GENERACION VALOR
 # =========================
+
 def generar_valor(capex, ingresos, opex, vida, tasa):
 
     flujo_operativo = ingresos - opex
-
     valor_ingresos = ingresos * vida
     valor_costos = opex * vida
-
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
     van = 0
@@ -98,25 +108,138 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
 # =========================
 # INDICADORES FINANCIEROS
 # =========================
-def calcular_indicadores(capex, ingresos, opex, van):
 
-    indicadores = {}
+def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
-    if ingresos > 0:
-        indicadores["Margen Operativo"] = round((ingresos - opex) / ingresos,3)
+    flujo = ingresos - opex
 
-    if capex > 0:
-        indicadores["Rentabilidad del Proyecto"] = round(van / capex,3)
+    flujos = [-capex] + [flujo]*vida
 
-    indicadores["EBIT"] = ingresos - opex
-    indicadores["EBITDA"] = ingresos - opex
+    # VAN
+    van = 0
+    for i,f in enumerate(flujos):
+        van += f / ((1+tasa)**i)
+
+    # TIR
+    try:
+        tir = np.irr(flujos)
+    except:
+        tir = None
+
+    # EBITDA
+    ebit = ingresos - opex
+    depreciacion = capex / vida
+    ebitda = ebit + depreciacion
+
+    # Margenes
+    margen_operativo = ebit / ingresos if ingresos else 0
+    margen_ebitda = ebitda / ingresos if ingresos else 0
+
+    # ROI
+    roi = (flujo*vida - capex) / capex if capex else 0
+
+    # ROIC
+    roic = ebit / capex if capex else 0
+
+    # WACC
+    costo_deuda = 0.10
+    costo_capital = 0.15
+    tasa_impuesto = 0.30
+    deuda = 0.4
+    capital = 0.6
+
+    wacc = (deuda*costo_deuda*(1-tasa_impuesto)) + (capital*costo_capital)
+
+    # DSCR
+    servicio_deuda = capex*0.4/vida if vida else 0
+    dscr = flujo/servicio_deuda if servicio_deuda else None
+
+    # =========================
+    # MONTE CARLO
+    # =========================
+
+    simulaciones = 1000
+    resultados_van = []
+
+    for i in range(simulaciones):
+
+        ingreso_sim = ingresos*np.random.normal(1,0.1)
+        opex_sim = opex*np.random.normal(1,0.1)
+
+        flujo_sim = ingreso_sim-opex_sim
+
+        flujos_sim = [-capex] + [flujo_sim]*vida
+
+        van_sim = 0
+
+        for j,f in enumerate(flujos_sim):
+            van_sim += f/((1+tasa)**j)
+
+        resultados_van.append(van_sim)
+
+    probabilidad = sum(v>0 for v in resultados_van)/simulaciones
+
+    indicadores = {
+
+        "VAN": round(van,2),
+        "TIR %": round(tir*100,2) if tir else None,
+        "ROI %": round(roi*100,2),
+        "ROIC %": round(roic*100,2),
+        "EBIT": round(ebit,2),
+        "EBITDA": round(ebitda,2),
+        "Margen Operativo %": round(margen_operativo*100,2),
+        "Margen EBITDA %": round(margen_ebitda*100,2),
+        "WACC %": round(wacc*100,2),
+        "DSCR": round(dscr,2) if dscr else None,
+        "Probabilidad Rentabilidad %": round(probabilidad*100,2)
+
+    }
 
     return indicadores
 
+# =========================
+# ESCENARIOS APALANCAMIENTO
+# =========================
+
+def escenarios_apalancamiento(capex):
+
+    costo_deuda = 0.10
+    costo_capital = 0.15
+    impuesto = 0.30
+
+    escenarios = {
+
+        "0% deuda":{
+
+            "deuda":0,
+            "capital":capex,
+            "wacc":costo_capital
+        },
+
+        "40% deuda":{
+
+            "deuda":capex*0.4,
+            "capital":capex*0.6,
+            "wacc":(0.4*costo_deuda*(1-impuesto))+(0.6*costo_capital)
+
+        },
+
+        "70% deuda":{
+
+            "deuda":capex*0.7,
+            "capital":capex*0.3,
+            "wacc":(0.7*costo_deuda*(1-impuesto))+(0.3*costo_capital)
+
+        }
+
+    }
+
+    return escenarios
 
 # =========================
 # LISTA PROYECTOS
 # =========================
+
 @proyectos_bp.route("/proyectos")
 def lista_proyectos():
 
@@ -133,26 +256,10 @@ def lista_proyectos():
         proyectos=proyectos
     )
 
-
-# =========================
-# LIMPIAR PROYECTOS
-# =========================
-@proyectos_bp.route("/proyectos/limpiar")
-def limpiar_proyectos():
-
-    conn = get_db()
-
-    conn.execute("DELETE FROM proyectos")
-
-    conn.commit()
-    conn.close()
-
-    return redirect("/proyectos")
-
-
 # =========================
 # CREAR PROYECTO
 # =========================
+
 @proyectos_bp.route("/proyectos/nuevo", methods=["GET","POST"])
 def nuevo_proyecto():
 
@@ -163,34 +270,29 @@ def nuevo_proyecto():
         horizonte = int(request.form["horizonte"])
         capacidad = float(request.form["capacidad"])
 
-        # =========================
-        # MAIA CALCULA AUTOMATICO
-        # =========================
-
         if sector == "Solar":
-            capex = capacidad * 900000
-            opex = capex * 0.02
-            ingresos = capacidad * 160000
+
+            capex = capacidad*900000
+            opex = capex*0.02
+            ingresos = capacidad*160000
 
         elif sector == "Hidro":
-            capex = capacidad * 2500000
-            opex = capex * 0.03
-            ingresos = capacidad * 220000
+
+            capex = capacidad*2500000
+            opex = capex*0.03
+            ingresos = capacidad*220000
 
         elif sector == "Eolico":
-            capex = capacidad * 1400000
-            opex = capex * 0.025
-            ingresos = capacidad * 180000
 
-        elif sector == "Agro":
-            capex = capacidad * 15000
-            opex = capex * 0.20
-            ingresos = capacidad * 8000
+            capex = capacidad*1400000
+            opex = capex*0.025
+            ingresos = capacidad*180000
 
         else:
-            capex = capacidad * 500000
-            opex = capex * 0.05
-            ingresos = capacidad * 100000
+
+            capex = capacidad*500000
+            opex = capex*0.05
+            ingresos = capacidad*100000
 
         vida = horizonte
         tasa = 0.10
@@ -198,9 +300,12 @@ def nuevo_proyecto():
         conn = get_db()
 
         conn.execute("""
+
         INSERT INTO proyectos
         (nombre,capex_inicial,opex_anual,ingresos_anuales,vida_util,tasa_descuento)
+
         VALUES (?,?,?,?,?,?)
+
         """,(nombre,capex,opex,ingresos,vida,tasa))
 
         conn.commit()
@@ -210,10 +315,10 @@ def nuevo_proyecto():
 
     return render_template("proyectos_form.html")
 
-
 # =========================
 # DASHBOARD PROYECTO
 # =========================
+
 @proyectos_bp.route("/proyectos/<int:proyecto_id>")
 def dashboard_proyecto(proyecto_id):
 
@@ -229,7 +334,6 @@ def dashboard_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado"
 
-
     capex = proyecto["capex_inicial"]
     opex = proyecto["opex_anual"]
     ingresos = proyecto["ingresos_anuales"]
@@ -238,17 +342,15 @@ def dashboard_proyecto(proyecto_id):
 
     flujo_anual = ingresos - opex
 
-    flujos = [-capex]
-
-    for i in range(vida):
-        flujos.append(flujo_anual)
+    flujos = [-capex] + [flujo_anual]*vida
 
     van = 0
 
     for i,f in enumerate(flujos):
-        van += f / ((1+tasa)**i)
+        van += f/((1+tasa)**i)
 
     # PAYBACK
+
     acumulado = 0
     payback = None
 
@@ -260,14 +362,15 @@ def dashboard_proyecto(proyecto_id):
             payback = i
             break
 
-
     if van > 0:
+
         evaluacion = "Proyecto rentable"
         recomendacion = "Invertir"
+
     else:
+
         evaluacion = "Proyecto no rentable"
         recomendacion = "No invertir"
-
 
     capex_detallado = desglose_capex(capex)
     opex_detallado = desglose_opex(opex)
@@ -284,11 +387,16 @@ def dashboard_proyecto(proyecto_id):
         capex,
         ingresos,
         opex,
-        van
+        vida,
+        tasa
     )
 
+    escenarios = escenarios_apalancamiento(capex)
+
     return render_template(
+
         "proyecto_dashboard.html",
+
         proyecto=proyecto,
         flujo_anual=round(flujo_anual,2),
         van=round(van,2),
@@ -298,5 +406,7 @@ def dashboard_proyecto(proyecto_id):
         valor_generado=valor_generado,
         capex_detallado=capex_detallado,
         opex_detallado=opex_detallado,
-        indicadores_financieros=indicadores_financieros
+        indicadores_financieros=indicadores_financieros,
+        escenarios_apalancamiento=escenarios
+
     )

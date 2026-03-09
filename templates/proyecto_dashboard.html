@@ -9,32 +9,24 @@
 
 <style>
 
-body{
-font-family:Arial;
-margin:40px;
-}
+body{font-family:Arial;margin:40px;}
 
-h1{
-color:#2c3e50;
-}
+h1{color:#2c3e50;}
 
-table{
-border-collapse:collapse;
-width:60%;
-margin-bottom:30px;
-}
+table{border-collapse:collapse;width:60%;margin-bottom:30px;}
 
-th,td{
-border:1px solid #ccc;
-padding:8px;
-text-align:left;
-}
+th,td{border:1px solid #ccc;padding:8px;text-align:left;}
 
-th{
-background:#f4f4f4;
-}
+th{background:#f4f4f4;}
 
-canvas{
+canvas{margin-bottom:40px;}
+
+.semaforo{
+padding:25px;
+width:320px;
+border-radius:12px;
+background:#f8f8f8;
+box-shadow:0 3px 8px rgba(0,0,0,0.1);
 margin-bottom:40px;
 }
 
@@ -48,17 +40,49 @@ margin-bottom:40px;
 
 <h2>{{ proyecto["nombre"] }}</h2>
 
+<!-- ===================================================== -->
+<!-- SEMAFORO MAIA -->
+<!-- ===================================================== -->
+
+<div class="semaforo">
+
+<h2>Score MAIA</h2>
+
+<h1 style="color:{{ color_semaforo }}; font-size:48px;">
+● {{ semaforo.upper() }}
+</h1>
+
+<h3>
+{{ score_maia }} / 100
+</h3>
+
+<p>
+{{ decision_maia }}
+</p>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- INDICADORES BASICOS -->
+<!-- ===================================================== -->
 
 <h3>Indicadores Financieros</h3>
 
 <p><b>Flujo anual:</b> {{ flujo_anual }}</p>
+
 <p><b>VAN:</b> {{ van }}</p>
+
 <p><b>TIR:</b> {{ tir }} %</p>
+
 <p><b>Payback:</b> {{ payback }} años</p>
 
 <p><b>Resultado:</b> {{ evaluacion }}</p>
+
 <p><b>Recomendación:</b> {{ recomendacion }}</p>
 
+<!-- ===================================================== -->
+<!-- GENERACION VALOR -->
+<!-- ===================================================== -->
 
 <h2>Generación de Valor del Proyecto</h2>
 
@@ -80,6 +104,9 @@ margin-bottom:40px;
 
 </table>
 
+<!-- ===================================================== -->
+<!-- CAPEX -->
+<!-- ===================================================== -->
 
 <h2>CAPEX Detallado</h2>
 
@@ -101,6 +128,9 @@ margin-bottom:40px;
 
 </table>
 
+<!-- ===================================================== -->
+<!-- OPEX -->
+<!-- ===================================================== -->
 
 <h2>OPEX Detallado</h2>
 
@@ -122,9 +152,8 @@ margin-bottom:40px;
 
 </table>
 
-
 <!-- ===================================================== -->
-<!-- INDICADORES FINANCIEROS AVANZADOS -->
+<!-- INDICADORES AVANZADOS -->
 <!-- ===================================================== -->
 
 <h2>Indicadores Financieros Avanzados</h2>
@@ -147,9 +176,8 @@ margin-bottom:40px;
 
 </table>
 
-
 <!-- ===================================================== -->
-<!-- ESCENARIOS DE APALANCAMIENTO -->
+<!-- APALANCAMIENTO -->
 <!-- ===================================================== -->
 
 <h2>Escenarios de Apalancamiento</h2>
@@ -176,21 +204,22 @@ margin-bottom:40px;
 
 </table>
 
-
 <!-- ===================================================== -->
-<!-- SIMULACION MONTE CARLO -->
+<!-- MONTE CARLO -->
 <!-- ===================================================== -->
 
 <h2>Simulación Monte Carlo</h2>
 
 <p>
+
 Probabilidad de que el proyecto sea rentable:
+
 <b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
+
 </p>
 
-
 <!-- ===================================================== -->
-<!-- GRAFICAS FINANCIERAS -->
+<!-- GRAFICAS -->
 <!-- ===================================================== -->
 
 <h2>Análisis Gráfico del Proyecto</h2>
@@ -201,7 +230,6 @@ Probabilidad de que el proyecto sea rentable:
 
 <canvas id="sensCapex"></canvas>
 
-
 <script>
 
 const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }}
@@ -211,15 +239,20 @@ new Chart(document.getElementById("montecarloChart"),{
 type:"bar",
 
 data:{
+
 labels:["Probabilidad rentable","Riesgo"],
+
 datasets:[{
+
 label:"Monte Carlo",
+
 data:[prob,100-prob]
+
 }]
+
 }
 
 })
-
 
 const van = {{ van }}
 
@@ -228,161 +261,38 @@ new Chart(document.getElementById("sensIngresos"),{
 type:"line",
 
 data:{
+
 labels:["-20%","-10%","Base","+10%","+20%"],
+
 datasets:[{
+
 label:"VAN vs Ingresos",
-data:[
-van*0.6,
-van*0.8,
-van,
-van*1.2,
-van*1.4
-]
+
+data:[van*0.6,van*0.8,van,van*1.2,van*1.4]
+
 }]
+
 }
 
 })
-
 
 new Chart(document.getElementById("sensCapex"),{
 
 type:"line",
 
 data:{
+
 labels:["-20%","-10%","Base","+10%","+20%"],
+
 datasets:[{
+
 label:"VAN vs CAPEX",
-data:[
-van*1.4,
-van*1.2,
-van,
-van*0.8,
-van*0.6
-]
+
+data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
+
 }]
-}
-
-})
-
-</script>
-
-
-<!-- ===================================================== -->
-<!-- CHAT MAIA PROYECTOS -->
-<!-- ===================================================== -->
-
-<h2>Chat con MAIA</h2>
-
-<div style="border:1px solid #ccc;padding:15px;width:60%;background:#fafafa;border-radius:8px;">
-
-<div id="chat-box"
-style="height:250px;overflow-y:auto;border:1px solid #ddd;padding:10px;margin-bottom:10px;background:white;">
-</div>
-
-<div style="display:flex;gap:10px;">
-
-<input
-id="pregunta"
-type="text"
-placeholder="Pregunta a MAIA sobre este proyecto..."
-style="flex:1;padding:10px;border:1px solid #ccc;border-radius:5px;"
->
-
-<button onclick="enviarPregunta()" style="padding:10px;">
-Enviar
-</button>
-
-<input type="file" id="archivo" style="display:none">
-
-<button onclick="document.getElementById('archivo').click()" style="padding:10px;">
-+
-</button>
-
-</div>
-
-</div>
-
-
-<script>
-
-function agregarMensaje(texto, quien){
-
-let chat = document.getElementById("chat-box")
-
-let div = document.createElement("div")
-
-if(quien==="usuario"){
-div.innerHTML="<b>Tú:</b> "+texto
-}else{
-div.innerHTML="<b>MAIA:</b> "+texto
-}
-
-div.style.marginBottom="8px"
-
-chat.appendChild(div)
-
-chat.scrollTop=chat.scrollHeight
 
 }
-
-
-function enviarPregunta(){
-
-let input=document.getElementById("pregunta")
-
-let texto=input.value
-
-if(!texto){return}
-
-agregarMensaje(texto,"usuario")
-
-fetch("/proyectos/{{ proyecto.id }}/chat",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({pregunta:texto})
-
-})
-
-.then(r=>r.json())
-
-.then(data=>{
-agregarMensaje(data.respuesta,"maia")
-})
-
-input.value=""
-
-}
-
-
-document.getElementById("archivo").addEventListener("change",function(){
-
-let archivo=this.files[0]
-
-let formData=new FormData()
-
-formData.append("file",archivo)
-
-fetch("/proyectos/{{ proyecto.id }}/upload",{
-
-method:"POST",
-body:formData
-
-})
-
-.then(r=>r.json())
-
-.then(data=>{
-
-agregarMensaje("Archivo subido: "+archivo.name,"usuario")
-
-agregarMensaje(data.mensaje,"maia")
-
-})
 
 })
 

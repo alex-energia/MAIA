@@ -28,6 +28,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # =========================
 # CREAR TABLA
 # =========================
@@ -51,6 +52,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 # =========================
 # DESGLOSE CAPEX
 # =========================
@@ -64,6 +66,7 @@ def desglose_capex(capex):
         {"actividad":"Permisos","valor":round(capex*0.10,2)},
         {"actividad":"Contingencia","valor":round(capex*0.10,2)}
     ]
+
 
 # =========================
 # DESGLOSE OPEX
@@ -79,6 +82,7 @@ def desglose_opex(opex):
         {"actividad":"Regulación","valor":round(opex*0.10,2)}
     ]
 
+
 # =========================
 # MOTOR GENERACION VALOR
 # =========================
@@ -86,25 +90,31 @@ def desglose_opex(opex):
 def generar_valor(capex, ingresos, opex, vida, tasa):
 
     flujo_operativo = ingresos - opex
+
     valor_ingresos = ingresos * vida
     valor_costos = opex * vida
+
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
     van = 0
+
     for i in range(1, vida+1):
         van += flujo_operativo / ((1+tasa)**i)
 
     van -= capex
 
     valor = [
+
         {"driver":"Ingresos operacionales totales","valor":round(valor_ingresos,2)},
         {"driver":"Costos operacionales totales","valor":round(valor_costos,2)},
         {"driver":"Flujo operativo anual","valor":round(flujo_operativo,2)},
         {"driver":"Eficiencia del capital","valor":round(eficiencia_capital,3)},
         {"driver":"Valor presente del proyecto","valor":round(van,2)}
+
     ]
 
     return valor
+
 
 # =========================
 # INDICADORES FINANCIEROS
@@ -116,50 +126,41 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
     flujos = [-capex] + [flujo]*vida
 
-    # VAN
     van = 0
+
     for i,f in enumerate(flujos):
         van += f / ((1+tasa)**i)
 
-    # TIR
     try:
         tir = npf.irr(flujos)
     except:
         tir = None
 
-    # EBITDA
     ebit = ingresos - opex
     depreciacion = capex / vida
     ebitda = ebit + depreciacion
 
-    # Margenes
     margen_operativo = ebit / ingresos if ingresos else 0
     margen_ebitda = ebitda / ingresos if ingresos else 0
 
-    # ROI
     roi = (flujo*vida - capex) / capex if capex else 0
-
-    # ROIC
     roic = ebit / capex if capex else 0
 
-    # WACC
     costo_deuda = 0.10
     costo_capital = 0.15
     tasa_impuesto = 0.30
+
     deuda = 0.4
     capital = 0.6
 
     wacc = (deuda*costo_deuda*(1-tasa_impuesto)) + (capital*costo_capital)
 
-    # DSCR
     servicio_deuda = capex*0.4/vida if vida else 0
+
     dscr = flujo/servicio_deuda if servicio_deuda else None
 
-    # =========================
-    # MONTE CARLO
-    # =========================
-
     simulaciones = 1000
+
     resultados_van = []
 
     for i in range(simulaciones):
@@ -167,7 +168,7 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
         ingreso_sim = ingresos*np.random.normal(1,0.1)
         opex_sim = opex*np.random.normal(1,0.1)
 
-        flujo_sim = ingreso_sim-opex_sim
+        flujo_sim = ingreso_sim - opex_sim
 
         flujos_sim = [-capex] + [flujo_sim]*vida
 
@@ -198,6 +199,7 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
     return indicadores
 
+
 # =========================
 # ESCENARIOS APALANCAMIENTO
 # =========================
@@ -211,31 +213,27 @@ def escenarios_apalancamiento(capex):
     escenarios = {
 
         "0% deuda":{
-
             "deuda":0,
             "capital":capex,
             "wacc":costo_capital
         },
 
         "40% deuda":{
-
             "deuda":capex*0.4,
             "capital":capex*0.6,
             "wacc":(0.4*costo_deuda*(1-impuesto))+(0.6*costo_capital)
-
         },
 
         "70% deuda":{
-
             "deuda":capex*0.7,
             "capital":capex*0.3,
             "wacc":(0.7*costo_deuda*(1-impuesto))+(0.3*costo_capital)
-
         }
 
     }
 
     return escenarios
+
 
 # =========================
 # LISTA PROYECTOS
@@ -246,9 +244,7 @@ def lista_proyectos():
 
     conn = get_db()
 
-    proyectos = conn.execute(
-        "SELECT * FROM proyectos"
-    ).fetchall()
+    proyectos = conn.execute("SELECT * FROM proyectos").fetchall()
 
     conn.close()
 
@@ -256,6 +252,7 @@ def lista_proyectos():
         "proyectos.html",
         proyectos=proyectos
     )
+
 
 # =========================
 # CREAR PROYECTO
@@ -272,25 +269,21 @@ def nuevo_proyecto():
         capacidad = float(request.form["capacidad"])
 
         if sector == "Solar":
-
             capex = capacidad*900000
             opex = capex*0.02
             ingresos = capacidad*160000
 
         elif sector == "Hidro":
-
             capex = capacidad*2500000
             opex = capex*0.03
             ingresos = capacidad*220000
 
         elif sector == "Eolico":
-
             capex = capacidad*1400000
             opex = capex*0.025
             ingresos = capacidad*180000
 
         else:
-
             capex = capacidad*500000
             opex = capex*0.05
             ingresos = capacidad*100000
@@ -301,12 +294,9 @@ def nuevo_proyecto():
         conn = get_db()
 
         conn.execute("""
-
         INSERT INTO proyectos
         (nombre,capex_inicial,opex_anual,ingresos_anuales,vida_util,tasa_descuento)
-
         VALUES (?,?,?,?,?,?)
-
         """,(nombre,capex,opex,ingresos,vida,tasa))
 
         conn.commit()
@@ -315,6 +305,7 @@ def nuevo_proyecto():
         return redirect("/proyectos")
 
     return render_template("proyectos_form.html")
+
 
 # =========================
 # DASHBOARD PROYECTO
@@ -350,8 +341,6 @@ def dashboard_proyecto(proyecto_id):
     for i,f in enumerate(flujos):
         van += f/((1+tasa)**i)
 
-    # PAYBACK
-
     acumulado = 0
     payback = None
 
@@ -364,12 +353,9 @@ def dashboard_proyecto(proyecto_id):
             break
 
     if van > 0:
-
         evaluacion = "Proyecto rentable"
         recomendacion = "Invertir"
-
     else:
-
         evaluacion = "Proyecto no rentable"
         recomendacion = "No invertir"
 
@@ -394,6 +380,47 @@ def dashboard_proyecto(proyecto_id):
 
     escenarios = escenarios_apalancamiento(capex)
 
+    # =========================
+    # SEMAFORO MAIA
+    # =========================
+
+    tir = indicadores_financieros.get("TIR %",0)
+    dscr = indicadores_financieros.get("DSCR",0)
+    prob = indicadores_financieros.get("Probabilidad Rentabilidad %",0)
+
+    score = 0
+
+    if tir and tir > 18:
+        score += 25
+    elif tir and tir > 12:
+        score += 15
+
+    if van > 0:
+        score += 20
+
+    if dscr and dscr > 1.5:
+        score += 20
+    elif dscr and dscr > 1.2:
+        score += 10
+
+    if payback and payback < vida/2:
+        score += 15
+
+    if prob and prob > 70:
+        score += 20
+    elif prob and prob > 55:
+        score += 10
+
+    if score >= 70:
+        semaforo = "verde"
+        decision = "Proyecto altamente atractivo"
+    elif score >= 40:
+        semaforo = "amarillo"
+        decision = "Proyecto viable con riesgos"
+    else:
+        semaforo = "rojo"
+        decision = "Proyecto no recomendable"
+
     return render_template(
 
         "proyecto_dashboard.html",
@@ -408,6 +435,10 @@ def dashboard_proyecto(proyecto_id):
         capex_detallado=capex_detallado,
         opex_detallado=opex_detallado,
         indicadores_financieros=indicadores_financieros,
-        escenarios_apalancamiento=escenarios
+        escenarios_apalancamiento=escenarios,
+
+        score_maia=score,
+        semaforo=semaforo,
+        decision_maia=decision
 
     )

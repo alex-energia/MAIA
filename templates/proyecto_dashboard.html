@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <title>MAIA - Evaluación Proyecto</title>
@@ -33,6 +32,40 @@ box-shadow:0 3px 8px rgba(0,0,0,0.1);
 margin-bottom:40px;
 }
 
+#chatBtn{
+position:fixed;
+bottom:25px;
+right:25px;
+width:60px;
+height:60px;
+border-radius:50%;
+background:#2c3e50;
+color:white;
+font-size:28px;
+border:none;
+cursor:pointer;
+}
+
+#chatBox{
+position:fixed;
+bottom:100px;
+right:25px;
+width:320px;
+background:white;
+border-radius:10px;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+padding:10px;
+display:none;
+}
+
+#chatMessages{
+height:250px;
+overflow:auto;
+border:1px solid #ddd;
+padding:5px;
+margin-bottom:10px;
+}
+
 </style>
 
 </head>
@@ -61,15 +94,15 @@ margin-bottom:40px;
 
 <!-- RATING DE RIESGO -->
 
-<h2>Rating de Riesgo</h2>
+<h2>Rating de Riesgo MAIA</h2>
 
-<h1 style="color:#34495e">
+<h1 style="font-size:40px;color:#34495e">
 
-{{ rating }}
+{{ rating if rating else "N/A" }}
 
 </h1>
 
-<p>Score riesgo: {{ score_riesgo }}/100</p>
+<p>Score riesgo: {{ score_riesgo if score_riesgo else 0 }}/100</p>
 
 <!-- INDICADORES -->
 
@@ -79,138 +112,15 @@ margin-bottom:40px;
 <p><b>VAN:</b> {{ van }}</p>
 <p><b>TIR:</b> {{ tir }} %</p>
 <p><b>Payback:</b> {{ payback }} años</p>
-<p><b>Resultado:</b> {{ evaluacion }}</p>
-<p><b>Recomendación:</b> {{ recomendacion }}</p>
-
-<!-- GENERACION VALOR -->
-
-<h2>Generación de Valor</h2>
-
-<table>
-
-<tr>
-<th>Driver</th>
-<th>Valor</th>
-</tr>
-
-{% for item in valor_generado %}
-
-<tr>
-<td>{{ item["driver"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-<!-- CAPEX -->
-
-<h2>CAPEX</h2>
-
-<table>
-
-<tr>
-<th>Actividad</th>
-<th>Valor</th>
-</tr>
-
-{% for item in capex_detallado %}
-
-<tr>
-<td>{{ item["actividad"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-<!-- OPEX -->
-
-<h2>OPEX</h2>
-
-<table>
-
-<tr>
-<th>Actividad</th>
-<th>Valor</th>
-</tr>
-
-{% for item in opex_detallado %}
-
-<tr>
-<td>{{ item["actividad"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-<!-- INDICADORES AVANZADOS -->
-
-<h2>Indicadores Financieros Avanzados</h2>
-
-<table>
-
-<tr>
-<th>Indicador</th>
-<th>Valor</th>
-</tr>
-
-{% for nombre, valor in indicadores_financieros.items() %}
-
-<tr>
-<td>{{ nombre }}</td>
-<td>{{ valor }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-<!-- APALANCAMIENTO -->
-
-<h2>Escenarios de Apalancamiento</h2>
-
-<table>
-
-<tr>
-<th>Escenario</th>
-<th>Deuda</th>
-<th>Capital</th>
-<th>WACC</th>
-</tr>
-
-{% for nombre, esc in escenarios_apalancamiento.items() %}
-
-<tr>
-<td>{{ nombre }}</td>
-<td>{{ esc.deuda }}</td>
-<td>{{ esc.capital }}</td>
-<td>{{ esc.wacc }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-<!-- MONTE CARLO -->
-
-<h2>Simulación Monte Carlo</h2>
-
-<p>
-Probabilidad de rentabilidad:
-<b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
-</p>
 
 <!-- GRAFICAS -->
 
 <h2>Gráficas del Proyecto</h2>
 
 <canvas id="montecarloChart"></canvas>
+
 <canvas id="sensIngresos"></canvas>
+
 <canvas id="sensCapex"></canvas>
 
 <!-- RADAR -->
@@ -225,32 +135,6 @@ Probabilidad de rentabilidad:
 
 <canvas id="vanAcumulado"></canvas>
 
-<!-- ANALISIS MAIA -->
-
-<h2>Análisis MAIA</h2>
-
-<div style="border:1px solid #ccc;padding:20px;width:60%;background:#f9f9f9;border-radius:8px;">
-
-<p>
-
-El proyecto presenta un VAN de <b>{{ van }}</b>
-y una TIR de <b>{{ tir }}%</b>.
-
-La probabilidad de rentabilidad es de
-<b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }}%</b>.
-
-{% if score_maia >= 70 %}
-Proyecto altamente atractivo.
-{% elif score_maia >= 50 %}
-Proyecto viable con riesgo moderado.
-{% else %}
-Proyecto de alto riesgo.
-{% endif %}
-
-</p>
-
-</div>
-
 <!-- MAPA -->
 
 <h2>Ubicación del Proyecto</h2>
@@ -259,14 +143,14 @@ Proyecto de alto riesgo.
 
 <script>
 
-//////////////////////// MONTE CARLO
+//////////////// MONTECARLO
 
 const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }};
 
 new Chart(document.getElementById("montecarloChart"),{
 type:"bar",
 data:{
-labels:["Probabilidad rentable","Riesgo"],
+labels:["Rentable","Riesgo"],
 datasets:[{
 label:"Monte Carlo",
 data:[prob,100-prob]
@@ -274,7 +158,7 @@ data:[prob,100-prob]
 }
 });
 
-//////////////////////// SENSIBILIDAD
+//////////////// SENSIBILIDAD
 
 const van = {{ van }};
 
@@ -300,7 +184,7 @@ data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
 }
 });
 
-//////////////////////// RADAR
+//////////////// RADAR
 
 new Chart(document.getElementById("radarProyecto"),{
 type:"radar",
@@ -319,9 +203,10 @@ data:[
 }
 });
 
-//////////////////////// VAN ACUMULADO
+//////////////// VAN ACUMULADO
 
 const flujo = {{ flujo_anual }};
+
 let acumulado = -{{ proyecto["capex"] if "capex" in proyecto.keys() else 0 }};
 
 let vanAcumulado = [];
@@ -342,10 +227,22 @@ data:vanAcumulado
 }
 });
 
-//////////////////////// MAPA DINAMICO
+//////////////// MAPA EXACTO MUNICIPIO
 
-let lat = {{ proyecto["lat"] if "lat" in proyecto.keys() else 4.5709 }};
-let lon = {{ proyecto["lon"] if "lon" in proyecto.keys() else -74.2973 }};
+var municipio = "{{ proyecto['municipio'] }}";
+var pais = "{{ proyecto['pais'] }}";
+
+fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${municipio},${pais}`)
+.then(res=>res.json())
+.then(data=>{
+
+let lat = 4.5709;
+let lon = -74.2973;
+
+if(data.length>0){
+lat = data[0].lat;
+lon = data[0].lon;
+}
 
 var mapa = L.map('mapaProyecto').setView([lat,lon],10);
 
@@ -358,8 +255,58 @@ L.marker([lat,lon])
 .bindPopup("Proyecto: {{ proyecto['nombre'] }}")
 .openPopup();
 
+});
+
+</script>
+
+<!-- CHAT MAIA -->
+
+<button id="chatBtn">+</button>
+
+<div id="chatBox">
+
+<h3>MAIA</h3>
+
+<div id="chatMessages"></div>
+
+<input id="chatInput" placeholder="Pregunta a MAIA..." style="width:70%">
+
+<button onclick="preguntar()">Enviar</button>
+
+</div>
+
+<script>
+
+document.getElementById("chatBtn").onclick=function(){
+
+let box=document.getElementById("chatBox");
+
+box.style.display=box.style.display=="none"?"block":"none";
+
+}
+
+function preguntar(){
+
+let pregunta=document.getElementById("chatInput").value;
+
+fetch("/maia_chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({message:pregunta})
+})
+.then(r=>r.json())
+.then(data=>{
+
+let chat=document.getElementById("chatMessages");
+
+chat.innerHTML+="<b>Tú:</b> "+pregunta+"<br>";
+chat.innerHTML+="<b>MAIA:</b> "+data.reply+"<br><br>";
+
+});
+
+}
+
 </script>
 
 </body>
-
 </html>

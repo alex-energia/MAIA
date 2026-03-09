@@ -7,6 +7,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <style>
 
 body{font-family:Arial;margin:40px;}
@@ -40,31 +43,21 @@ margin-bottom:40px;
 
 <h2>{{ proyecto["nombre"] }}</h2>
 
-<!-- ===================================================== -->
 <!-- SEMAFORO MAIA -->
-<!-- ===================================================== -->
 
 <div class="semaforo">
 
 <h2>Score MAIA</h2>
 
-<h1 style="color:{{ color_semaforo }}; font-size:48px;">
-● {{ semaforo.upper() }}
-</h1>
+<h1 style="color:{{ color_semaforo }}; font-size:48px;">● {{ semaforo.upper() }}</h1>
 
-<h3>
-{{ score_maia }} / 100
-</h3>
+<h3>{{ score_maia }} / 100</h3>
 
-<p>
-{{ decision_maia }}
-</p>
+<p>{{ decision_maia }}</p>
 
 </div>
 
-<!-- ===================================================== -->
 <!-- INDICADORES BASICOS -->
-<!-- ===================================================== -->
 
 <h3>Indicadores Financieros</h3>
 
@@ -80,9 +73,7 @@ margin-bottom:40px;
 
 <p><b>Recomendación:</b> {{ recomendacion }}</p>
 
-<!-- ===================================================== -->
 <!-- GENERACION VALOR -->
-<!-- ===================================================== -->
 
 <h2>Generación de Valor del Proyecto</h2>
 
@@ -104,9 +95,7 @@ margin-bottom:40px;
 
 </table>
 
-<!-- ===================================================== -->
 <!-- CAPEX -->
-<!-- ===================================================== -->
 
 <h2>CAPEX Detallado</h2>
 
@@ -128,9 +117,7 @@ margin-bottom:40px;
 
 </table>
 
-<!-- ===================================================== -->
 <!-- OPEX -->
-<!-- ===================================================== -->
 
 <h2>OPEX Detallado</h2>
 
@@ -152,9 +139,7 @@ margin-bottom:40px;
 
 </table>
 
-<!-- ===================================================== -->
 <!-- INDICADORES AVANZADOS -->
-<!-- ===================================================== -->
 
 <h2>Indicadores Financieros Avanzados</h2>
 
@@ -176,9 +161,7 @@ margin-bottom:40px;
 
 </table>
 
-<!-- ===================================================== -->
 <!-- APALANCAMIENTO -->
-<!-- ===================================================== -->
 
 <h2>Escenarios de Apalancamiento</h2>
 
@@ -204,9 +187,7 @@ margin-bottom:40px;
 
 </table>
 
-<!-- ===================================================== -->
 <!-- MONTE CARLO -->
-<!-- ===================================================== -->
 
 <h2>Simulación Monte Carlo</h2>
 
@@ -218,9 +199,7 @@ Probabilidad de que el proyecto sea rentable:
 
 </p>
 
-<!-- ===================================================== -->
 <!-- GRAFICAS -->
-<!-- ===================================================== -->
 
 <h2>Análisis Gráfico del Proyecto</h2>
 
@@ -230,71 +209,165 @@ Probabilidad de que el proyecto sea rentable:
 
 <canvas id="sensCapex"></canvas>
 
+<!-- RADAR FINANCIERO -->
+
+<h2>Radar Financiero del Proyecto</h2>
+
+<canvas id="radarProyecto"></canvas>
+
+<!-- VAN ACUMULADO -->
+
+<h2>VAN Acumulado del Proyecto</h2>
+
+<canvas id="vanAcumulado"></canvas>
+
+<!-- ANALISIS MAIA -->
+
+<h2>Análisis Inteligente MAIA</h2>
+
+<div style="border:1px solid #ccc;padding:20px;width:60%;background:#f9f9f9;border-radius:8px;">
+
+<p>
+
+MAIA analiza este proyecto considerando rentabilidad y riesgo financiero.
+
+El proyecto presenta un VAN de <b>{{ van }}</b>
+y una TIR de <b>{{ tir }}%</b>.
+
+La probabilidad de rentabilidad según simulación Monte Carlo
+es de <b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }}%</b>.
+
+{% if score_maia >= 70 %}
+MAIA considera este proyecto altamente atractivo para inversión.
+{% elif score_maia >= 50 %}
+MAIA considera el proyecto viable pero con riesgos moderados.
+{% else %}
+MAIA considera el proyecto de alto riesgo financiero.
+{% endif %}
+
+</p>
+
+</div>
+
+<!-- MAPA -->
+
+<h2>Ubicación del Proyecto</h2>
+
+<div id="mapaProyecto" style="height:400px;width:60%;"></div>
+
 <script>
 
-const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }}
+const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }};
 
 new Chart(document.getElementById("montecarloChart"),{
-
 type:"bar",
-
 data:{
-
 labels:["Probabilidad rentable","Riesgo"],
-
 datasets:[{
-
 label:"Monte Carlo",
-
 data:[prob,100-prob]
-
 }]
-
 }
+});
 
-})
-
-const van = {{ van }}
+const van = {{ van }};
 
 new Chart(document.getElementById("sensIngresos"),{
-
 type:"line",
-
 data:{
-
 labels:["-20%","-10%","Base","+10%","+20%"],
-
 datasets:[{
-
 label:"VAN vs Ingresos",
-
 data:[van*0.6,van*0.8,van,van*1.2,van*1.4]
-
 }]
-
 }
-
-})
+});
 
 new Chart(document.getElementById("sensCapex"),{
-
 type:"line",
-
 data:{
-
 labels:["-20%","-10%","Base","+10%","+20%"],
-
 datasets:[{
-
 label:"VAN vs CAPEX",
-
 data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
-
 }]
+}
+});
+
+/////////////////////
+//// RADAR
+/////////////////////
+
+new Chart(document.getElementById("radarProyecto"),{
+type:"radar",
+data:{
+labels:["ROI","ROIC","EBITDA","WACC","Probabilidad Rentabilidad"],
+datasets:[{
+label:"Perfil Financiero",
+data:[
+{{ indicadores_financieros.get("ROI",0) }},
+{{ indicadores_financieros.get("ROIC",0) }},
+{{ indicadores_financieros.get("EBITDA",0) }},
+{{ indicadores_financieros.get("WACC",0) }},
+{{ indicadores_financieros.get("Probabilidad Rentabilidad %",0) }}
+]
+}]
+}
+});
+
+/////////////////////
+//// VAN ACUMULADO
+/////////////////////
+
+const flujo = {{ flujo_anual }};
+let acumulado = -{{ proyecto["capex"] }};
+let vanAcumulado = [];
+
+for(let i=1;i<=10;i++){
+acumulado += flujo;
+vanAcumulado.push(acumulado);
+}
+
+new Chart(document.getElementById("vanAcumulado"),{
+type:"line",
+data:{
+labels:["Año1","Año2","Año3","Año4","Año5","Año6","Año7","Año8","Año9","Año10"],
+datasets:[{
+label:"VAN acumulado",
+data:vanAcumulado
+}]
+}
+});
+
+/////////////////////
+//// MAPA
+/////////////////////
+
+const pais = "{{ proyecto['pais'] }}";
+const municipio = "{{ proyecto['municipio'] }}";
+
+fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${municipio},${pais}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(data.length>0){
+
+const lat = data[0].lat;
+const lon = data[0].lon;
+
+var mapa = L.map('mapaProyecto').setView([lat,lon],10);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+maxZoom:18
+}).addTo(mapa);
+
+L.marker([lat,lon]).addTo(mapa)
+.bindPopup("Proyecto: {{ proyecto['nombre'] }}")
+.openPopup();
 
 }
 
-})
+});
 
 </script>
 

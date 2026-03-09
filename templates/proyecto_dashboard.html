@@ -92,19 +92,17 @@ margin-bottom:10px;
 
 </div>
 
-<!-- RATING DE RIESGO -->
+<!-- RATING -->
 
-<h2>Rating de Riesgo MAIA</h2>
+<h2>Rating de Riesgo</h2>
 
 <h1 style="font-size:40px;color:#34495e">
-
 {{ rating if rating else "N/A" }}
-
 </h1>
 
 <p>Score riesgo: {{ score_riesgo if score_riesgo else 0 }}/100</p>
 
-<!-- INDICADORES -->
+<!-- INDICADORES BASICOS -->
 
 <h3>Indicadores Financieros</h3>
 
@@ -113,14 +111,137 @@ margin-bottom:10px;
 <p><b>TIR:</b> {{ tir }} %</p>
 <p><b>Payback:</b> {{ payback }} años</p>
 
+<!-- GENERACION DE VALOR -->
+
+<h2>Generación de Valor</h2>
+
+<table>
+
+<tr>
+<th>Driver</th>
+<th>Valor</th>
+</tr>
+
+{% for item in valor_generado %}
+
+<tr>
+<td>{{ item["driver"] }}</td>
+<td>{{ item["valor"] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<!-- CAPEX -->
+
+<h2>CAPEX</h2>
+
+<table>
+
+<tr>
+<th>Actividad</th>
+<th>Valor</th>
+</tr>
+
+{% for item in capex_detallado %}
+
+<tr>
+<td>{{ item["actividad"] }}</td>
+<td>{{ item["valor"] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<!-- OPEX -->
+
+<h2>OPEX</h2>
+
+<table>
+
+<tr>
+<th>Actividad</th>
+<th>Valor</th>
+</tr>
+
+{% for item in opex_detallado %}
+
+<tr>
+<td>{{ item["actividad"] }}</td>
+<td>{{ item["valor"] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<!-- INDICADORES AVANZADOS -->
+
+<h2>Indicadores Financieros Avanzados</h2>
+
+<table>
+
+<tr>
+<th>Indicador</th>
+<th>Valor</th>
+</tr>
+
+{% for nombre, valor in indicadores_financieros.items() %}
+
+<tr>
+<td>{{ nombre }}</td>
+<td>{{ valor }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<!-- APALANCAMIENTO -->
+
+<h2>Escenarios de Apalancamiento</h2>
+
+<table>
+
+<tr>
+<th>Escenario</th>
+<th>Deuda</th>
+<th>Capital</th>
+<th>WACC</th>
+</tr>
+
+{% for nombre, esc in escenarios_apalancamiento.items() %}
+
+<tr>
+<td>{{ nombre }}</td>
+<td>{{ esc.deuda }}</td>
+<td>{{ esc.capital }}</td>
+<td>{{ esc.wacc }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+<!-- MONTE CARLO -->
+
+<h2>Simulación Monte Carlo</h2>
+
+<p>
+
+Probabilidad de rentabilidad:
+<b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
+
+</p>
+
 <!-- GRAFICAS -->
 
 <h2>Gráficas del Proyecto</h2>
 
 <canvas id="montecarloChart"></canvas>
-
 <canvas id="sensIngresos"></canvas>
-
 <canvas id="sensCapex"></canvas>
 
 <!-- RADAR -->
@@ -143,8 +264,6 @@ margin-bottom:10px;
 
 <script>
 
-//////////////// MONTECARLO
-
 const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }};
 
 new Chart(document.getElementById("montecarloChart"),{
@@ -157,8 +276,6 @@ data:[prob,100-prob]
 }]
 }
 });
-
-//////////////// SENSIBILIDAD
 
 const van = {{ van }};
 
@@ -184,8 +301,6 @@ data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
 }
 });
 
-//////////////// RADAR
-
 new Chart(document.getElementById("radarProyecto"),{
 type:"radar",
 data:{
@@ -203,12 +318,8 @@ data:[
 }
 });
 
-//////////////// VAN ACUMULADO
-
 const flujo = {{ flujo_anual }};
-
 let acumulado = -{{ proyecto["capex"] if "capex" in proyecto.keys() else 0 }};
-
 let vanAcumulado = [];
 
 for(let i=1;i<=10;i++){
@@ -227,8 +338,6 @@ data:vanAcumulado
 }
 });
 
-//////////////// MAPA EXACTO MUNICIPIO
-
 var municipio = "{{ proyecto['municipio'] }}";
 var pais = "{{ proyecto['pais'] }}";
 
@@ -236,13 +345,8 @@ fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${municipio},${p
 .then(res=>res.json())
 .then(data=>{
 
-let lat = 4.5709;
-let lon = -74.2973;
-
-if(data.length>0){
-lat = data[0].lat;
-lon = data[0].lon;
-}
+let lat = data[0].lat;
+let lon = data[0].lon;
 
 var mapa = L.map('mapaProyecto').setView([lat,lon],10);
 
@@ -258,8 +362,6 @@ L.marker([lat,lon])
 });
 
 </script>
-
-<!-- CHAT MAIA -->
 
 <button id="chatBtn">+</button>
 

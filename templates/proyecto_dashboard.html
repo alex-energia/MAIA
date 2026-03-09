@@ -339,7 +339,7 @@ data:[
 
 const flujo = {{ flujo_anual }};
 
-let acumulado = -{{ proyecto["capex"] }};
+let acumulado = -{{ proyecto.get("capex",0) }};
 
 let vanAcumulado = [];
 

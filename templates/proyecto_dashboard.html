@@ -49,7 +49,9 @@ margin-bottom:40px;
 
 <h2>Score MAIA</h2>
 
-<h1 style="color:{{ color_semaforo }}; font-size:48px;">● {{ semaforo.upper() }}</h1>
+<h1 style="color:{{ color_semaforo }}; font-size:48px;">
+● {{ semaforo.upper() }}
+</h1>
 
 <h3>{{ score_maia }} / 100</h3>
 
@@ -57,20 +59,27 @@ margin-bottom:40px;
 
 </div>
 
+<!-- RATING DE RIESGO -->
+
+<h2>Rating de Riesgo</h2>
+
+<h1 style="color:#34495e">
+
+{{ rating }}
+
+</h1>
+
+<p>Score riesgo: {{ score_riesgo }}/100</p>
+
 <!-- INDICADORES -->
 
 <h3>Indicadores Financieros</h3>
 
 <p><b>Flujo anual:</b> {{ flujo_anual }}</p>
-
 <p><b>VAN:</b> {{ van }}</p>
-
 <p><b>TIR:</b> {{ tir }} %</p>
-
 <p><b>Payback:</b> {{ payback }} años</p>
-
 <p><b>Resultado:</b> {{ evaluacion }}</p>
-
 <p><b>Recomendación:</b> {{ recomendacion }}</p>
 
 <!-- GENERACION VALOR -->
@@ -192,11 +201,8 @@ margin-bottom:40px;
 <h2>Simulación Monte Carlo</h2>
 
 <p>
-
 Probabilidad de rentabilidad:
-
 <b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
-
 </p>
 
 <!-- GRAFICAS -->
@@ -204,9 +210,7 @@ Probabilidad de rentabilidad:
 <h2>Gráficas del Proyecto</h2>
 
 <canvas id="montecarloChart"></canvas>
-
 <canvas id="sensIngresos"></canvas>
-
 <canvas id="sensCapex"></canvas>
 
 <!-- RADAR -->
@@ -255,16 +259,12 @@ Proyecto de alto riesgo.
 
 <script>
 
-////////////////////
-//// MONTE CARLO
-////////////////////
+//////////////////////// MONTE CARLO
 
 const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }};
 
 new Chart(document.getElementById("montecarloChart"),{
-
 type:"bar",
-
 data:{
 labels:["Probabilidad rentable","Riesgo"],
 datasets:[{
@@ -272,19 +272,14 @@ label:"Monte Carlo",
 data:[prob,100-prob]
 }]
 }
-
 });
 
-////////////////////
-//// SENSIBILIDAD
-////////////////////
+//////////////////////// SENSIBILIDAD
 
 const van = {{ van }};
 
 new Chart(document.getElementById("sensIngresos"),{
-
 type:"line",
-
 data:{
 labels:["-20%","-10%","Base","+10%","+20%"],
 datasets:[{
@@ -292,13 +287,10 @@ label:"VAN vs Ingresos",
 data:[van*0.6,van*0.8,van,van*1.2,van*1.4]
 }]
 }
-
 });
 
 new Chart(document.getElementById("sensCapex"),{
-
 type:"line",
-
 data:{
 labels:["-20%","-10%","Base","+10%","+20%"],
 datasets:[{
@@ -306,17 +298,12 @@ label:"VAN vs CAPEX",
 data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
 }]
 }
-
 });
 
-////////////////////
-//// RADAR
-////////////////////
+//////////////////////// RADAR
 
 new Chart(document.getElementById("radarProyecto"),{
-
 type:"radar",
-
 data:{
 labels:["ROI","ROIC","EBITDA","WACC","Probabilidad"],
 datasets:[{
@@ -330,31 +317,22 @@ data:[
 ]
 }]
 }
-
 });
 
-////////////////////
-//// VAN ACUMULADO
-////////////////////
+//////////////////////// VAN ACUMULADO
 
 const flujo = {{ flujo_anual }};
-
 let acumulado = -{{ proyecto["capex"] if "capex" in proyecto.keys() else 0 }};
 
 let vanAcumulado = [];
 
 for(let i=1;i<=10;i++){
-
 acumulado += flujo;
-
 vanAcumulado.push(acumulado);
-
 }
 
 new Chart(document.getElementById("vanAcumulado"),{
-
 type:"line",
-
 data:{
 labels:["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"],
 datasets:[{
@@ -362,24 +340,26 @@ label:"VAN acumulado",
 data:vanAcumulado
 }]
 }
-
 });
 
-////////////////////
-//// MAPA ESTABLE
-////////////////////
+//////////////////////// MAPA DINAMICO
 
-var mapa = L.map('mapaProyecto').setView([4.5709,-74.2973],6);
+let lat = {{ proyecto["lat"] if "lat" in proyecto.keys() else 4.5709 }};
+let lon = {{ proyecto["lon"] if "lon" in proyecto.keys() else -74.2973 }};
+
+var mapa = L.map('mapaProyecto').setView([lat,lon],10);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 maxZoom:18
 }).addTo(mapa);
 
-L.marker([4.5709,-74.2973]).addTo(mapa)
+L.marker([lat,lon])
+.addTo(mapa)
 .bindPopup("Proyecto: {{ proyecto['nombre'] }}")
 .openPopup();
 
 </script>
 
 </body>
+
 </html>

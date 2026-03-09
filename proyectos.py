@@ -19,6 +19,7 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
@@ -39,6 +40,7 @@ def init_db():
 
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
+
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
         capex_inicial REAL,
@@ -46,6 +48,7 @@ def init_db():
         ingresos_anuales REAL,
         vida_util INTEGER,
         tasa_descuento REAL
+
     )
     """)
 
@@ -60,11 +63,13 @@ def init_db():
 def desglose_capex(capex):
 
     return [
+
         {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
         {"actividad":"Equipos","valor":round(capex*0.40,2)},
         {"actividad":"Construcción","valor":round(capex*0.25,2)},
         {"actividad":"Permisos","valor":round(capex*0.10,2)},
         {"actividad":"Contingencia","valor":round(capex*0.10,2)}
+
     ]
 
 
@@ -75,11 +80,13 @@ def desglose_capex(capex):
 def desglose_opex(opex):
 
     return [
+
         {"actividad":"Operación","valor":round(opex*0.35,2)},
         {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
         {"actividad":"Administración","valor":round(opex*0.15,2)},
         {"actividad":"Logística","valor":round(opex*0.15,2)},
         {"actividad":"Regulación","valor":round(opex*0.10,2)}
+
     ]
 
 
@@ -97,7 +104,6 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
     van = 0
-
     for i in range(1, vida+1):
         van += flujo_operativo / ((1+tasa)**i)
 
@@ -123,11 +129,9 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
 def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
     flujo = ingresos - opex
-
     flujos = [-capex] + [flujo]*vida
 
     van = 0
-
     for i,f in enumerate(flujos):
         van += f / ((1+tasa)**i)
 
@@ -156,11 +160,9 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
     wacc = (deuda*costo_deuda*(1-tasa_impuesto)) + (capital*costo_capital)
 
     servicio_deuda = capex*0.4/vida if vida else 0
-
     dscr = flujo/servicio_deuda if servicio_deuda else None
 
     simulaciones = 1000
-
     resultados_van = []
 
     for i in range(simulaciones):
@@ -173,7 +175,6 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
         flujos_sim = [-capex] + [flujo_sim]*vida
 
         van_sim = 0
-
         for j,f in enumerate(flujos_sim):
             van_sim += f/((1+tasa)**j)
 
@@ -243,9 +244,7 @@ def escenarios_apalancamiento(capex):
 def lista_proyectos():
 
     conn = get_db()
-
     proyectos = conn.execute("SELECT * FROM proyectos").fetchall()
-
     conn.close()
 
     return render_template(
@@ -337,7 +336,6 @@ def dashboard_proyecto(proyecto_id):
     flujos = [-capex] + [flujo_anual]*vida
 
     van = 0
-
     for i,f in enumerate(flujos):
         van += f/((1+tasa)**i)
 
@@ -345,9 +343,7 @@ def dashboard_proyecto(proyecto_id):
     payback = None
 
     for i,f in enumerate(flujos):
-
         acumulado += f
-
         if acumulado > 0:
             payback = i
             break
@@ -362,21 +358,9 @@ def dashboard_proyecto(proyecto_id):
     capex_detallado = desglose_capex(capex)
     opex_detallado = desglose_opex(opex)
 
-    valor_generado = generar_valor(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
+    valor_generado = generar_valor(capex,ingresos,opex,vida,tasa)
 
-    indicadores_financieros = calcular_indicadores(
-        capex,
-        ingresos,
-        opex,
-        vida,
-        tasa
-    )
+    indicadores_financieros = calcular_indicadores(capex,ingresos,opex,vida,tasa)
 
     escenarios = escenarios_apalancamiento(capex)
 
@@ -414,12 +398,17 @@ def dashboard_proyecto(proyecto_id):
     if score >= 70:
         semaforo = "verde"
         decision = "Proyecto altamente atractivo"
+        color_semaforo = "#16a34a"
+
     elif score >= 40:
         semaforo = "amarillo"
         decision = "Proyecto viable con riesgos"
+        color_semaforo = "#eab308"
+
     else:
         semaforo = "rojo"
         decision = "Proyecto no recomendable"
+        color_semaforo = "#dc2626"
 
     return render_template(
 
@@ -439,6 +428,7 @@ def dashboard_proyecto(proyecto_id):
 
         score_maia=score,
         semaforo=semaforo,
-        decision_maia=decision
+        decision_maia=decision,
+        color_semaforo=color_semaforo
 
     )

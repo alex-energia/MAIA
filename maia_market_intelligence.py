@@ -3,32 +3,41 @@ import datetime
 import urllib.parse
 
 
+# =========================
+# PAISES OBJETIVO
+# =========================
+
 PAISES = [
-"colombia",
-"ecuador",
-"peru",
-"panama",
-"paraguay",
-"venezuela"
+    "colombia",
+    "ecuador",
+    "peru",
+    "panama",
+    "paraguay",
+    "venezuela"
 ]
 
 
+# =========================
+# PALABRAS CLAVE
+# =========================
+
 KEYWORDS = [
 
-"hydropower project for sale",
-"small hydro project investment",
-"hydropower plant seeking investors",
-"small hydro power plant 1 mw investment",
-"hydropower project latin america",
-"energy infrastructure investment",
-"smr nuclear project investment",
-"small modular reactor project"
+    "hydropower project for sale",
+    "small hydro project investment",
+    "hydropower plant seeking investors",
+    "small hydro power plant 1 mw investment",
+    "hydropower project latin america",
+    "energy infrastructure investment",
+    "smr nuclear project investment",
+    "small modular reactor project"
 
 ]
 
 
 # =========================
 # BUSCAR OPORTUNIDADES
+# GLOBAL ENERGY SCANNER
 # =========================
 
 def buscar_oportunidades():
@@ -51,12 +60,37 @@ def buscar_oportunidades():
 
                 data = r.json()
 
+                texto = query.lower()
+
+                # -----------------
+                # CLASIFICACION
+                # -----------------
+
+                tipo_activo = "energia"
+                fase = "desarrollo"
+                capacidad = "1+ MW"
+                tipo_oportunidad = "general"
+
+                if "hydro" in texto or "hydropower" in texto:
+                    tipo_activo = "hidroelectrica"
+
+                if "smr" in texto or "nuclear" in texto:
+                    tipo_activo = "nuclear_smr"
+
+                if "sale" in texto or "for sale" in texto or "venta" in texto:
+                    tipo_oportunidad = "activo_en_venta"
+
+                if "investment" in texto or "investor" in texto:
+                    tipo_oportunidad = "buscando_inversion"
+
                 oportunidades.append({
 
                     "titulo": query,
                     "pais": pais,
-                    "tecnologia": "energia",
-                    "potencia_mw": "1+",
+                    "tipo_activo": tipo_activo,
+                    "fase": fase,
+                    "tipo_oportunidad": tipo_oportunidad,
+                    "potencia_mw": capacidad,
                     "empresa": "fuente web",
                     "contacto": f"https://duckduckgo.com/?q={query_encoded}",
                     "fecha": str(datetime.date.today())
@@ -68,7 +102,6 @@ def buscar_oportunidades():
                 continue
 
     return oportunidades
-
 
 
 # =========================
@@ -86,34 +119,24 @@ def detectar_activos_tempranos():
         texto = o["titulo"].lower()
 
         prioridad = "normal"
-        tipo_activo = "energia"
+        tipo_activo = o["tipo_activo"]
 
+        # -----------------
+        # PRIORIDAD
+        # -----------------
 
-        # hidroeléctricas
-        if any(x in texto for x in ["hydro", "hydropower", "small hydro"]):
-
-            tipo_activo = "hidroelectrica"
-
-
-        # nuclear SMR
-        if any(x in texto for x in ["smr", "small modular reactor", "nuclear"]):
-
-            tipo_activo = "nuclear_smr"
-            prioridad = "estrategica"
-
-
-        # activos en venta
         if any(x in texto for x in ["sale", "for sale", "venta"]):
-
             prioridad = "alta"
 
-
-        # buscando inversionistas
         if any(x in texto for x in ["investment", "investor", "capital", "partner"]):
+            prioridad = "media"
 
-            if prioridad != "alta":
-                prioridad = "media"
+        if "smr" in texto or "nuclear" in texto:
+            prioridad = "estrategica"
 
+        # -----------------
+        # FILTRO
+        # -----------------
 
         if prioridad != "normal":
 
@@ -121,6 +144,5 @@ def detectar_activos_tempranos():
             o["tipo_activo"] = tipo_activo
 
             deals.append(o)
-
 
     return deals

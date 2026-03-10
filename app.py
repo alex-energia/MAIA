@@ -22,7 +22,6 @@ app.register_blueprint(proyectos_bp)
 def home():
     return render_template("index.html")
 
-
 # =========================
 # CHAT MAIA
 # =========================
@@ -67,12 +66,21 @@ def maia_chat():
 @app.route("/maia_oportunidades")
 def maia_oportunidades():
 
-    data = buscar_oportunidades()
+    try:
 
-    return jsonify({
-        "total_oportunidades": len(data),
-        "oportunidades": data
-    })
+        data = buscar_oportunidades()
+
+        return jsonify({
+            "total_oportunidades": len(data),
+            "oportunidades": data
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": "Error buscando oportunidades",
+            "detalle": str(e)
+        })
 
 
 # =========================
@@ -82,16 +90,28 @@ def maia_oportunidades():
 @app.route("/maia_deal_finder")
 def maia_deal_finder():
 
-    data = detectar_activos_tempranos()
+    try:
 
-    return jsonify({
-        "deals_detectados": len(data),
-        "deals": data
-    })
+        data = detectar_activos_tempranos()
+
+        return jsonify({
+            "deals_detectados": len(data),
+            "deals": data
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": "Error detectando activos",
+            "detalle": str(e)
+        })
 
 
 # =========================
 # EJECUTAR APLICACION
 # =========================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+
+    port = int(os.environ.get("PORT", 10000))
+
+    app.run(host="0.0.0.0", port=port)

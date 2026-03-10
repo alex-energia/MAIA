@@ -11,3 +11,4 @@ python-docx
 pandas
 pillow
 numpy-financial
+requests

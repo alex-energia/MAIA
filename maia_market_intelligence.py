@@ -22,7 +22,6 @@ PAISES = [
 # =========================
 
 KEYWORDS = [
-
     "hydropower project for sale",
     "small hydro project investment",
     "hydropower plant seeking investors",
@@ -31,12 +30,10 @@ KEYWORDS = [
     "energy infrastructure investment",
     "smr nuclear project investment",
     "small modular reactor project"
-
 ]
 
 
 # =========================
-# BUSCAR OPORTUNIDADES
 # GLOBAL ENERGY SCANNER
 # =========================
 
@@ -62,13 +59,13 @@ def buscar_oportunidades():
 
                 texto = query.lower()
 
-                # -----------------
-                # CLASIFICACION
-                # -----------------
+                # -------------------------
+                # CLASIFICACION ACTIVO
+                # -------------------------
 
                 tipo_activo = "energia"
                 fase = "desarrollo"
-                capacidad = "1+ MW"
+                potencia = "1+ MW"
                 tipo_oportunidad = "general"
 
                 if "hydro" in texto or "hydropower" in texto:
@@ -90,7 +87,7 @@ def buscar_oportunidades():
                     "tipo_activo": tipo_activo,
                     "fase": fase,
                     "tipo_oportunidad": tipo_oportunidad,
-                    "potencia_mw": capacidad,
+                    "potencia_mw": potencia,
                     "empresa": "fuente web",
                     "contacto": f"https://duckduckgo.com/?q={query_encoded}",
                     "fecha": str(datetime.date.today())
@@ -105,7 +102,7 @@ def buscar_oportunidades():
 
 
 # =========================
-# DETECTAR ACTIVOS TEMPRANOS
+# MAIA DEAL INTELLIGENCE
 # =========================
 
 def detectar_activos_tempranos():
@@ -119,28 +116,41 @@ def detectar_activos_tempranos():
         texto = o["titulo"].lower()
 
         prioridad = "normal"
+        tipo_negocio = "exploracion"
         tipo_activo = o["tipo_activo"]
 
-        # -----------------
-        # PRIORIDAD
-        # -----------------
+        # -------------------------
+        # CLASIFICACION NEGOCIO
+        # -------------------------
 
         if any(x in texto for x in ["sale", "for sale", "venta"]):
-            prioridad = "alta"
 
-        if any(x in texto for x in ["investment", "investor", "capital", "partner"]):
+            prioridad = "alta"
+            tipo_negocio = "adquisicion_proyecto"
+
+        if any(x in texto for x in ["investment", "investor", "capital"]):
+
             prioridad = "media"
+            tipo_negocio = "entrada_inversionista"
+
+        if "partner" in texto:
+
+            prioridad = "media"
+            tipo_negocio = "busqueda_socio"
 
         if "smr" in texto or "nuclear" in texto:
-            prioridad = "estrategica"
 
-        # -----------------
-        # FILTRO
-        # -----------------
+            prioridad = "estrategica"
+            tipo_negocio = "infraestructura_estrategica"
+
+        # -------------------------
+        # FILTRO FINAL
+        # -------------------------
 
         if prioridad != "normal":
 
             o["prioridad"] = prioridad
+            o["tipo_negocio"] = tipo_negocio
             o["tipo_activo"] = tipo_activo
 
             deals.append(o)

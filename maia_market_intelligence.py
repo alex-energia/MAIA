@@ -2,6 +2,7 @@ import requests
 import datetime
 import urllib.parse
 
+
 PAISES = [
 "colombia",
 "ecuador",
@@ -11,7 +12,9 @@ PAISES = [
 "venezuela"
 ]
 
+
 KEYWORDS = [
+
 "hydropower project for sale",
 "small hydro project investment",
 "hydropower plant seeking investors",
@@ -20,6 +23,7 @@ KEYWORDS = [
 "energy infrastructure investment",
 "smr nuclear project investment",
 "small modular reactor project"
+
 ]
 
 
@@ -59,7 +63,7 @@ def buscar_oportunidades():
 
                 })
 
-            except Exception as e:
+            except Exception:
 
                 continue
 
@@ -82,26 +86,41 @@ def detectar_activos_tempranos():
         texto = o["titulo"].lower()
 
         prioridad = "normal"
+        tipo_activo = "energia"
 
-        if any(x in texto for x in ["sale", "venta", "for sale"]):
-            prioridad = "alta"
 
-        if any(x in texto for x in ["investment", "investor", "capital", "partner"]):
-            prioridad = "media"
+        # hidroeléctricas
+        if any(x in texto for x in ["hydro", "hydropower", "small hydro"]):
 
-        if "smr" in texto or "nuclear" in texto:
+            tipo_activo = "hidroelectrica"
+
+
+        # nuclear SMR
+        if any(x in texto for x in ["smr", "small modular reactor", "nuclear"]):
+
+            tipo_activo = "nuclear_smr"
             prioridad = "estrategica"
 
-        if any(x in texto for x in [
-            "sale",
-            "investment",
-            "capital",
-            "partner",
-            "smr",
-            "nuclear"
-        ]):
+
+        # activos en venta
+        if any(x in texto for x in ["sale", "for sale", "venta"]):
+
+            prioridad = "alta"
+
+
+        # buscando inversionistas
+        if any(x in texto for x in ["investment", "investor", "capital", "partner"]):
+
+            if prioridad != "alta":
+                prioridad = "media"
+
+
+        if prioridad != "normal":
 
             o["prioridad"] = prioridad
+            o["tipo_activo"] = tipo_activo
+
             deals.append(o)
+
 
     return deals

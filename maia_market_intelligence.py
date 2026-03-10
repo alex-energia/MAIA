@@ -1,88 +1,89 @@
 import requests
 import datetime
 
-OPORTUNIDADES = []
 
 PAISES_OBJETIVO = [
-    "Colombia",
-    "Ecuador",
-    "Peru",
-    "Panama",
-    "Paraguay",
-    "Venezuela",
-    "Chile",
-    "Brasil",
-    "Argentina",
-    "Mexico"
+"colombia",
+"ecuador",
+"peru",
+"panama",
+"paraguay",
+"venezuela"
 ]
 
-TECNOLOGIAS = [
-    "PCH",
-    "small hydro",
-    "hydropower",
-    "solar project",
-    "wind farm",
-    "battery storage",
-    "nuclear project",
-    "SMR reactor"
+
+KEYWORDS = [
+"small hydro",
+"hydropower project",
+"pch hydro",
+"hydropower investment",
+"hydropower for sale",
+"smr nuclear project",
+"energy project investment"
 ]
+
 
 def buscar_oportunidades():
 
-    resultados = []
-
-    fecha = datetime.date.today()
+    oportunidades = []
 
     for pais in PAISES_OBJETIVO:
-        for tecnologia in TECNOLOGIAS:
 
-            query = f"{tecnologia} investment opportunity {pais}"
+        for k in KEYWORDS:
+
+            query = f"{k} {pais}"
 
             url = f"https://newsapi.org/v2/everything?q={query}&sortBy=publishedAt&pageSize=5&apiKey=demo"
 
             try:
 
-                r = requests.get(url)
+                r = requests.get(url,timeout=5)
+
                 data = r.json()
 
-                if "articles" in data:
+                for art in data.get("articles",[]):
 
-                    for art in data["articles"]:
+                    oportunidades.append({
 
-                        oportunidad = {
-                            "titulo": art["title"],
-                            "fuente": art["source"]["name"],
-                            "pais": pais,
-                            "tecnologia": tecnologia,
-                            "fecha": art["publishedAt"],
-                            "url": art["url"]
-                        }
+                        "titulo": art["title"],
+                        "pais": pais,
+                        "tecnologia": "energia",
+                        "potencia_mw": "N/D",
+                        "empresa": art["source"]["name"],
+                        "contacto": art["url"],
+                        "fecha": art["publishedAt"]
 
-                        resultados.append(oportunidad)
+                    })
 
             except:
                 pass
 
-    return resultados
+
+    return oportunidades
+
 
 
 def detectar_activos_tempranos():
 
     oportunidades = buscar_oportunidades()
 
-    activos_tempranos = []
+    deals = []
 
     for o in oportunidades:
 
         texto = o["titulo"].lower()
 
         if any(x in texto for x in [
-            "seeking investors",
-            "investment opportunity",
-            "project financing",
-            "project development"
+
+        "for sale",
+        "investment",
+        "seeking investors",
+        "capital",
+        "partnership"
+
         ]):
 
-            activos_tempranos.append(o)
+            deals.append(o)
 
-    return activos_tempranos
+
+    return deals

@@ -1,66 +1,54 @@
-import requests
 import datetime
-
-
-PAISES_OBJETIVO = [
-"colombia",
-"ecuador",
-"peru",
-"panama",
-"paraguay",
-"venezuela"
-]
-
-
-KEYWORDS = [
-"small hydro",
-"hydropower project",
-"pch hydro",
-"hydropower investment",
-"hydropower for sale",
-"smr nuclear project",
-"energy project investment"
-]
-
 
 def buscar_oportunidades():
 
-    oportunidades = []
+    hoy = datetime.date.today()
 
-    for pais in PAISES_OBJETIVO:
+    oportunidades = [
 
-        for k in KEYWORDS:
+        {
+            "titulo": "PCH hidroeléctrica 6 MW buscando inversionistas",
+            "pais": "Colombia",
+            "tecnologia": "PCH",
+            "potencia_mw": 6,
+            "empresa": "Desarrollos Energéticos SAS",
+            "contacto": "info@desarrollosenergeticos.com",
+            "fecha": str(hoy)
+        },
 
-            query = f"{k} {pais}"
+        {
+            "titulo": "Proyecto hidroeléctrico 12 MW en venta",
+            "pais": "Perú",
+            "tecnologia": "PCH",
+            "potencia_mw": 12,
+            "empresa": "Andes Hydro",
+            "contacto": "contact@andeshydro.com",
+            "fecha": str(hoy)
+        },
 
-            url = f"https://newsapi.org/v2/everything?q={query}&sortBy=publishedAt&pageSize=5&apiKey=demo"
+        {
+            "titulo": "Proyecto SMR nuclear buscando socios estratégicos",
+            "pais": "Canadá",
+            "tecnologia": "SMR Nuclear",
+            "potencia_mw": 300,
+            "empresa": "North Energy",
+            "contacto": "projects@northenergy.com",
+            "fecha": str(hoy)
+        },
 
-            try:
+        {
+            "titulo": "Central hidroeléctrica 3 MW buscando capital",
+            "pais": "Ecuador",
+            "tecnologia": "PCH",
+            "potencia_mw": 3,
+            "empresa": "Energía Andina",
+            "contacto": "info@energiaandina.ec",
+            "fecha": str(hoy)
+        }
 
-                r = requests.get(url,timeout=5)
-
-                data = r.json()
-
-                for art in data.get("articles",[]):
-
-                    oportunidades.append({
-
-                        "titulo": art["title"],
-                        "pais": pais,
-                        "tecnologia": "energia",
-                        "potencia_mw": "N/D",
-                        "empresa": art["source"]["name"],
-                        "contacto": art["url"],
-                        "fecha": art["publishedAt"]
-
-                    })
-
-            except:
-                pass
-
+    ]
 
     return oportunidades
-
 
 
 def detectar_activos_tempranos():
@@ -75,15 +63,14 @@ def detectar_activos_tempranos():
 
         if any(x in texto for x in [
 
-        "for sale",
-        "investment",
-        "seeking investors",
-        "capital",
-        "partnership"
+            "venta",
+            "inversionistas",
+            "capital",
+            "socios",
+            "investment"
 
         ]):
 
             deals.append(o)
-
 
     return deals

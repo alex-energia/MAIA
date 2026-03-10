@@ -1,54 +1,62 @@
+import requests
 import datetime
+
+PAISES = [
+"colombia",
+"ecuador",
+"peru",
+"panama",
+"paraguay",
+"venezuela"
+]
+
+KEYWORDS = [
+
+"hydropower project for sale",
+"small hydro project investment",
+"hydropower plant seeking investors",
+"small hydro power plant 1 mw investment",
+"hydropower project latin america",
+"energy infrastructure investment",
+"smr nuclear project investment",
+"small modular reactor project"
+]
+
 
 def buscar_oportunidades():
 
-    hoy = datetime.date.today()
+    oportunidades = []
 
-    oportunidades = [
+    for pais in PAISES:
 
-        {
-            "titulo": "PCH hidroeléctrica 6 MW buscando inversionistas",
-            "pais": "Colombia",
-            "tecnologia": "PCH",
-            "potencia_mw": 6,
-            "empresa": "Desarrollos Energéticos SAS",
-            "contacto": "info@desarrollosenergeticos.com",
-            "fecha": str(hoy)
-        },
+        for keyword in KEYWORDS:
 
-        {
-            "titulo": "Proyecto hidroeléctrico 12 MW en venta",
-            "pais": "Perú",
-            "tecnologia": "PCH",
-            "potencia_mw": 12,
-            "empresa": "Andes Hydro",
-            "contacto": "contact@andeshydro.com",
-            "fecha": str(hoy)
-        },
+            query = f"{keyword} {pais}"
 
-        {
-            "titulo": "Proyecto SMR nuclear buscando socios estratégicos",
-            "pais": "Canadá",
-            "tecnologia": "SMR Nuclear",
-            "potencia_mw": 300,
-            "empresa": "North Energy",
-            "contacto": "projects@northenergy.com",
-            "fecha": str(hoy)
-        },
+            try:
 
-        {
-            "titulo": "Central hidroeléctrica 3 MW buscando capital",
-            "pais": "Ecuador",
-            "tecnologia": "PCH",
-            "potencia_mw": 3,
-            "empresa": "Energía Andina",
-            "contacto": "info@energiaandina.ec",
-            "fecha": str(hoy)
-        }
+                url = f"https://duckduckgo.com/?q={query}&format=json"
 
-    ]
+                r = requests.get(url, timeout=5)
+
+                oportunidades.append({
+
+                    "titulo": query,
+                    "pais": pais,
+                    "tecnologia": "energia",
+                    "potencia_mw": "1+",
+                    "empresa": "fuente web",
+                    "contacto": url,
+                    "fecha": str(datetime.date.today())
+
+                })
+
+            except:
+
+                continue
 
     return oportunidades
+
 
 
 def detectar_activos_tempranos():
@@ -63,11 +71,11 @@ def detectar_activos_tempranos():
 
         if any(x in texto for x in [
 
-            "venta",
-            "inversionistas",
-            "capital",
-            "socios",
-            "investment"
+        "sale",
+        "investment",
+        "investor",
+        "capital",
+        "partner"
 
         ]):
 

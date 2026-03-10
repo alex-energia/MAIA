@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
+from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 import os
 
 app = Flask(__name__)
@@ -7,32 +8,28 @@ app = Flask(__name__)
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
-
 init_db()
 
 # =========================
 # REGISTRAR BLUEPRINT
 # =========================
-
 app.register_blueprint(proyectos_bp)
 
 # =========================
 # PAGINA PRINCIPAL
 # =========================
-
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
 # =========================
 # CHAT MAIA
 # =========================
-
 @app.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
     data = request.get_json()
-
     pregunta = data.get("message","").lower()
 
     respuesta = "MAIA no tiene suficiente información para responder."
@@ -63,12 +60,39 @@ def maia_chat():
 
     return jsonify({"reply": respuesta})
 
+
+# =========================
+# MAIA OPORTUNIDADES ENERGÉTICAS
+# =========================
+@app.route("/maia_oportunidades")
+def maia_oportunidades():
+
+    data = buscar_oportunidades()
+
+    return jsonify({
+        "total_oportunidades": len(data),
+        "oportunidades": data
+    })
+
+
+# =========================
+# MAIA DEAL FINDER
+# Detecta activos antes de salir al mercado
+# =========================
+@app.route("/maia_deal_finder")
+def maia_deal_finder():
+
+    data = detectar_activos_tempranos()
+
+    return jsonify({
+        "deals_detectados": len(data),
+        "deals": data
+    })
+
+
 # =========================
 # EJECUTAR APLICACION
 # =========================
-
 if __name__ == "__main__":
-
     port = int(os.environ.get("PORT", 10000))
-
     app.run(host="0.0.0.0", port=port)

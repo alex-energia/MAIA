@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
+from maia_global_scanner import escanear_mercado_global
 import os
 
 app = Flask(__name__)
@@ -34,6 +35,10 @@ def maia_chat():
 
     respuesta = "MAIA no tiene suficiente información para responder."
 
+    # =========================
+    # ANALISIS FINANCIERO
+    # =========================
+
     if "van" in pregunta:
         respuesta = "El VAN (Valor Actual Neto) mide la rentabilidad del proyecto descontando los flujos futuros."
 
@@ -55,8 +60,38 @@ def maia_chat():
     elif "montecarlo" in pregunta:
         respuesta = "La simulación Monte Carlo evalúa miles de escenarios posibles para estimar la probabilidad de rentabilidad."
 
+    # =========================
+    # CONSULTAS SOBRE MAIA
+    # =========================
+
     elif "maia" in pregunta:
-        respuesta = "MAIA es un motor de análisis financiero que evalúa proyectos usando indicadores, simulaciones y modelos de riesgo."
+        respuesta = "MAIA es un motor de análisis financiero y de inteligencia de mercado que analiza proyectos, detecta oportunidades energéticas y busca negocios en el mercado global."
+
+    # =========================
+    # SCANNER GLOBAL
+    # =========================
+
+    elif "barrido" in pregunta or "scan" in pregunta or "buscar proyectos" in pregunta:
+
+        resultados = escanear_mercado_global()
+
+        respuesta = f"MAIA realizó un barrido global y encontró {len(resultados)} oportunidades energéticas."
+
+    elif "smr" in pregunta or "nuclear" in pregunta:
+
+        resultados = escanear_mercado_global()
+
+        filtrados = [r for r in resultados if r["tipo_activo"] == "nuclear_smr"]
+
+        respuesta = f"MAIA detectó {len(filtrados)} oportunidades relacionadas con reactores nucleares SMR."
+
+    elif "hidro" in pregunta or "hidroelectrica" in pregunta:
+
+        resultados = escanear_mercado_global()
+
+        filtrados = [r for r in resultados if r["tipo_activo"] == "hidroelectrica"]
+
+        respuesta = f"MAIA detectó {len(filtrados)} oportunidades hidroeléctricas en el mercado global."
 
     return jsonify({"reply": respuesta})
 
@@ -105,6 +140,28 @@ def maia_deal_finder():
         return jsonify({
             "error": "Error detectando activos",
             "detalle": str(e)
+        })
+
+
+# =========================
+# MAIA GLOBAL SCANNER
+# =========================
+@app.route("/maia_global_scan")
+def maia_global_scan():
+
+    try:
+
+        data = escanear_mercado_global()
+
+        return jsonify({
+            "total_oportunidades": len(data),
+            "resultados": data
+        })
+
+    except Exception as e:
+
+        return jsonify({
+            "error": str(e)
         })
 
 

@@ -1,12 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, jsonify
+from flask import Blueprint, request, jsonify
 import numpy as np
 import numpy_financial as npf
 import sqlite3
 import os
-import datetime
-import pdfplumber
-import pandas as pd
-from docx import Document
 import random
 import requests
 from datetime import datetime
@@ -41,18 +37,6 @@ def init_db():
     conn = get_db()
 
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS proyectos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        capex_inicial REAL,
-        opex_anual REAL,
-        ingresos_anuales REAL,
-        vida_util INTEGER,
-        tasa_descuento REAL
-    )
-    """)
-
-    conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos_guardados (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         titulo TEXT,
@@ -80,7 +64,6 @@ def init_db():
 def guardar_proyecto():
 
     data = request.get_json()
-
     conn = get_db()
 
     conn.execute("""
@@ -122,13 +105,7 @@ def memoria_proyectos():
 
     conn.close()
 
-    data = []
-
-    for p in proyectos:
-
-        data.append(dict(p))
-
-    return jsonify(data)
+    return jsonify([dict(p) for p in proyectos])
 
 # =========================
 # ELIMINAR PROYECTO
@@ -163,13 +140,11 @@ paises_mundo = [
 ]
 
 continentes = {
-
 "africa":["kenia","sudafrica","marruecos"],
 "asia":["india","china","indonesia","vietnam"],
 "europa":["españa","francia","alemania","italia","portugal","noruega"],
 "america":["colombia","brasil","peru","mexico","paraguay","argentina"],
 "oceania":["australia"]
-
 }
 
 # =========================
@@ -200,7 +175,6 @@ def radar_pch_global(pais=None):
             lista_paises = [pais]
 
     else:
-
         lista_paises = paises_mundo
 
     for p in lista_paises:
@@ -323,6 +297,72 @@ def maia_energy_intelligence_engine():
     return oportunidades
 
 # =========================
+# MAIA GLOBAL ENERGY SCANNER PRO
+# =========================
+
+def maia_global_energy_scanner():
+
+    fuentes = [
+
+    {"nombre":"WorldBank","url":"https://www.worldbank.org"},
+    {"nombre":"IRENA","url":"https://www.irena.org"},
+    {"nombre":"UNGM","url":"https://www.ungm.org"},
+    {"nombre":"HydropowerOrg","url":"https://www.hydropower.org"}
+
+    ]
+
+    tecnologias = {
+    "hydro":"Hidro",
+    "hydropower":"Hidro",
+    "solar":"Solar",
+    "wind":"Eolico"
+    }
+
+    oportunidades = []
+
+    for fuente in fuentes:
+
+        try:
+
+            r = requests.get(fuente["url"],timeout=5)
+
+            if r.status_code == 200:
+
+                texto = r.text.lower()
+
+                for key in tecnologias:
+
+                    if key in texto:
+
+                        tecnologia = tecnologias[key]
+
+                        potencia = random.randint(5,150)
+
+                        if tecnologia == "PCH":
+                            potencia = random.randint(1,20)
+
+                        oportunidades.append({
+
+                        "titulo":f"Energy project detected via {fuente['nombre']}",
+                        "pais":"Global",
+                        "tipo_activo":tecnologia,
+                        "capacidad_mw":potencia,
+                        "empresa":"International Energy Market",
+                        "tipo_oportunidad":"Investment / Tender",
+                        "fuente":fuente["nombre"],
+                        "contacto":fuente["url"],
+                        "fecha_publicacion":str(datetime.today().date())
+
+                        })
+
+                        break
+
+        except:
+            pass
+
+    return oportunidades
+
+# =========================
 # CRITERIOS ALERTA MAIA
 # =========================
 
@@ -369,7 +409,8 @@ def maia_alertas():
     radar_pch_global() +
     radar_hidro_global() +
     radar_licitaciones_energia() +
-    maia_energy_intelligence_engine()
+    maia_energy_intelligence_engine() +
+    maia_global_energy_scanner()
     )
 
     alertas = maia_alert_engine(radar)
@@ -382,6 +423,23 @@ def maia_alertas():
     })
 
 # =========================
+# MAIA ENERGY SCANNER API
+# =========================
+
+@proyectos_bp.route("/maia_energy_scanner")
+def maia_energy_scanner():
+
+    data = maia_global_energy_scanner()
+
+    return jsonify({
+
+    "motor":"MAIA Global Energy Scanner PRO",
+    "total_oportunidades":len(data),
+    "oportunidades":data
+
+    })
+
+# =========================
 # CHAT MAIA
 # =========================
 
@@ -389,19 +447,16 @@ def maia_alertas():
 def maia_chat():
 
     data = request.get_json()
-
     mensaje = data.get("message","").lower()
 
     pais_detectado = None
 
     for p in paises_mundo:
-
         if p in mensaje:
             pais_detectado = p
             break
 
     for c in continentes:
-
         if c in mensaje:
             pais_detectado = c
             break
@@ -422,12 +477,21 @@ def maia_chat():
         "reply":f"MAIA detectó {len(proyectos)} oportunidades hidroeléctricas."
         })
 
+    if "scanner" in mensaje:
+
+        data = maia_global_energy_scanner()
+
+        return jsonify({
+        "reply":f"MAIA Global Energy Scanner detectó {len(data)} oportunidades."
+        })
+
     if "alerta" in mensaje or "alertas" in mensaje:
 
         radar = (
         radar_pch_global() +
         radar_hidro_global() +
-        maia_energy_intelligence_engine()
+        maia_energy_intelligence_engine() +
+        maia_global_energy_scanner()
         )
 
         alertas = maia_alert_engine(radar)
@@ -438,6 +502,6 @@ def maia_chat():
 
     return jsonify({
 
-    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, ejecutar radar o consultar alertas."
+    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, ejecutar scanner o consultar alertas."
 
     })

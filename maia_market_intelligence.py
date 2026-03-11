@@ -2,9 +2,11 @@ import requests
 import datetime
 import urllib.parse
 
+
 # =========================
 # PAISES OBJETIVO
 # =========================
+
 PAISES = [
     "colombia",
     "ecuador",
@@ -14,10 +16,13 @@ PAISES = [
     "venezuela"
 ]
 
+
 # =========================
 # PALABRAS CLAVE
 # =========================
+
 KEYWORDS = [
+
     "hydropower project for sale",
     "small hydro project investment",
     "hydropower plant seeking investors",
@@ -26,16 +31,20 @@ KEYWORDS = [
     "energy infrastructure investment",
     "smr nuclear project investment",
     "small modular reactor project"
+
 ]
+
 
 # =========================
 # GLOBAL ENERGY SCANNER
 # =========================
+
 def buscar_oportunidades():
 
     oportunidades = []
 
     for pais in PAISES:
+
         for keyword in KEYWORDS:
 
             query = f"{keyword} {pais}"
@@ -47,11 +56,11 @@ def buscar_oportunidades():
                 url = f"https://api.duckduckgo.com/?q={query_encoded}&format=json&no_redirect=1&no_html=1"
 
                 r = requests.get(url, timeout=5)
+
                 data = r.json()
 
                 texto = query.lower()
 
-                # CLASIFICACION
                 tipo_activo = "energia"
                 fase = "desarrollo"
                 potencia = "1+ MW"
@@ -70,6 +79,7 @@ def buscar_oportunidades():
                     tipo_oportunidad = "buscando_inversion"
 
                 oportunidades.append({
+
                     "titulo": query,
                     "pais": pais,
                     "tipo_activo": tipo_activo,
@@ -79,9 +89,11 @@ def buscar_oportunidades():
                     "empresa": "fuente web",
                     "contacto": f"https://duckduckgo.com/?q={query_encoded}",
                     "fecha": str(datetime.date.today())
+
                 })
 
             except Exception:
+
                 continue
 
     return oportunidades
@@ -90,6 +102,7 @@ def buscar_oportunidades():
 # =========================
 # MAIA DEAL INTELLIGENCE
 # =========================
+
 def detectar_activos_tempranos():
 
     oportunidades = buscar_oportunidades()
@@ -105,25 +118,31 @@ def detectar_activos_tempranos():
         tipo_activo = o["tipo_activo"]
 
         if any(x in texto for x in ["sale", "for sale", "venta"]):
+
             prioridad = "alta"
             tipo_negocio = "adquisicion_proyecto"
 
         if any(x in texto for x in ["investment", "investor", "capital"]):
+
             prioridad = "media"
             tipo_negocio = "entrada_inversionista"
 
         if "partner" in texto:
+
             prioridad = "media"
             tipo_negocio = "busqueda_socio"
 
         if "smr" in texto or "nuclear" in texto:
+
             prioridad = "estrategica"
             tipo_negocio = "infraestructura_estrategica"
 
         if prioridad != "normal":
+
             o["prioridad"] = prioridad
             o["tipo_negocio"] = tipo_negocio
             o["tipo_activo"] = tipo_activo
+
             deals.append(o)
 
     return deals
@@ -132,6 +151,7 @@ def detectar_activos_tempranos():
 # =========================
 # MAIA GLOBAL DEAL RADAR
 # =========================
+
 def radar_global_deals():
 
     deals = detectar_activos_tempranos()
@@ -179,6 +199,7 @@ def radar_global_deals():
 # =========================
 # MAIA ENERGY DATA ENRICHMENT
 # =========================
+
 def enriquecer_datos_energia():
 
     radar = radar_global_deals()

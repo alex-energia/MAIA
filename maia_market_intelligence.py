@@ -59,10 +59,7 @@ def buscar_oportunidades():
 
                 texto = query.lower()
 
-                # -------------------------
-                # CLASIFICACION ACTIVO
-                # -------------------------
-
+                # CLASIFICACION
                 tipo_activo = "energia"
                 fase = "desarrollo"
                 potencia = "1+ MW"
@@ -119,33 +116,21 @@ def detectar_activos_tempranos():
         tipo_negocio = "exploracion"
         tipo_activo = o["tipo_activo"]
 
-        # -------------------------
-        # CLASIFICACION NEGOCIO
-        # -------------------------
-
         if any(x in texto for x in ["sale", "for sale", "venta"]):
-
             prioridad = "alta"
             tipo_negocio = "adquisicion_proyecto"
 
         if any(x in texto for x in ["investment", "investor", "capital"]):
-
             prioridad = "media"
             tipo_negocio = "entrada_inversionista"
 
         if "partner" in texto:
-
             prioridad = "media"
             tipo_negocio = "busqueda_socio"
 
         if "smr" in texto or "nuclear" in texto:
-
             prioridad = "estrategica"
             tipo_negocio = "infraestructura_estrategica"
-
-        # -------------------------
-        # FILTRO FINAL
-        # -------------------------
 
         if prioridad != "normal":
 
@@ -156,3 +141,51 @@ def detectar_activos_tempranos():
             deals.append(o)
 
     return deals
+
+
+# =========================
+# MAIA GLOBAL DEAL RADAR
+# =========================
+
+def radar_global_deals():
+
+    deals = detectar_activos_tempranos()
+
+    radar = []
+
+    for d in deals:
+
+        score = 0
+        region = "LATAM"
+
+        texto = d["titulo"].lower()
+
+        if d["prioridad"] == "alta":
+            score += 40
+
+        if d["prioridad"] == "media":
+            score += 25
+
+        if d["prioridad"] == "estrategica":
+            score += 60
+
+        if "hydro" in texto:
+            score += 20
+
+        if "smr" in texto or "nuclear" in texto:
+            score += 50
+
+        if "investment" in texto or "investor" in texto:
+            score += 15
+
+        if "sale" in texto:
+            score += 30
+
+        d["region"] = region
+        d["score_oportunidad"] = score
+
+        radar.append(d)
+
+    radar = sorted(radar, key=lambda x: x["score_oportunidad"], reverse=True)
+
+    return radar

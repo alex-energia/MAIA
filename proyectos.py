@@ -193,12 +193,7 @@ continentes = {
 
 def radar_pch_global(pais=None):
 
-    fases = [
-    "Prefactibilidad",
-    "Permisos",
-    "Construcción",
-    "Operación"
-    ]
+    fases = ["Prefactibilidad","Permisos","Construcción","Operación"]
 
     empresas = [
     "Brookfield Renewable",
@@ -220,7 +215,6 @@ def radar_pch_global(pais=None):
             lista_paises = [pais]
 
     else:
-
         lista_paises = paises_mundo
 
     for p in lista_paises:
@@ -251,11 +245,9 @@ def radar_pch_global(pais=None):
 def radar_licitaciones_energia():
 
     fuentes = [
-
     "https://www.worldbank.org",
     "https://www.irena.org",
     "https://www.ungm.org"
-
     ]
 
     resultados = []
@@ -312,6 +304,69 @@ def radar_hidro_global():
         })
 
     return resultados
+
+# =========================
+# MAIA ENERGY INTELLIGENCE ENGINE
+# =========================
+
+def maia_energy_intelligence_engine():
+
+    tecnologias = ["Hidro","PCH","Solar","Eolico","Baterias"]
+
+    tipos_negocio = [
+    "Venta de activo",
+    "Busqueda inversionistas",
+    "Joint Venture",
+    "Licitacion internacional"
+    ]
+
+    oportunidades = []
+
+    for i in range(10):
+
+        tecnologia = random.choice(tecnologias)
+
+        potencia = random.randint(5,200)
+
+        if tecnologia == "PCH":
+            potencia = random.randint(1,20)
+
+        prioridad = random.choice(["Alta","Alta","Media"])
+
+        oportunidades.append({
+
+        "titulo":f"Proyecto {tecnologia} {potencia} MW",
+        "pais":"Global",
+        "tipo_activo":tecnologia,
+        "capacidad_mw":potencia,
+        "empresa":"Energy Market",
+        "tipo_oportunidad":random.choice(tipos_negocio),
+        "prioridad_inversion":prioridad,
+        "fuente":"MAIA Intelligence Engine",
+        "contacto":"https://energy-market.com",
+        "fecha_publicacion":str(datetime.today().date())
+
+        })
+
+    return oportunidades
+
+# =========================
+# RUTA MOTOR INTELIGENCIA
+# =========================
+
+@proyectos_bp.route("/maia_energy_intelligence")
+
+def maia_energy_intelligence():
+
+    data = maia_energy_intelligence_engine()
+
+    return jsonify({
+
+    "motor":"MAIA Global Energy Intelligence Engine",
+    "total_oportunidades":len(data),
+    "oportunidades":data
+
+    })
 
 # =========================
 # MAIA ENERGY RADAR
@@ -388,6 +443,16 @@ def maia_chat():
 
         })
 
+    if "inteligencia" in mensaje:
+
+        data = maia_energy_intelligence_engine()
+
+        return jsonify({
+
+        "reply":f"MAIA ejecutó el Energy Intelligence Engine y detectó {len(data)} oportunidades energéticas globales."
+
+        })
+
     if "radar" in mensaje:
 
         data = radar_hidro_global() + radar_licitaciones_energia()
@@ -400,6 +465,6 @@ def maia_chat():
 
     return jsonify({
 
-    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, buscar licitaciones energia o ejecutar radar global."
+    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, buscar licitaciones energia o ejecutar inteligencia energetica."
 
     })

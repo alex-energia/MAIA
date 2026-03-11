@@ -3,6 +3,7 @@ import numpy as np
 import numpy_financial as npf
 import sqlite3
 import os
+import datetime
 import pdfplumber
 import pandas as pd
 from docx import Document
@@ -19,7 +20,6 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
@@ -31,16 +31,16 @@ def get_db():
 
 
 # =========================
-# CREAR TABLA
+# CREAR TABLAS
 # =========================
 
 def init_db():
 
     conn = get_db()
 
+    # TABLA PROYECTOS FINANCIEROS
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
-
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT,
         capex_inicial REAL,
@@ -48,12 +48,125 @@ def init_db():
         ingresos_anuales REAL,
         vida_util INTEGER,
         tasa_descuento REAL
+    )
+    """)
 
+    # =========================
+    # MEMORIA PROYECTOS MAIA
+    # =========================
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS proyectos_guardados (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT,
+        pais TEXT,
+        tipo_activo TEXT,
+        capacidad_mw TEXT,
+        fase TEXT,
+        empresa TEXT,
+        tipo_oportunidad TEXT,
+        fuente TEXT,
+        contacto TEXT,
+        fecha_publicacion TEXT,
+        fecha_guardado TEXT
     )
     """)
 
     conn.commit()
     conn.close()
+
+
+# =========================
+# GUARDAR PROYECTO MAIA
+# =========================
+
+@proyectos_bp.route("/guardar_proyecto", methods=["POST"])
+def guardar_proyecto():
+
+    data = request.get_json()
+
+    conn = get_db()
+
+    conn.execute("""
+        INSERT INTO proyectos_guardados
+        (titulo,pais,tipo_activo,capacidad_mw,fase,empresa,
+        tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+    """,(
+        data.get("titulo"),
+        data.get("pais"),
+        data.get("tipo_activo"),
+        data.get("capacidad_mw"),
+        data.get("fase"),
+        data.get("empresa"),
+        data.get("tipo_oportunidad"),
+        data.get("fuente"),
+        data.get("contacto"),
+        data.get("fecha_publicacion"),
+        str(datetime.date.today())
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status":"proyecto_guardado"})
+
+
+# =========================
+# VER MEMORIA DE PROYECTOS
+# =========================
+
+@proyectos_bp.route("/memoria_proyectos")
+def memoria_proyectos():
+
+    conn = get_db()
+
+    proyectos = conn.execute(
+        "SELECT * FROM proyectos_guardados ORDER BY fecha_guardado DESC"
+    ).fetchall()
+
+    conn.close()
+
+    data = []
+
+    for p in proyectos:
+
+        data.append({
+            "id":p["id"],
+            "titulo":p["titulo"],
+            "pais":p["pais"],
+            "tipo_activo":p["tipo_activo"],
+            "capacidad_mw":p["capacidad_mw"],
+            "fase":p["fase"],
+            "empresa":p["empresa"],
+            "tipo_oportunidad":p["tipo_oportunidad"],
+            "fuente":p["fuente"],
+            "contacto":p["contacto"],
+            "fecha_publicacion":p["fecha_publicacion"],
+            "fecha_guardado":p["fecha_guardado"]
+        })
+
+    return jsonify(data)
+
+
+# =========================
+# ELIMINAR PROYECTO
+# =========================
+
+@proyectos_bp.route("/eliminar_proyecto/<int:proyecto_id>", methods=["DELETE"])
+def eliminar_proyecto(proyecto_id):
+
+    conn = get_db()
+
+    conn.execute(
+        "DELETE FROM proyectos_guardados WHERE id=?",
+        (proyecto_id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"status":"eliminado"})
 
 
 # =========================
@@ -63,13 +176,11 @@ def init_db():
 def desglose_capex(capex):
 
     return [
-
         {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
         {"actividad":"Equipos","valor":round(capex*0.40,2)},
         {"actividad":"Construcción","valor":round(capex*0.25,2)},
         {"actividad":"Permisos","valor":round(capex*0.10,2)},
         {"actividad":"Contingencia","valor":round(capex*0.10,2)}
-
     ]
 
 
@@ -80,13 +191,11 @@ def desglose_capex(capex):
 def desglose_opex(opex):
 
     return [
-
         {"actividad":"Operación","valor":round(opex*0.35,2)},
         {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
         {"actividad":"Administración","valor":round(opex*0.15,2)},
         {"actividad":"Logística","valor":round(opex*0.15,2)},
         {"actividad":"Regulación","valor":round(opex*0.10,2)}
-
     ]
 
 
@@ -104,7 +213,9 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
     eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
 
     van = 0
+
     for i in range(1, vida+1):
+
         van += flujo_operativo / ((1+tasa)**i)
 
     van -= capex
@@ -129,15 +240,21 @@ def generar_valor(capex, ingresos, opex, vida, tasa):
 def calcular_indicadores(capex, ingresos, opex, vida, tasa):
 
     flujo = ingresos - opex
+
     flujos = [-capex] + [flujo]*vida
 
     van = 0
+
     for i,f in enumerate(flujos):
+
         van += f / ((1+tasa)**i)
 
     try:
+
         tir = npf.irr(flujos)
+
     except:
+
         tir = None
 
     ebit = ingresos - opex
@@ -160,6 +277,7 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
     wacc = (deuda*costo_deuda*(1-tasa_impuesto)) + (capital*costo_capital)
 
     servicio_deuda = capex*0.4/vida if vida else 0
+
     dscr = flujo/servicio_deuda if servicio_deuda else None
 
     simulaciones = 1000
@@ -175,7 +293,9 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
         flujos_sim = [-capex] + [flujo_sim]*vida
 
         van_sim = 0
+
         for j,f in enumerate(flujos_sim):
+
             van_sim += f/((1+tasa)**j)
 
         resultados_van.append(van_sim)
@@ -199,236 +319,3 @@ def calcular_indicadores(capex, ingresos, opex, vida, tasa):
     }
 
     return indicadores
-
-
-# =========================
-# ESCENARIOS APALANCAMIENTO
-# =========================
-
-def escenarios_apalancamiento(capex):
-
-    costo_deuda = 0.10
-    costo_capital = 0.15
-    impuesto = 0.30
-
-    escenarios = {
-
-        "0% deuda":{
-            "deuda":0,
-            "capital":capex,
-            "wacc":costo_capital
-        },
-
-        "40% deuda":{
-            "deuda":capex*0.4,
-            "capital":capex*0.6,
-            "wacc":(0.4*costo_deuda*(1-impuesto))+(0.6*costo_capital)
-        },
-
-        "70% deuda":{
-            "deuda":capex*0.7,
-            "capital":capex*0.3,
-            "wacc":(0.7*costo_deuda*(1-impuesto))+(0.3*costo_capital)
-        }
-
-    }
-
-    return escenarios
-
-
-# =========================
-# LISTA PROYECTOS
-# =========================
-
-@proyectos_bp.route("/proyectos")
-def lista_proyectos():
-
-    conn = get_db()
-    proyectos = conn.execute("SELECT * FROM proyectos").fetchall()
-    conn.close()
-
-    return render_template(
-        "proyectos.html",
-        proyectos=proyectos
-    )
-
-
-# =========================
-# CREAR PROYECTO
-# =========================
-
-@proyectos_bp.route("/proyectos/nuevo", methods=["GET","POST"])
-def nuevo_proyecto():
-
-    if request.method == "POST":
-
-        nombre = request.form["nombre"]
-        sector = request.form["sector"]
-        horizonte = int(request.form["horizonte"])
-        capacidad = float(request.form["capacidad"])
-
-        if sector == "Solar":
-            capex = capacidad*900000
-            opex = capex*0.02
-            ingresos = capacidad*160000
-
-        elif sector == "Hidro":
-            capex = capacidad*2500000
-            opex = capex*0.03
-            ingresos = capacidad*220000
-
-        elif sector == "Eolico":
-            capex = capacidad*1400000
-            opex = capex*0.025
-            ingresos = capacidad*180000
-
-        else:
-            capex = capacidad*500000
-            opex = capex*0.05
-            ingresos = capacidad*100000
-
-        vida = horizonte
-        tasa = 0.10
-
-        conn = get_db()
-
-        conn.execute("""
-        INSERT INTO proyectos
-        (nombre,capex_inicial,opex_anual,ingresos_anuales,vida_util,tasa_descuento)
-        VALUES (?,?,?,?,?,?)
-        """,(nombre,capex,opex,ingresos,vida,tasa))
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/proyectos")
-
-    return render_template("proyectos_form.html")
-
-
-# =========================
-# DASHBOARD PROYECTO
-# =========================
-
-@proyectos_bp.route("/proyectos/<int:proyecto_id>")
-def dashboard_proyecto(proyecto_id):
-
-    conn = get_db()
-
-    proyecto = conn.execute(
-        "SELECT * FROM proyectos WHERE id=?",
-        (proyecto_id,)
-    ).fetchone()
-
-    conn.close()
-
-    if not proyecto:
-        return "Proyecto no encontrado"
-
-    capex = proyecto["capex_inicial"]
-    opex = proyecto["opex_anual"]
-    ingresos = proyecto["ingresos_anuales"]
-    vida = proyecto["vida_util"]
-    tasa = proyecto["tasa_descuento"]
-
-    flujo_anual = ingresos - opex
-
-    flujos = [-capex] + [flujo_anual]*vida
-
-    van = 0
-    for i,f in enumerate(flujos):
-        van += f/((1+tasa)**i)
-
-    acumulado = 0
-    payback = None
-
-    for i,f in enumerate(flujos):
-        acumulado += f
-        if acumulado > 0:
-            payback = i
-            break
-
-    if van > 0:
-        evaluacion = "Proyecto rentable"
-        recomendacion = "Invertir"
-    else:
-        evaluacion = "Proyecto no rentable"
-        recomendacion = "No invertir"
-
-    capex_detallado = desglose_capex(capex)
-    opex_detallado = desglose_opex(opex)
-
-    valor_generado = generar_valor(capex,ingresos,opex,vida,tasa)
-
-    indicadores_financieros = calcular_indicadores(capex,ingresos,opex,vida,tasa)
-
-    escenarios = escenarios_apalancamiento(capex)
-
-    # =========================
-    # SEMAFORO MAIA
-    # =========================
-
-    tir = indicadores_financieros.get("TIR %",0)
-    dscr = indicadores_financieros.get("DSCR",0)
-    prob = indicadores_financieros.get("Probabilidad Rentabilidad %",0)
-
-    score = 0
-
-    if tir and tir > 18:
-        score += 25
-    elif tir and tir > 12:
-        score += 15
-
-    if van > 0:
-        score += 20
-
-    if dscr and dscr > 1.5:
-        score += 20
-    elif dscr and dscr > 1.2:
-        score += 10
-
-    if payback and payback < vida/2:
-        score += 15
-
-    if prob and prob > 70:
-        score += 20
-    elif prob and prob > 55:
-        score += 10
-
-    if score >= 70:
-        semaforo = "verde"
-        decision = "Proyecto altamente atractivo"
-        color_semaforo = "#16a34a"
-
-    elif score >= 40:
-        semaforo = "amarillo"
-        decision = "Proyecto viable con riesgos"
-        color_semaforo = "#eab308"
-
-    else:
-        semaforo = "rojo"
-        decision = "Proyecto no recomendable"
-        color_semaforo = "#dc2626"
-
-    return render_template(
-
-        "proyecto_dashboard.html",
-
-        proyecto=proyecto,
-        flujo_anual=round(flujo_anual,2),
-        van=round(van,2),
-        payback=payback,
-        evaluacion=evaluacion,
-        recomendacion=recomendacion,
-        valor_generado=valor_generado,
-        capex_detallado=capex_detallado,
-        opex_detallado=opex_detallado,
-        indicadores_financieros=indicadores_financieros,
-        escenarios_apalancamiento=escenarios,
-
-        score_maia=score,
-        semaforo=semaforo,
-        decision_maia=decision,
-        color_semaforo=color_semaforo
-
-    )

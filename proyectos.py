@@ -9,7 +9,7 @@ import pandas as pd
 from docx import Document
 import random
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 # =========================
 # BLUEPRINT
@@ -18,7 +18,6 @@ from datetime import datetime, timedelta
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
-
 UPLOAD_FOLDER = "uploads"
 
 if not os.path.exists(UPLOAD_FOLDER):
@@ -90,6 +89,7 @@ def guardar_proyecto():
         tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
         VALUES (?,?,?,?,?,?,?,?,?,?,?)
     """,(
+
         data.get("titulo"),
         data.get("pais"),
         data.get("tipo_activo"),
@@ -101,6 +101,7 @@ def guardar_proyecto():
         data.get("contacto"),
         data.get("fecha_publicacion"),
         str(datetime.today().date())
+
     ))
 
     conn.commit()
@@ -168,31 +169,21 @@ def eliminar_proyecto(proyecto_id):
 # =========================
 
 paises_mundo = [
-
 "paraguay","colombia","brasil","peru","bolivia","chile","argentina",
 "mexico","panama","costa rica","ecuador","venezuela",
-
-"españa","francia","alemania","italia","portugal","noruega","suecia",
-
-"india","china","indonesia","vietnam","tailandia","filipinas",
-
-"kenia","sudafrica","marruecos","etiopia","ghana",
-
-"canada","estados unidos","australia","nueva zelanda"
-
+"españa","francia","alemania","italia","portugal","noruega",
+"india","china","indonesia","vietnam",
+"kenia","sudafrica","marruecos",
+"canada","estados unidos","australia"
 ]
 
 continentes = {
 
-"africa":["kenia","sudafrica","marruecos","etiopia","ghana"],
-
-"asia":["india","china","indonesia","vietnam","filipinas"],
-
+"africa":["kenia","sudafrica","marruecos"],
+"asia":["india","china","indonesia","vietnam"],
 "europa":["españa","francia","alemania","italia","portugal","noruega"],
-
 "america":["colombia","brasil","peru","mexico","paraguay","argentina"],
-
-"oceania":["australia","nueva zelanda"]
+"oceania":["australia"]
 
 }
 
@@ -214,7 +205,6 @@ def radar_pch_global(pais=None):
     "Statkraft",
     "Enel Green Power",
     "Acciona Energia",
-    "China Three Gorges",
     "EDF Renewables"
     ]
 
@@ -225,11 +215,8 @@ def radar_pch_global(pais=None):
         pais = pais.lower()
 
         if pais in continentes:
-
             lista_paises = continentes[pais]
-
         else:
-
             lista_paises = [pais]
 
     else:
@@ -238,158 +225,117 @@ def radar_pch_global(pais=None):
 
     for p in lista_paises:
 
-        for i in range(2):
+        potencia = random.randint(1,25)
 
-            potencia = random.randint(1,25)
+        resultados.append({
 
-            resultados.append({
+        "titulo":f"Proyecto PCH {potencia} MW",
+        "pais":p.title(),
+        "tipo_activo":"PCH",
+        "capacidad_mw":potencia,
+        "fase":random.choice(fases),
+        "empresa":random.choice(empresas),
+        "tipo_oportunidad":"Busqueda inversionistas",
+        "fuente":"MAIA Global Intelligence",
+        "contacto":"https://energy-investment-contact.com",
+        "fecha_publicacion":str(datetime.today().date())
 
-            "titulo": f"Proyecto PCH {potencia} MW",
-
-            "pais": p.title(),
-
-            "tipo_activo":"PCH",
-
-            "capacidad_mw":potencia,
-
-            "fase":random.choice(fases),
-
-            "empresa":random.choice(empresas),
-
-            "tipo_oportunidad":"Busqueda inversionistas",
-
-            "fuente":"MAIA Global Intelligence",
-
-            "contacto":"energy-investment-contact.com",
-
-            "fecha_publicacion":str(datetime.today().date())
-
-            })
+        })
 
     return resultados
 
 # =========================
-# SCANNER REAL MERCADO
+# RADAR LICITACIONES ENERGIA
 # =========================
 
-def detectar_tecnologia(texto):
+def radar_licitaciones_energia():
 
-    texto = texto.lower()
+    fuentes = [
 
-    if "hydro" in texto:
-        return "Hidro"
+    "https://www.worldbank.org",
+    "https://www.irena.org",
+    "https://www.ungm.org"
 
-    if "solar" in texto:
-        return "Solar"
+    ]
 
-    if "wind" in texto:
-        return "Eolico"
+    resultados = []
 
-    if "smr" in texto:
-        return "SMR"
+    for f in fuentes:
 
-    return "Energia"
+        resultados.append({
 
-def detectar_tipo_negocio(texto):
+        "titulo":"Energy infrastructure tender",
+        "pais":"Global",
+        "tipo_activo":"Energia",
+        "empresa":"Organismo internacional",
+        "tipo_oportunidad":"Licitacion internacional",
+        "fuente":f,
+        "contacto":f,
+        "fecha_publicacion":str(datetime.today().date())
 
-    texto = texto.lower()
+        })
 
-    if "sale" in texto:
-        return "Venta"
+    return resultados
 
-    if "investment" in texto:
-        return "Busqueda inversionistas"
+# =========================
+# GLOBAL HYDRO RADAR
+# =========================
 
-    if "joint venture" in texto:
-        return "Joint Venture"
-
-    return "Oportunidad energia"
-
-def scanner_inteligencia_real():
+def radar_hidro_global():
 
     queries = [
 
     "hydropower project for sale",
     "small hydro project investment",
-    "solar farm investment opportunity",
-    "wind farm seeking investors",
-    "renewable energy project joint venture",
-    "SMR nuclear project investment"
+    "run of river hydropower project",
+    "hydropower plant investors",
+    "small hydro concession"
 
     ]
 
-    oportunidades = []
+    resultados = []
 
     for q in queries:
 
-        oportunidad = {
+        resultados.append({
 
-        "titulo": q,
-
-        "pais": "Global",
-
-        "tipo_activo": detectar_tecnologia(q),
-
-        "potencia_mw": "N/D",
-
-        "empresa": "Mercado energético",
-
-        "tipo_oportunidad": detectar_tipo_negocio(q),
-
-        "contacto": f"https://duckduckgo.com/?q={q}",
-
-        "fecha_publicacion": str(datetime.today().date())
-
-        }
-
-        oportunidades.append(oportunidad)
-
-    return oportunidades
-
-# =========================
-# BUSCAR OPORTUNIDADES
-# =========================
-
-@proyectos_bp.route("/maia_oportunidades")
-
-def maia_oportunidades():
-
-    oportunidades = scanner_inteligencia_real()
-
-    if not oportunidades:
-        oportunidades = radar_pch_global()
-
-    return jsonify({"oportunidades": oportunidades})
-
-# =========================
-# DEAL FINDER
-# =========================
-
-@proyectos_bp.route("/maia_deal_finder")
-
-def maia_deal_finder():
-
-    oportunidades = scanner_inteligencia_real()
-
-    deals = []
-
-    for o in oportunidades:
-
-        deals.append({
-
-        "titulo": o["titulo"],
-        "pais": o["pais"],
-        "tipo_activo": o["tipo_activo"],
-        "empresa": o["empresa"],
-        "contacto": o["contacto"],
-        "prioridad": "Alta"
+        "titulo":q,
+        "pais":"Global",
+        "tipo_activo":"Hidro",
+        "capacidad_mw":"1+",
+        "empresa":"Energy Market",
+        "tipo_oportunidad":"Busqueda inversionistas",
+        "fuente":"DuckDuckGo Energy Search",
+        "contacto":f"https://duckduckgo.com/?q={q}",
+        "fecha_publicacion":str(datetime.today().date())
 
         })
 
-    return jsonify({"deals": deals})
+    return resultados
 
 # =========================
-# CHAT MAIA INTELIGENTE
+# MAIA ENERGY RADAR
+# =========================
+
+@proyectos_bp.route("/maia_energy_radar")
+
+def maia_energy_radar():
+
+    licitaciones = radar_licitaciones_energia()
+
+    hidro = radar_hidro_global()
+
+    oportunidades = licitaciones + hidro
+
+    return jsonify({
+
+    "total_oportunidades":len(oportunidades),
+    "oportunidades":oportunidades
+
+    })
+
+# =========================
+# CHAT MAIA
 # =========================
 
 @proyectos_bp.route("/maia_chat", methods=["POST"])
@@ -418,32 +364,42 @@ def maia_chat():
 
         return jsonify({
 
-        "reply": f"MAIA detectó {len(proyectos)} proyectos PCH en {pais_detectado if pais_detectado else 'el radar global'}."
+        "reply":f"MAIA detectó {len(proyectos)} proyectos PCH en {pais_detectado if pais_detectado else 'el radar global'}."
 
         })
 
     if "hidro" in mensaje:
 
-        proyectos = radar_pch_global(pais_detectado)
+        proyectos = radar_hidro_global()
 
         return jsonify({
 
-        "reply": f"MAIA encontró {len(proyectos)} oportunidades hidroeléctricas en {pais_detectado if pais_detectado else 'el radar global'}."
+        "reply":f"MAIA detectó {len(proyectos)} oportunidades hidroeléctricas globales."
 
         })
 
-    if "barrido" in mensaje:
+    if "licitacion" in mensaje:
 
-        proyectos = radar_pch_global()
+        data = radar_licitaciones_energia()
 
         return jsonify({
 
-        "reply": f"MAIA ejecutó el radar global y detectó {len(proyectos)} proyectos hidroeléctricos potenciales."
+        "reply":f"MAIA detectó {len(data)} licitaciones energéticas internacionales."
+
+        })
+
+    if "radar" in mensaje:
+
+        data = radar_hidro_global() + radar_licitaciones_energia()
+
+        return jsonify({
+
+        "reply":f"MAIA ejecutó el radar global y detectó {len(data)} oportunidades energéticas."
 
         })
 
     return jsonify({
 
-    "reply":"Puedes pedirme por ejemplo: buscar proyecto pch en paraguay, buscar hidro en brasil o buscar pch en africa."
+    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, buscar licitaciones energia o ejecutar radar global."
 
     })

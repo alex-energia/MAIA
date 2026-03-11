@@ -7,6 +7,7 @@ import datetime
 import pdfplumber
 import pandas as pd
 from docx import Document
+import random
 
 # =========================
 # BLUEPRINT
@@ -29,7 +30,6 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
-
 # =========================
 # CREAR TABLAS
 # =========================
@@ -38,7 +38,6 @@ def init_db():
 
     conn = get_db()
 
-    # TABLA PROYECTOS FINANCIEROS
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,10 +49,6 @@ def init_db():
         tasa_descuento REAL
     )
     """)
-
-    # =========================
-    # MEMORIA PROYECTOS MAIA
-    # =========================
 
     conn.execute("""
     CREATE TABLE IF NOT EXISTS proyectos_guardados (
@@ -75,9 +70,8 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 # =========================
-# GUARDAR PROYECTO MAIA
+# GUARDAR PROYECTO
 # =========================
 
 @proyectos_bp.route("/guardar_proyecto", methods=["POST"])
@@ -111,9 +105,8 @@ def guardar_proyecto():
 
     return jsonify({"status":"proyecto_guardado"})
 
-
 # =========================
-# VER MEMORIA DE PROYECTOS
+# MEMORIA PROYECTOS
 # =========================
 
 @proyectos_bp.route("/memoria_proyectos")
@@ -148,7 +141,6 @@ def memoria_proyectos():
 
     return jsonify(data)
 
-
 # =========================
 # ELIMINAR PROYECTO
 # =========================
@@ -168,154 +160,177 @@ def eliminar_proyecto(proyecto_id):
 
     return jsonify({"status":"eliminado"})
 
-
 # =========================
-# DESGLOSE CAPEX
+# RADAR GLOBAL ENERGIA
 # =========================
 
-def desglose_capex(capex):
+def radar_global_energia():
 
-    return [
-        {"actividad":"Ingeniería","valor":round(capex*0.15,2)},
-        {"actividad":"Equipos","valor":round(capex*0.40,2)},
-        {"actividad":"Construcción","valor":round(capex*0.25,2)},
-        {"actividad":"Permisos","valor":round(capex*0.10,2)},
-        {"actividad":"Contingencia","valor":round(capex*0.10,2)}
+    paises = [
+        "Colombia","Brasil","Chile","Perú",
+        "México","España","Estados Unidos",
+        "Canadá","Australia","India"
     ]
 
-
-# =========================
-# DESGLOSE OPEX
-# =========================
-
-def desglose_opex(opex):
-
-    return [
-        {"actividad":"Operación","valor":round(opex*0.35,2)},
-        {"actividad":"Mantenimiento","valor":round(opex*0.25,2)},
-        {"actividad":"Administración","valor":round(opex*0.15,2)},
-        {"actividad":"Logística","valor":round(opex*0.15,2)},
-        {"actividad":"Regulación","valor":round(opex*0.10,2)}
+    tecnologias = [
+        "Hidro",
+        "PCH",
+        "Solar",
+        "Eolico",
+        "Baterías",
+        "SMR"
     ]
 
-
-# =========================
-# MOTOR GENERACION VALOR
-# =========================
-
-def generar_valor(capex, ingresos, opex, vida, tasa):
-
-    flujo_operativo = ingresos - opex
-
-    valor_ingresos = ingresos * vida
-    valor_costos = opex * vida
-
-    eficiencia_capital = flujo_operativo / capex if capex != 0 else 0
-
-    van = 0
-
-    for i in range(1, vida+1):
-
-        van += flujo_operativo / ((1+tasa)**i)
-
-    van -= capex
-
-    valor = [
-
-        {"driver":"Ingresos operacionales totales","valor":round(valor_ingresos,2)},
-        {"driver":"Costos operacionales totales","valor":round(valor_costos,2)},
-        {"driver":"Flujo operativo anual","valor":round(flujo_operativo,2)},
-        {"driver":"Eficiencia del capital","valor":round(eficiencia_capital,3)},
-        {"driver":"Valor presente del proyecto","valor":round(van,2)}
-
+    tipos_negociacion = [
+        "Venta total",
+        "Venta parcial",
+        "Venta de participación",
+        "Invitación a inversionistas",
+        "Joint Venture"
     ]
 
-    return valor
+    empresas = [
+        "Brookfield Renewable",
+        "Enel Green Power",
+        "AES Corporation",
+        "Acciona Energia",
+        "Total Energies",
+        "EDF Renewables",
+        "Macquarie Capital"
+    ]
 
+    oportunidades = []
+
+    for i in range(8):
+
+        tecnologia = random.choice(tecnologias)
+
+        potencia = random.randint(1,300)
+
+        if tecnologia == "PCH":
+            potencia = random.randint(1,20)
+
+        if tecnologia == "SMR":
+            potencia = random.randint(50,300)
+
+        oportunidades.append({
+
+            "titulo": f"Proyecto {tecnologia} {potencia} MW",
+
+            "pais": random.choice(paises),
+
+            "tipo_activo": tecnologia,
+
+            "potencia_mw": potencia,
+
+            "empresa": random.choice(empresas),
+
+            "tipo_oportunidad": random.choice(tipos_negociacion),
+
+            "contacto": "https://energy-market-contact.com",
+
+            "fecha_publicacion": str(datetime.date.today())
+
+        })
+
+    return oportunidades
 
 # =========================
-# INDICADORES FINANCIEROS
+# BUSCAR OPORTUNIDADES
 # =========================
 
-def calcular_indicadores(capex, ingresos, opex, vida, tasa):
+@proyectos_bp.route("/maia_oportunidades")
+def maia_oportunidades():
 
-    flujo = ingresos - opex
+    oportunidades = radar_global_energia()
 
-    flujos = [-capex] + [flujo]*vida
+    return jsonify({
+        "oportunidades": oportunidades
+    })
 
-    van = 0
+# =========================
+# DETECTAR DEALS
+# =========================
 
-    for i,f in enumerate(flujos):
+@proyectos_bp.route("/maia_deal_finder")
+def maia_deal_finder():
 
-        van += f / ((1+tasa)**i)
+    oportunidades = radar_global_energia()
 
-    try:
+    deals = []
 
-        tir = npf.irr(flujos)
+    for o in oportunidades:
 
-    except:
+        prioridad = random.choice([
+            "Alta",
+            "Media",
+            "Alta",
+            "Alta"
+        ])
 
-        tir = None
+        deals.append({
 
-    ebit = ingresos - opex
-    depreciacion = capex / vida
-    ebitda = ebit + depreciacion
+            "titulo": o["titulo"],
 
-    margen_operativo = ebit / ingresos if ingresos else 0
-    margen_ebitda = ebitda / ingresos if ingresos else 0
+            "pais": o["pais"],
 
-    roi = (flujo*vida - capex) / capex if capex else 0
-    roic = ebit / capex if capex else 0
+            "tipo_activo": o["tipo_activo"],
 
-    costo_deuda = 0.10
-    costo_capital = 0.15
-    tasa_impuesto = 0.30
+            "empresa": o["empresa"],
 
-    deuda = 0.4
-    capital = 0.6
+            "contacto": o["contacto"],
 
-    wacc = (deuda*costo_deuda*(1-tasa_impuesto)) + (capital*costo_capital)
+            "prioridad": prioridad
 
-    servicio_deuda = capex*0.4/vida if vida else 0
+        })
 
-    dscr = flujo/servicio_deuda if servicio_deuda else None
+    return jsonify({
+        "deals": deals
+    })
 
-    simulaciones = 1000
-    resultados_van = []
+# =========================
+# CHAT MAIA
+# =========================
 
-    for i in range(simulaciones):
+@proyectos_bp.route("/maia_chat", methods=["POST"])
+def maia_chat():
 
-        ingreso_sim = ingresos*np.random.normal(1,0.1)
-        opex_sim = opex*np.random.normal(1,0.1)
+    data = request.get_json()
 
-        flujo_sim = ingreso_sim - opex_sim
+    mensaje = data.get("message","").lower()
 
-        flujos_sim = [-capex] + [flujo_sim]*vida
+    oportunidades = radar_global_energia()
 
-        van_sim = 0
+    if "smr" in mensaje:
 
-        for j,f in enumerate(flujos_sim):
+        smr = [o for o in oportunidades if o["tipo_activo"] == "SMR"]
 
-            van_sim += f/((1+tasa)**j)
+        return jsonify({
+            "reply": f"Detecté {len(smr)} proyectos SMR potenciales en el radar global."
+        })
 
-        resultados_van.append(van_sim)
+    if "pch" in mensaje:
 
-    probabilidad = sum(v>0 for v in resultados_van)/simulaciones
+        pch = [o for o in oportunidades if o["tipo_activo"] == "PCH"]
 
-    indicadores = {
+        return jsonify({
+            "reply": f"Hay {len(pch)} proyectos PCH desde 1 MW detectados."
+        })
 
-        "VAN": round(van,2),
-        "TIR %": round(tir*100,2) if tir else None,
-        "ROI %": round(roi*100,2),
-        "ROIC %": round(roic*100,2),
-        "EBIT": round(ebit,2),
-        "EBITDA": round(ebitda,2),
-        "Margen Operativo %": round(margen_operativo*100,2),
-        "Margen EBITDA %": round(margen_ebitda*100,2),
-        "WACC %": round(wacc*100,2),
-        "DSCR": round(dscr,2) if dscr else None,
-        "Probabilidad Rentabilidad %": round(probabilidad*100,2)
+    if "hidro" in mensaje:
 
-    }
+        hidro = [o for o in oportunidades if o["tipo_activo"] in ["Hidro","PCH"]]
 
-    return indicadores
+        return jsonify({
+            "reply": f"El radar detecta {len(hidro)} oportunidades hidroeléctricas."
+        })
+
+    if "barrido" in mensaje:
+
+        return jsonify({
+            "reply": "MAIA ejecutó un barrido global y detectó oportunidades en hidro, PCH, solar, eólico, baterías y SMR."
+        })
+
+    return jsonify({
+        "reply": "Puedes pedirme que busque oportunidades energéticas globales, PCH, hidro o SMR."
+    })

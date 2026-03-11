@@ -89,7 +89,6 @@ def guardar_proyecto():
         tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
         VALUES (?,?,?,?,?,?,?,?,?,?,?)
     """,(
-
         data.get("titulo"),
         data.get("pais"),
         data.get("tipo_activo"),
@@ -101,7 +100,6 @@ def guardar_proyecto():
         data.get("contacto"),
         data.get("fecha_publicacion"),
         str(datetime.today().date())
-
     ))
 
     conn.commit()
@@ -128,20 +126,7 @@ def memoria_proyectos():
 
     for p in proyectos:
 
-        data.append({
-            "id":p["id"],
-            "titulo":p["titulo"],
-            "pais":p["pais"],
-            "tipo_activo":p["tipo_activo"],
-            "capacidad_mw":p["capacidad_mw"],
-            "fase":p["fase"],
-            "empresa":p["empresa"],
-            "tipo_oportunidad":p["tipo_oportunidad"],
-            "fuente":p["fuente"],
-            "contacto":p["contacto"],
-            "fecha_publicacion":p["fecha_publicacion"],
-            "fecha_guardado":p["fecha_guardado"]
-        })
+        data.append(dict(p))
 
     return jsonify(data)
 
@@ -215,6 +200,7 @@ def radar_pch_global(pais=None):
             lista_paises = [pais]
 
     else:
+
         lista_paises = paises_mundo
 
     for p in lista_paises:
@@ -239,7 +225,7 @@ def radar_pch_global(pais=None):
     return resultados
 
 # =========================
-# RADAR LICITACIONES ENERGIA
+# RADAR LICITACIONES
 # =========================
 
 def radar_licitaciones_energia():
@@ -270,19 +256,15 @@ def radar_licitaciones_energia():
     return resultados
 
 # =========================
-# GLOBAL HYDRO RADAR
+# RADAR HIDRO GLOBAL
 # =========================
 
 def radar_hidro_global():
 
     queries = [
-
     "hydropower project for sale",
     "small hydro project investment",
-    "run of river hydropower project",
-    "hydropower plant investors",
-    "small hydro concession"
-
+    "run of river hydropower project"
     ]
 
     resultados = []
@@ -294,11 +276,11 @@ def radar_hidro_global():
         "titulo":q,
         "pais":"Global",
         "tipo_activo":"Hidro",
-        "capacidad_mw":"1+",
+        "capacidad_mw":1,
         "empresa":"Energy Market",
         "tipo_oportunidad":"Busqueda inversionistas",
-        "fuente":"DuckDuckGo Energy Search",
-        "contacto":f"https://duckduckgo.com/?q={q}",
+        "fuente":"Energy Intelligence Search",
+        "contacto":"https://duckduckgo.com/?q="+q,
         "fecha_publicacion":str(datetime.today().date())
 
         })
@@ -306,19 +288,12 @@ def radar_hidro_global():
     return resultados
 
 # =========================
-# MAIA ENERGY INTELLIGENCE ENGINE
+# ENERGY INTELLIGENCE ENGINE
 # =========================
 
 def maia_energy_intelligence_engine():
 
     tecnologias = ["Hidro","PCH","Solar","Eolico","Baterias"]
-
-    tipos_negocio = [
-    "Venta de activo",
-    "Busqueda inversionistas",
-    "Joint Venture",
-    "Licitacion internacional"
-    ]
 
     oportunidades = []
 
@@ -331,8 +306,6 @@ def maia_energy_intelligence_engine():
         if tecnologia == "PCH":
             potencia = random.randint(1,20)
 
-        prioridad = random.choice(["Alta","Alta","Media"])
-
         oportunidades.append({
 
         "titulo":f"Proyecto {tecnologia} {potencia} MW",
@@ -340,8 +313,7 @@ def maia_energy_intelligence_engine():
         "tipo_activo":tecnologia,
         "capacidad_mw":potencia,
         "empresa":"Energy Market",
-        "tipo_oportunidad":random.choice(tipos_negocio),
-        "prioridad_inversion":prioridad,
+        "tipo_oportunidad":"Busqueda inversionistas",
         "fuente":"MAIA Intelligence Engine",
         "contacto":"https://energy-market.com",
         "fecha_publicacion":str(datetime.today().date())
@@ -351,41 +323,61 @@ def maia_energy_intelligence_engine():
     return oportunidades
 
 # =========================
-# RUTA MOTOR INTELIGENCIA
+# CRITERIOS ALERTA MAIA
 # =========================
 
-@proyectos_bp.route("/maia_energy_intelligence")
+criterios_alerta = {
 
-def maia_energy_intelligence():
+"tecnologias":["Hidro","PCH"],
+"capacidad_min":1,
+"paises":["colombia","brasil","peru","paraguay","mexico","chile","argentina"]
 
-    data = maia_energy_intelligence_engine()
+}
+
+# =========================
+# MOTOR ALERTAS
+# =========================
+
+def maia_alert_engine(oportunidades):
+
+    alertas = []
+
+    for o in oportunidades:
+
+        tecnologia = o.get("tipo_activo","").lower()
+        pais = o.get("pais","").lower()
+        capacidad = int(o.get("capacidad_mw",1))
+
+        if tecnologia in [t.lower() for t in criterios_alerta["tecnologias"]]:
+
+            if pais in criterios_alerta["paises"] or pais == "global":
+
+                if capacidad >= criterios_alerta["capacidad_min"]:
+
+                    alertas.append(o)
+
+    return alertas
+
+# =========================
+# ALERTAS MAIA
+# =========================
+
+@proyectos_bp.route("/maia_alertas")
+def maia_alertas():
+
+    radar = (
+    radar_pch_global() +
+    radar_hidro_global() +
+    radar_licitaciones_energia() +
+    maia_energy_intelligence_engine()
+    )
+
+    alertas = maia_alert_engine(radar)
 
     return jsonify({
 
-    "motor":"MAIA Global Energy Intelligence Engine",
-    "total_oportunidades":len(data),
-    "oportunidades":data
-
-    })
-
-# =========================
-# MAIA ENERGY RADAR
-# =========================
-
-@proyectos_bp.route("/maia_energy_radar")
-
-def maia_energy_radar():
-
-    licitaciones = radar_licitaciones_energia()
-
-    hidro = radar_hidro_global()
-
-    oportunidades = licitaciones + hidro
-
-    return jsonify({
-
-    "total_oportunidades":len(oportunidades),
-    "oportunidades":oportunidades
+    "total_alertas":len(alertas),
+    "alertas":alertas
 
     })
 
@@ -394,7 +386,6 @@ def maia_energy_radar():
 # =========================
 
 @proyectos_bp.route("/maia_chat", methods=["POST"])
-
 def maia_chat():
 
     data = request.get_json()
@@ -404,11 +395,13 @@ def maia_chat():
     pais_detectado = None
 
     for p in paises_mundo:
+
         if p in mensaje:
             pais_detectado = p
             break
 
     for c in continentes:
+
         if c in mensaje:
             pais_detectado = c
             break
@@ -418,9 +411,7 @@ def maia_chat():
         proyectos = radar_pch_global(pais_detectado)
 
         return jsonify({
-
-        "reply":f"MAIA detectó {len(proyectos)} proyectos PCH en {pais_detectado if pais_detectado else 'el radar global'}."
-
+        "reply":f"MAIA detectó {len(proyectos)} proyectos PCH."
         })
 
     if "hidro" in mensaje:
@@ -428,43 +419,25 @@ def maia_chat():
         proyectos = radar_hidro_global()
 
         return jsonify({
-
-        "reply":f"MAIA detectó {len(proyectos)} oportunidades hidroeléctricas globales."
-
+        "reply":f"MAIA detectó {len(proyectos)} oportunidades hidroeléctricas."
         })
 
-    if "licitacion" in mensaje:
+    if "alerta" in mensaje or "alertas" in mensaje:
 
-        data = radar_licitaciones_energia()
+        radar = (
+        radar_pch_global() +
+        radar_hidro_global() +
+        maia_energy_intelligence_engine()
+        )
 
-        return jsonify({
-
-        "reply":f"MAIA detectó {len(data)} licitaciones energéticas internacionales."
-
-        })
-
-    if "inteligencia" in mensaje:
-
-        data = maia_energy_intelligence_engine()
+        alertas = maia_alert_engine(radar)
 
         return jsonify({
-
-        "reply":f"MAIA ejecutó el Energy Intelligence Engine y detectó {len(data)} oportunidades energéticas globales."
-
-        })
-
-    if "radar" in mensaje:
-
-        data = radar_hidro_global() + radar_licitaciones_energia()
-
-        return jsonify({
-
-        "reply":f"MAIA ejecutó el radar global y detectó {len(data)} oportunidades energéticas."
-
+        "reply":f"MAIA detectó {len(alertas)} oportunidades que cumplen tus criterios."
         })
 
     return jsonify({
 
-    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, buscar licitaciones energia o ejecutar inteligencia energetica."
+    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, ejecutar radar o consultar alertas."
 
     })

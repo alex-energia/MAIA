@@ -113,13 +113,9 @@ border-radius:8px;
 <div class="topbar-buttons">
 
 <button onclick="activarGanado()">🐄 MAIA GANADO</button>
-
 <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
-
 <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
-
 <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
-
 <button onclick="volverChat()">🏠 Inicio</button>
 
 </div>
@@ -206,13 +202,11 @@ border-radius:8px;
 <br><br>
 
 <select id="idiomaDestino">
-
 <option value="en">Inglés</option>
 <option value="es">Español</option>
 <option value="fr">Francés</option>
 <option value="pt">Portugués</option>
 <option value="de">Alemán</option>
-
 </select>
 
 <br><br>
@@ -251,6 +245,20 @@ border-radius:8px;
 <button onclick="buscarDeals()">Detectar activos antes del mercado</button>
 
 <div id="panelOportunidades" class="panel-oportunidades"></div>
+
+<hr>
+
+<h3>💬 Chat con MAIA</h3>
+
+<div id="chatMaia" class="chat-box" style="height:250px"></div>
+
+<div class="input-area">
+
+<input type="text" id="mensajeMaia" placeholder="Pregunta a MAIA sobre proyectos, inversiones o licitaciones energéticas">
+
+<button class="send" onclick="enviarMensajeMaia()">Enviar</button>
+
+</div>
 
 </div>
 
@@ -313,16 +321,12 @@ data.oportunidades.forEach(o=>{
 
 panel.innerHTML += `
 <div class="card-oportunidad">
-
 <b>${o.titulo}</b><br>
-
 Pais: ${o.pais}<br>
 Tipo activo: ${o.tipo_activo}<br>
 Potencia: ${o.potencia_mw}<br>
 Empresa: ${o.empresa}<br>
-
 <a href="${o.contacto}" target="_blank">Ver fuente</a>
-
 </div>
 `
 
@@ -347,20 +351,52 @@ data.deals.forEach(o=>{
 
 panel.innerHTML += `
 <div class="card-oportunidad">
-
 <b>${o.titulo}</b><br>
-
 Pais: ${o.pais}<br>
 Tipo activo: ${o.tipo_activo}<br>
 Prioridad: ${o.prioridad}<br>
 Empresa: ${o.empresa}<br>
-
 <a href="${o.contacto}" target="_blank">Ver fuente</a>
-
 </div>
 `
 
 })
+
+}
+
+
+async function enviarMensajeMaia(){
+
+let input = document.getElementById("mensajeMaia")
+let chat = document.getElementById("chatMaia")
+
+let mensaje = input.value
+
+if(!mensaje) return
+
+chat.innerHTML += `<div><b>Tú:</b> ${mensaje}</div>`
+
+input.value=""
+
+const res = await fetch("/maia_chat",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body: JSON.stringify({
+message: mensaje
+})
+
+})
+
+const data = await res.json()
+
+chat.innerHTML += `<div><b>MAIA:</b> ${data.reply}</div>`
+
+chat.scrollTop = chat.scrollHeight
 
 }
 

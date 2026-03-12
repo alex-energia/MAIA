@@ -49,6 +49,30 @@ def proyectos():
     return render_template("proyectos.html", proyectos=proyectos)
 
 # =========================
+# VER PROYECTO INDIVIDUAL
+# =========================
+
+@app.route("/proyectos/<int:id>")
+def ver_proyecto(id):
+
+    conn = get_db()
+
+    proyecto = conn.execute(
+        "SELECT * FROM proyectos_guardados WHERE id=?",
+        (id,)
+    ).fetchone()
+
+    conn.close()
+
+    if proyecto is None:
+        return "Proyecto no encontrado"
+
+    return render_template(
+        "proyecto_detalle.html",
+        proyecto=proyecto
+    )
+
+# =========================
 # FORMULARIO NUEVO PROYECTO
 # =========================
 
@@ -143,14 +167,12 @@ def maia_energy_harvester():
                         link = b.split('href="')[1].split('"')[0]
 
                         resultados.append({
-
                             "titulo": titulo,
                             "pais": "web",
                             "tipo_activo": "energia",
                             "capacidad_mw": "N/D",
                             "empresa": "fuente web",
                             "contacto": link
-
                         })
 
                     except:
@@ -193,7 +215,6 @@ def maia_oportunidades():
 def maia_chat():
 
     data = request.get_json()
-
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."

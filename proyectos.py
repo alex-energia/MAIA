@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 import sqlite3
 import os
-import random
 import requests
 from datetime import datetime
 
@@ -31,7 +30,6 @@ def get_db():
 # =========================
 
 def init_db():
-
     conn = get_db()
 
     conn.execute("""
@@ -66,11 +64,12 @@ def guardar_proyecto():
     conn = get_db()
 
     conn.execute("""
-        INSERT INTO proyectos_guardados
-        (titulo,pais,tipo_activo,capacidad_mw,fase,empresa,
-        tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+    INSERT INTO proyectos_guardados
+    (titulo,pais,tipo_activo,capacidad_mw,fase,empresa,
+    tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)
     """,(
+
         data.get("titulo"),
         data.get("pais"),
         data.get("tipo_activo"),
@@ -82,6 +81,7 @@ def guardar_proyecto():
         data.get("contacto"),
         data.get("fecha_publicacion"),
         str(datetime.today().date())
+
     ))
 
     conn.commit()
@@ -126,160 +126,7 @@ def eliminar_proyecto(proyecto_id):
     return jsonify({"status":"eliminado"})
 
 # =========================
-# PAISES
-# =========================
-
-paises_mundo = [
-"paraguay","colombia","brasil","peru","bolivia","chile","argentina",
-"mexico","panama","costa rica","ecuador","venezuela",
-"españa","francia","alemania","italia","portugal","noruega",
-"india","china","indonesia","vietnam",
-"kenia","sudafrica","marruecos",
-"canada","estados unidos","australia"
-]
-
-# =========================
-# RADAR PCH
-# =========================
-
-def radar_pch_global():
-
-    empresas = [
-    "Brookfield Renewable",
-    "Statkraft",
-    "Enel Green Power",
-    "Acciona Energia",
-    "EDF Renewables"
-    ]
-
-    resultados = []
-
-    for p in paises_mundo:
-
-        potencia = random.randint(1,25)
-
-        resultados.append({
-
-        "titulo":f"Proyecto PCH {potencia} MW",
-        "pais":p.title(),
-        "tipo_activo":"PCH",
-        "capacidad_mw":potencia,
-        "empresa":random.choice(empresas),
-        "tipo_oportunidad":"Busqueda inversionistas",
-        "fuente":"MAIA Radar",
-        "contacto":"https://energy-investment-contact.com",
-        "fecha_publicacion":str(datetime.today().date())
-
-        })
-
-    return resultados
-
-# =========================
-# RADAR HIDRO
-# =========================
-
-def radar_hidro_global():
-
-    queries = [
-    "hydropower project for sale",
-    "small hydro investment",
-    "run of river project"
-    ]
-
-    resultados = []
-
-    for q in queries:
-
-        resultados.append({
-
-        "titulo":q,
-        "pais":"Global",
-        "tipo_activo":"Hidro",
-        "capacidad_mw":random.randint(5,80),
-        "empresa":"Energy Market",
-        "tipo_oportunidad":"Busqueda inversionistas",
-        "fuente":"Energy Intelligence",
-        "contacto":"https://duckduckgo.com/?q="+q,
-        "fecha_publicacion":str(datetime.today().date())
-
-        })
-
-    return resultados
-
-# =========================
-# ENERGY INTELLIGENCE ENGINE
-# =========================
-
-def maia_energy_intelligence_engine():
-
-    tecnologias = ["Hidro","PCH","Solar","Eolico"]
-
-    oportunidades = []
-
-    for i in range(10):
-
-        tecnologia = random.choice(tecnologias)
-
-        oportunidades.append({
-
-        "titulo":f"Proyecto {tecnologia} {random.randint(5,200)} MW",
-        "pais":"Global",
-        "tipo_activo":tecnologia,
-        "capacidad_mw":random.randint(5,200),
-        "empresa":"Energy Market",
-        "tipo_oportunidad":"Busqueda inversionistas",
-        "fuente":"MAIA Engine",
-        "contacto":"https://energy-market.com",
-        "fecha_publicacion":str(datetime.today().date())
-
-        })
-
-    return oportunidades
-
-# =========================
-# MAIA GLOBAL ENERGY HARVESTER
-# =========================
-
-def maia_global_energy_harvester():
-
-    fuentes = [
-    "https://www.worldbank.org",
-    "https://www.irena.org",
-    "https://www.iea.org",
-    "https://www.hydropower.org"
-    ]
-
-    oportunidades = []
-
-    for f in fuentes:
-
-        try:
-
-            r = requests.get(f,timeout=8)
-
-            if r.status_code == 200:
-
-                oportunidades.append({
-
-                "titulo":"Harvested energy opportunity",
-                "pais":"Global",
-                "tipo_activo":random.choice(["Hidro","PCH","Solar","Eolico"]),
-                "capacidad_mw":random.randint(5,200),
-                "empresa":"Global Energy Market",
-                "tipo_oportunidad":"Investment",
-                "fuente":f,
-                "contacto":f,
-                "fecha_publicacion":str(datetime.today().date())
-
-                })
-
-        except:
-            pass
-
-    return oportunidades
-
-# =========================
-# MAIA LIVE ENERGY SEARCH
+# BUSQUEDA REAL EN INTERNET
 # =========================
 
 def maia_live_energy_search(query):
@@ -290,7 +137,7 @@ def maia_live_energy_search(query):
 
     try:
 
-        r = requests.post(url,data={"q":query},timeout=10)
+        r = requests.post(url, data={"q": query}, timeout=15)
 
         if r.status_code == 200:
 
@@ -298,7 +145,7 @@ def maia_live_energy_search(query):
 
             bloques = html.split("result__a")
 
-            for b in bloques[1:6]:
+            for b in bloques[1:8]:
 
                 try:
 
@@ -307,15 +154,15 @@ def maia_live_energy_search(query):
 
                     resultados.append({
 
-                    "titulo":titulo,
-                    "pais":"Detectado en búsqueda",
-                    "tipo_activo":"Hidro",
-                    "capacidad_mw":"Desconocido",
-                    "empresa":"Fuente web",
-                    "tipo_oportunidad":"Busqueda web",
-                    "fuente":"DuckDuckGo",
-                    "contacto":link,
-                    "fecha_publicacion":str(datetime.today().date())
+                        "titulo": titulo,
+                        "pais": "Detectado en web",
+                        "tipo_activo": "Energia",
+                        "capacidad_mw": "N/D",
+                        "empresa": "Fuente web",
+                        "tipo_oportunidad": "Oportunidad detectada",
+                        "fuente": "DuckDuckGo",
+                        "contacto": link,
+                        "fecha_publicacion": str(datetime.today().date())
 
                     })
 
@@ -328,6 +175,70 @@ def maia_live_energy_search(query):
     return resultados
 
 # =========================
+# BOTON BUSCAR OPORTUNIDADES
+# =========================
+
+@proyectos_bp.route("/maia_buscar_oportunidades")
+def maia_buscar_oportunidades():
+
+    queries = [
+
+        "hydropower project for sale",
+        "small hydro investors wanted",
+        "renewable energy project investment opportunity",
+        "energy project seeking investors",
+        "run of river hydro project investment"
+
+    ]
+
+    oportunidades = []
+
+    for q in queries:
+
+        resultados = maia_live_energy_search(q)
+
+        oportunidades.extend(resultados)
+
+    return jsonify({
+
+        "motor":"MAIA Global Energy Scanner",
+        "resultados": oportunidades
+
+    })
+
+# =========================
+# BOTON ACTIVOS TEMPRANOS
+# =========================
+
+@proyectos_bp.route("/maia_activos_tempranos")
+def maia_activos_tempranos():
+
+    queries = [
+
+        "hydropower project permitting",
+        "small hydro project prefeasibility",
+        "hydropower concession project",
+        "run of river license application",
+        "hydropower environmental permit"
+
+    ]
+
+    oportunidades = []
+
+    for q in queries:
+
+        resultados = maia_live_energy_search(q)
+
+        oportunidades.extend(resultados)
+
+    return jsonify({
+
+        "motor":"MAIA Early Energy Asset Detector",
+        "resultados": oportunidades
+
+    })
+
+# =========================
 # CHAT MAIA
 # =========================
 
@@ -336,32 +247,23 @@ def maia_chat():
 
     data = request.get_json()
 
-    mensaje = data.get("message","").lower()
+    mensaje = data.get("message","")
 
-    if "buscar" in mensaje:
+    if "buscar" in mensaje.lower():
 
-        resultados = maia_live_energy_search(mensaje)
+        query = mensaje.replace("buscar","").strip()
 
-        return jsonify({
-        "reply":f"MAIA encontró {len(resultados)} resultados en la web.",
-        "resultados":resultados
-        })
-
-    if "top" in mensaje:
-
-        radar = (
-        radar_pch_global() +
-        radar_hidro_global() +
-        maia_energy_intelligence_engine() +
-        maia_global_energy_harvester()
-        )
-
-        radar = sorted(radar, key=lambda x: random.random())
+        resultados = maia_live_energy_search(query)
 
         return jsonify({
-        "reply":f"MAIA encontró {len(radar)} oportunidades energéticas."
+
+            "reply": f"MAIA encontró {len(resultados)} resultados para: {query}",
+            "resultados": resultados
+
         })
 
     return jsonify({
-    "reply":"Puedes escribir: buscar hydropower colombia o buscar small hydro paraguay"
+
+        "reply":"Puedes escribir por ejemplo: buscar pch paraguay o buscar hydropower colombia"
+
     })

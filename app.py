@@ -4,29 +4,55 @@ from maia_market_intelligence import buscar_oportunidades, detectar_activos_temp
 from maia_global_scanner import escanear_mercado_global
 import os
 
+# =========================
+# CREAR APP
+# =========================
+
 app = Flask(__name__)
 
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
+
 init_db()
 
 # =========================
 # REGISTRAR BLUEPRINT
 # =========================
+
 app.register_blueprint(proyectos_bp)
 
 # =========================
 # PAGINA PRINCIPAL
 # =========================
+
 @app.route("/")
 def home():
     return render_template("index.html")
 
+# =========================
+# ALERTAS MAIA
+# =========================
+
+@app.route("/maia_alertas")
+def maia_alertas():
+
+    from proyectos import get_db
+
+    conn = get_db()
+
+    alertas = conn.execute(
+        "SELECT * FROM maia_alertas ORDER BY id DESC LIMIT 10"
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify([dict(a) for a in alertas])
 
 # =========================
 # CHAT MAIA
 # =========================
+
 @app.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
@@ -61,11 +87,11 @@ def maia_chat():
         respuesta = "La simulación Monte Carlo evalúa miles de escenarios posibles para estimar la probabilidad de rentabilidad."
 
     # =========================
-    # CONSULTAS SOBRE MAIA
+    # INFORMACION SOBRE MAIA
     # =========================
 
     elif "maia" in pregunta:
-        respuesta = "MAIA es un motor de análisis financiero y de inteligencia de mercado que analiza proyectos, detecta oportunidades energéticas y busca negocios en el mercado global."
+        respuesta = "MAIA es un motor de inteligencia energética que analiza proyectos, detecta oportunidades de inversión y realiza barridos globales del mercado energético."
 
     # =========================
     # SCANNER GLOBAL
@@ -81,7 +107,7 @@ def maia_chat():
 
         resultados = escanear_mercado_global()
 
-        filtrados = [r for r in resultados if r["tipo_activo"] == "nuclear_smr"]
+        filtrados = [r for r in resultados if r.get("tipo_activo") == "nuclear_smr"]
 
         respuesta = f"MAIA detectó {len(filtrados)} oportunidades relacionadas con reactores nucleares SMR."
 
@@ -89,16 +115,16 @@ def maia_chat():
 
         resultados = escanear_mercado_global()
 
-        filtrados = [r for r in resultados if r["tipo_activo"] == "hidroelectrica"]
+        filtrados = [r for r in resultados if r.get("tipo_activo") == "hidroelectrica"]
 
         respuesta = f"MAIA detectó {len(filtrados)} oportunidades hidroeléctricas en el mercado global."
 
     return jsonify({"reply": respuesta})
 
+# =========================
+# MAIA OPORTUNIDADES ENERGETICAS
+# =========================
 
-# =========================
-# MAIA OPORTUNIDADES ENERGÉTICAS
-# =========================
 @app.route("/maia_oportunidades")
 def maia_oportunidades():
 
@@ -118,11 +144,10 @@ def maia_oportunidades():
             "detalle": str(e)
         })
 
-
 # =========================
 # MAIA DEAL FINDER
-# Detecta activos antes de salir al mercado
 # =========================
+
 @app.route("/maia_deal_finder")
 def maia_deal_finder():
 
@@ -142,10 +167,10 @@ def maia_deal_finder():
             "detalle": str(e)
         })
 
-
 # =========================
 # MAIA GLOBAL SCANNER
 # =========================
+
 @app.route("/maia_global_scan")
 def maia_global_scan():
 
@@ -164,18 +189,18 @@ def maia_global_scan():
             "error": str(e)
         })
 
-
 # =========================
 # HEALTH CHECK (IMPORTANTE PARA RENDER)
 # =========================
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
 
+# =========================
+# EJECUTAR APP
+# =========================
 
-# =========================
-# EJECUTAR APLICACION
-# =========================
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 10000))

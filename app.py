@@ -64,12 +64,23 @@ def nuevo_proyecto():
 def guardar_proyecto():
 
     nombre = request.form.get("nombre")
+    tecnologia = request.form.get("tecnologia")
+    pais = request.form.get("pais")
+    ciudad = request.form.get("ciudad")
+    moneda = request.form.get("moneda")
+    horizonte = request.form.get("horizonte")
+    potencia = request.form.get("potencia")
+    unidad = request.form.get("unidad")
 
     conn = get_db()
 
     conn.execute(
-        "INSERT INTO proyectos_guardados (titulo) VALUES (?)",
-        (nombre,)
+        """
+        INSERT INTO proyectos_guardados
+        (titulo, tecnologia, pais, ciudad, moneda, horizonte, potencia, unidad)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (nombre, tecnologia, pais, ciudad, moneda, horizonte, potencia, unidad)
     )
 
     conn.commit()
@@ -132,12 +143,14 @@ def maia_energy_harvester():
                         link = b.split('href="')[1].split('"')[0]
 
                         resultados.append({
+
                             "titulo": titulo,
                             "pais": "web",
                             "tipo_activo": "energia",
                             "capacidad_mw": "N/D",
                             "empresa": "fuente web",
                             "contacto": link
+
                         })
 
                     except:
@@ -180,6 +193,7 @@ def maia_oportunidades():
 def maia_chat():
 
     data = request.get_json()
+
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."

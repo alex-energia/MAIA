@@ -10,11 +10,31 @@
 body{
 font-family:Arial;
 margin:40px;
+background:#f5f5f5;
+}
+
+h1{
+color:#222;
+}
+
+button{
+padding:10px 20px;
+margin:5px;
+background:#2c7be5;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1a5fd0;
 }
 
 table{
 border-collapse:collapse;
-width:60%;
+width:70%;
+background:white;
 }
 
 th,td{
@@ -26,19 +46,21 @@ th{
 background:#f4f4f4;
 }
 
-a{
-text-decoration:none;
-color:blue;
+.card{
+background:white;
+padding:15px;
+margin-top:20px;
+border-radius:6px;
+box-shadow:0 0 5px rgba(0,0,0,0.1);
 }
 
 </style>
 
 </head>
 
-
 <body>
 
-<h1>Proyectos MAIA</h1>
+<h1>MAIA PROYECTOS</h1>
 
 <br>
 
@@ -46,14 +68,22 @@ color:blue;
 
 <br><br>
 
+<button onclick="buscarOportunidades()">Buscar oportunidades energéticas</button>
+
+<button onclick="buscarOportunidades()">Buscar activos tempranos</button>
+
+<div id="resultados"></div>
+
+<br><br>
+
+<h2>Proyectos guardados</h2>
+
 <table>
 
 <tr>
-
 <th>ID</th>
 <th>Nombre</th>
 <th>Ver</th>
-
 </tr>
 
 {% for p in proyectos %}
@@ -74,6 +104,43 @@ color:blue;
 
 </table>
 
+<script>
+
+function buscarOportunidades(){
+
+document.getElementById("resultados").innerHTML = "MAIA está escaneando el mercado energético global...";
+
+fetch("/maia_master_scan")
+
+.then(response => response.json())
+
+.then(data => {
+
+let html = "<h2>Oportunidades detectadas</h2>";
+
+data.resultados.forEach(o => {
+
+html += `
+<div class="card">
+
+<b>${o.titulo}</b><br>
+Pais: ${o.pais}<br>
+Tipo activo: ${o.tipo_activo}<br>
+Empresa: ${o.empresa}<br>
+<a href="${o.contacto}" target="_blank">Ver fuente</a>
+
+</div>
+`;
+
+});
+
+document.getElementById("resultados").innerHTML = html;
+
+});
+
+}
+
+</script>
 
 </body>
 

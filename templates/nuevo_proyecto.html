@@ -1,65 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 
 <head>
 
-<title>MAIA - Nuevo Proyecto</title>
+<title>Crear Nuevo Proyecto</title>
 
 <style>
 
 body{
 font-family:Arial;
 margin:40px;
+background:#f5f5f5;
 }
 
-input{
-padding:6px;
-width:200px;
-margin-bottom:10px;
+.container{
+background:white;
+padding:30px;
+width:500px;
+border-radius:8px;
+box-shadow:0px 0px 10px rgba(0,0,0,0.1);
+}
+
+input,select{
+width:100%;
+padding:8px;
+margin-top:5px;
+margin-bottom:15px;
 }
 
 button{
-padding:8px 15px;
+padding:10px 20px;
+background:#2c7be5;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1a5fcc;
 }
 
 </style>
 
 </head>
 
-
 <body>
 
-<h1>Crear Nuevo Proyecto</h1>
+<div class="container">
 
-<form method="POST">
+<h2>Crear Nuevo Proyecto</h2>
 
-<p>Nombre del proyecto</p>
+<form method="POST" action="/guardar_proyecto">
+
+<label>Nombre del proyecto</label>
 <input type="text" name="nombre" required>
 
-<p>CAPEX</p>
-<input type="number" step="any" name="capex" required>
+<label>Tecnología</label>
+<select name="tecnologia" required>
+<option value="">Seleccionar</option>
+<option value="solar">Solar</option>
+<option value="hidro">Hidroeléctrica</option>
+<option value="eolico">Eólica</option>
+<option value="biomasa">Biomasa</option>
+<option value="infraestructura">Infraestructura</option>
+</select>
 
-<p>OPEX anual</p>
-<input type="number" step="any" name="opex" required>
+<label>País</label>
+<input type="text" name="pais" required>
 
-<p>Ingresos anuales</p>
-<input type="number" step="any" name="ingresos" required>
+<label>Ciudad</label>
+<input type="text" name="ciudad">
 
-<p>Vida útil (años)</p>
-<input type="number" name="vida" required>
+<label>Moneda</label>
+<select name="moneda">
+<option value="USD">USD</option>
+<option value="COP">COP</option>
+<option value="EUR">EUR</option>
+</select>
 
-<p>Tasa de descuento</p>
-<input type="number" step="any" name="tasa" required>
+<label>Horizonte del proyecto (años)</label>
+<input type="number" name="horizonte" required>
 
-<br><br>
+<label>Potencia del proyecto</label>
+<input type="number" name="potencia" required>
 
-<button type="submit">Crear proyecto</button>
+<label>Unidad</label>
+<select name="unidad">
+<option value="MW">MW</option>
+<option value="hectareas">Hectáreas</option>
+<option value="ton">Ton/año</option>
+<option value="km">Km</option>
+</select>
+
+<br>
+
+<button type="submit">Crear Proyecto</button>
 
 </form>
 
 <br>
 
 <a href="/proyectos">Volver a proyectos</a>
+
+</div>
 
 </body>
 

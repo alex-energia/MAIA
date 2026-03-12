@@ -7,7 +7,6 @@ from datetime import datetime
 # =========================
 # BLUEPRINT
 # =========================
-
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
@@ -19,7 +18,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
-
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -28,7 +26,6 @@ def get_db():
 # =========================
 # CREAR TABLAS
 # =========================
-
 def init_db():
 
     conn = get_db()
@@ -65,44 +62,35 @@ def init_db():
 # =========================
 # GUARDAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
-    data = request.get_json()
+    if request.is_json:
+        data = request.get_json()
+        titulo = data.get("titulo")
+    else:
+        titulo = request.form.get("nombre")
 
     conn = get_db()
 
     conn.execute("""
     INSERT INTO proyectos_guardados
-    (titulo,pais,tipo_activo,capacidad_mw,fase,empresa,
-    tipo_oportunidad,fuente,contacto,fecha_publicacion,fecha_guardado)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)
-    """,(
-
-        data.get("titulo"),
-        data.get("pais"),
-        data.get("tipo_activo"),
-        data.get("capacidad_mw"),
-        data.get("fase"),
-        data.get("empresa"),
-        data.get("tipo_oportunidad"),
-        data.get("fuente"),
-        data.get("contacto"),
-        data.get("fecha_publicacion"),
+    (titulo,fecha_guardado)
+    VALUES (?,?)
+    """,
+    (
+        titulo,
         str(datetime.today().date())
-
     ))
 
     conn.commit()
     conn.close()
 
-    return jsonify({"status":"proyecto_guardado"})
+    return jsonify({"status": "proyecto_guardado"})
 
 # =========================
 # MEMORIA PROYECTOS
 # =========================
-
 @proyectos_bp.route("/memoria_proyectos")
 def memoria_proyectos():
 
@@ -119,7 +107,6 @@ def memoria_proyectos():
 # =========================
 # ELIMINAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/eliminar_proyecto/<int:proyecto_id>", methods=["DELETE"])
 def eliminar_proyecto(proyecto_id):
 
@@ -133,12 +120,11 @@ def eliminar_proyecto(proyecto_id):
     conn.commit()
     conn.close()
 
-    return jsonify({"status":"eliminado"})
+    return jsonify({"status": "eliminado"})
 
 # =========================
 # BUSQUEDA REAL EN INTERNET
 # =========================
-
 def maia_live_energy_search(query):
 
     url = "https://duckduckgo.com/html/"
@@ -147,18 +133,24 @@ def maia_live_energy_search(query):
 
     try:
 
-        r = requests.post(url, data={"q": query}, timeout=15)
+        r = requests.post(
+            url,
+            data={"q": query},
+            timeout=5
+        )
 
         if r.status_code == 200:
 
             html = r.text
+
             bloques = html.split("result__a")
 
-            for b in bloques[1:8]:
+            for b in bloques[1:4]:
 
                 try:
 
                     titulo = b.split(">")[1].split("<")[0]
+
                     link = b.split('href="')[1].split('"')[0]
 
                     resultados.append({
@@ -186,7 +178,6 @@ def maia_live_energy_search(query):
 # =========================
 # MAIA GLOBAL HYDRO DEAL HUNTER
 # =========================
-
 def maia_hydro_deal_hunter():
 
     queries = [
@@ -217,7 +208,6 @@ def maia_hydro_deal_hunter():
 # =========================
 # REGISTRAR ALERTAS
 # =========================
-
 def registrar_alertas(oportunidades):
 
     conn = get_db()
@@ -225,21 +215,19 @@ def registrar_alertas(oportunidades):
     for o in oportunidades:
 
         existe = conn.execute(
-
-        "SELECT id FROM maia_alertas WHERE titulo=?",
-
-        (o["titulo"],)
-
+            "SELECT id FROM maia_alertas WHERE titulo=?",
+            (o["titulo"],)
         ).fetchone()
 
         if not existe:
 
             conn.execute(
-
-            "INSERT INTO maia_alertas (titulo,fuente,fecha) VALUES (?,?,?)",
-
-            (o["titulo"], o["fuente"], str(datetime.today().date()))
-
+                "INSERT INTO maia_alertas (titulo,fuente,fecha) VALUES (?,?,?)",
+                (
+                    o["titulo"],
+                    o["fuente"],
+                    str(datetime.today().date())
+                )
             )
 
     conn.commit()
@@ -248,7 +236,6 @@ def registrar_alertas(oportunidades):
 # =========================
 # ALERTAS
 # =========================
-
 @proyectos_bp.route("/maia_alertas")
 def maia_alertas():
 
@@ -265,7 +252,6 @@ def maia_alertas():
 # =========================
 # BOTON BUSCAR OPORTUNIDADES
 # =========================
-
 @proyectos_bp.route("/maia_buscar_oportunidades")
 def maia_buscar_oportunidades():
 
@@ -275,7 +261,8 @@ def maia_buscar_oportunidades():
 
     return jsonify({
 
-        "motor":"MAIA Hydro Deal Hunter",
+        "motor": "MAIA Hydro Deal Hunter",
+        "total": len(oportunidades),
         "resultados": oportunidades
 
     })
@@ -283,7 +270,6 @@ def maia_buscar_oportunidades():
 # =========================
 # BOTON ACTIVOS TEMPRANOS
 # =========================
-
 @proyectos_bp.route("/maia_activos_tempranos")
 def maia_activos_tempranos():
 
@@ -309,7 +295,8 @@ def maia_activos_tempranos():
 
     return jsonify({
 
-        "motor":"MAIA Early Energy Asset Detector",
+        "motor": "MAIA Early Energy Asset Detector",
+        "total": len(oportunidades),
         "resultados": oportunidades
 
     })
@@ -317,17 +304,16 @@ def maia_activos_tempranos():
 # =========================
 # CHAT MAIA
 # =========================
-
 @proyectos_bp.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
     data = request.get_json()
 
-    mensaje = data.get("message","")
+    mensaje = data.get("message", "")
 
     if "buscar" in mensaje.lower():
 
-        query = mensaje.replace("buscar","").strip()
+        query = mensaje.replace("buscar", "").strip()
 
         resultados = maia_live_energy_search(query)
 
@@ -342,6 +328,6 @@ def maia_chat():
 
     return jsonify({
 
-        "reply":"Puedes escribir por ejemplo: buscar pch paraguay o buscar hydropower colombia"
+        "reply": "Puedes decir por ejemplo: buscar pch colombia o buscar hydropower chile"
 
     })

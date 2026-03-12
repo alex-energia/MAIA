@@ -31,6 +31,7 @@ def get_db():
 # =========================
 
 def init_db():
+
     conn = get_db()
 
     conn.execute("""
@@ -61,6 +62,7 @@ def init_db():
 def guardar_proyecto():
 
     data = request.get_json()
+
     conn = get_db()
 
     conn.execute("""
@@ -235,48 +237,6 @@ def maia_energy_intelligence_engine():
     return oportunidades
 
 # =========================
-# MAIA ENERGY SCANNER
-# =========================
-
-def maia_global_energy_scanner():
-
-    fuentes = [
-    "https://www.worldbank.org",
-    "https://www.irena.org",
-    "https://www.ungm.org",
-    "https://www.hydropower.org"
-    ]
-
-    oportunidades = []
-
-    for f in fuentes:
-
-        try:
-
-            r = requests.get(f,timeout=5)
-
-            if r.status_code == 200:
-
-                oportunidades.append({
-
-                "titulo":"Energy opportunity detected",
-                "pais":"Global",
-                "tipo_activo":random.choice(["Hidro","Solar","Eolico"]),
-                "capacidad_mw":random.randint(5,150),
-                "empresa":"International Energy Market",
-                "tipo_oportunidad":"Investment / Tender",
-                "fuente":f,
-                "contacto":f,
-                "fecha_publicacion":str(datetime.today().date())
-
-                })
-
-        except:
-            pass
-
-    return oportunidades
-
-# =========================
 # MAIA GLOBAL ENERGY HARVESTER
 # =========================
 
@@ -319,76 +279,53 @@ def maia_global_energy_harvester():
     return oportunidades
 
 # =========================
-# DEAL SCORING AI
+# MAIA LIVE ENERGY SEARCH
 # =========================
 
-def maia_deal_scoring(proyectos):
+def maia_live_energy_search(query):
+
+    url = "https://duckduckgo.com/html/"
 
     resultados = []
 
-    for p in proyectos:
+    try:
 
-        score = 0
+        r = requests.post(url,data={"q":query},timeout=10)
 
-        tecnologia = str(p.get("tipo_activo","")).lower()
-        capacidad = int(p.get("capacidad_mw",1))
+        if r.status_code == 200:
 
-        if tecnologia in ["hidro","pch"]:
-            score += 25
-        else:
-            score += 20
+            html = r.text
 
-        if capacidad > 100:
-            score += 25
-        elif capacidad > 20:
-            score += 15
-        else:
-            score += 10
+            bloques = html.split("result__a")
 
-        if "inversion" in p.get("tipo_oportunidad","").lower():
-            score += 20
-        else:
-            score += 10
+            for b in bloques[1:6]:
 
-        prioridad = "Baja"
+                try:
 
-        if score >= 70:
-            prioridad = "Alta"
-        elif score >= 50:
-            prioridad = "Media"
+                    titulo = b.split(">")[1].split("<")[0]
+                    link = b.split('href="')[1].split('"')[0]
 
-        p["score_inversion"] = score
-        p["prioridad_inversion"] = prioridad
+                    resultados.append({
 
-        resultados.append(p)
+                    "titulo":titulo,
+                    "pais":"Detectado en búsqueda",
+                    "tipo_activo":"Hidro",
+                    "capacidad_mw":"Desconocido",
+                    "empresa":"Fuente web",
+                    "tipo_oportunidad":"Busqueda web",
+                    "fuente":"DuckDuckGo",
+                    "contacto":link,
+                    "fecha_publicacion":str(datetime.today().date())
+
+                    })
+
+                except:
+                    pass
+
+    except:
+        pass
 
     return resultados
-
-# =========================
-# TOP DEALS
-# =========================
-
-@proyectos_bp.route("/maia_top_deals")
-def maia_top_deals():
-
-    radar = (
-    radar_pch_global() +
-    radar_hidro_global() +
-    maia_energy_intelligence_engine() +
-    maia_global_energy_scanner() +
-    maia_global_energy_harvester()
-    )
-
-    scored = maia_deal_scoring(radar)
-
-    scored = sorted(scored, key=lambda x: x["score_inversion"], reverse=True)
-
-    return jsonify({
-
-    "motor":"MAIA Energy Intelligence",
-    "top_deals":scored[:20]
-
-    })
 
 # =========================
 # CHAT MAIA
@@ -398,24 +335,33 @@ def maia_top_deals():
 def maia_chat():
 
     data = request.get_json()
+
     mensaje = data.get("message","").lower()
+
+    if "buscar" in mensaje:
+
+        resultados = maia_live_energy_search(mensaje)
+
+        return jsonify({
+        "reply":f"MAIA encontró {len(resultados)} resultados en la web.",
+        "resultados":resultados
+        })
 
     if "top" in mensaje:
 
         radar = (
         radar_pch_global() +
         radar_hidro_global() +
+        maia_energy_intelligence_engine() +
         maia_global_energy_harvester()
         )
 
-        scored = maia_deal_scoring(radar)
-
-        scored = sorted(scored, key=lambda x: x["score_inversion"], reverse=True)
+        radar = sorted(radar, key=lambda x: random.random())
 
         return jsonify({
-        "reply":f"MAIA encontró {len(scored)} oportunidades. El mejor proyecto tiene score {scored[0]['score_inversion']}."
+        "reply":f"MAIA encontró {len(radar)} oportunidades energéticas."
         })
 
     return jsonify({
-    "reply":"Puedes pedirme: top proyectos, ejecutar scanner o buscar hidro."
+    "reply":"Puedes escribir: buscar hydropower colombia o buscar small hydro paraguay"
     })

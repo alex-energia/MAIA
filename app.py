@@ -136,14 +136,14 @@ def maia_energy_harvester():
             r = requests.get(
                 "https://duckduckgo.com/html/",
                 params={"q": q},
-                timeout=15
+                timeout=5
             )
 
             if r.status_code == 200:
 
                 bloques = r.text.split("result__a")
 
-                for b in bloques[1:6]:
+                for b in bloques[1:3]:
 
                     try:
 
@@ -195,12 +195,12 @@ def maia_hydro_deal_hunter():
             r = requests.get(
                 "https://duckduckgo.com/html/",
                 params={"q": q},
-                timeout=15
+                timeout=5
             )
 
             bloques = r.text.split("result__a")
 
-            for b in bloques[1:5]:
+            for b in bloques[1:3]:
 
                 try:
 

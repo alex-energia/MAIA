@@ -23,6 +23,7 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 # =========================
 # CREAR TABLAS
 # =========================
@@ -59,6 +60,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 # =========================
 # GUARDAR PROYECTO
 # =========================
@@ -88,6 +90,7 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
+
 # =========================
 # MEMORIA PROYECTOS
 # =========================
@@ -103,6 +106,7 @@ def memoria_proyectos():
     conn.close()
 
     return jsonify([dict(p) for p in proyectos])
+
 
 # =========================
 # ELIMINAR PROYECTO
@@ -122,6 +126,7 @@ def eliminar_proyecto(proyecto_id):
 
     return jsonify({"status": "eliminado"})
 
+
 # =========================
 # VER PROYECTO (DASHBOARD)
 # =========================
@@ -140,10 +145,21 @@ def ver_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado"
 
+    # VARIABLES QUE ESPERA EL DASHBOARD
+    contexto = {
+        "proyecto": proyecto,
+        "semaforo": "amarillo",
+        "capex": 0,
+        "opex": 0,
+        "van": 0,
+        "tir": 0
+    }
+
     return render_template(
         "proyecto_dashboard.html",
-        proyecto=proyecto
+        **contexto
     )
+
 
 # =========================
 # BUSQUEDA REAL EN INTERNET
@@ -193,6 +209,7 @@ def maia_live_energy_search(query):
 
     return resultados
 
+
 # =========================
 # MAIA GLOBAL HYDRO DEAL HUNTER
 # =========================
@@ -218,6 +235,7 @@ def maia_hydro_deal_hunter():
             resultados.append(item)
 
     return resultados
+
 
 # =========================
 # REGISTRAR ALERTAS
@@ -247,6 +265,7 @@ def registrar_alertas(oportunidades):
     conn.commit()
     conn.close()
 
+
 # =========================
 # ALERTAS
 # =========================
@@ -263,6 +282,7 @@ def maia_alertas():
 
     return jsonify([dict(a) for a in alertas])
 
+
 # =========================
 # BOTON BUSCAR OPORTUNIDADES
 # =========================
@@ -278,6 +298,7 @@ def maia_buscar_oportunidades():
         "total": len(oportunidades),
         "resultados": oportunidades
     })
+
 
 # =========================
 # BOTON ACTIVOS TEMPRANOS
@@ -307,6 +328,7 @@ def maia_activos_tempranos():
         "total": len(oportunidades),
         "resultados": oportunidades
     })
+
 
 # =========================
 # CHAT MAIA

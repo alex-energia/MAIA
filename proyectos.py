@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, redirect
 import sqlite3
 import os
 import requests
@@ -7,6 +7,7 @@ from datetime import datetime
 # =========================
 # BLUEPRINT
 # =========================
+
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
@@ -18,6 +19,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
+
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -26,6 +28,7 @@ def get_db():
 # =========================
 # CREAR TABLAS
 # =========================
+
 def init_db():
 
     conn = get_db()
@@ -62,6 +65,7 @@ def init_db():
 # =========================
 # GUARDAR PROYECTO
 # =========================
+
 @proyectos_bp.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
@@ -86,11 +90,12 @@ def guardar_proyecto():
     conn.commit()
     conn.close()
 
-    return jsonify({"status": "proyecto_guardado"})
+    return redirect("/proyectos")
 
 # =========================
 # MEMORIA PROYECTOS
 # =========================
+
 @proyectos_bp.route("/memoria_proyectos")
 def memoria_proyectos():
 
@@ -107,6 +112,7 @@ def memoria_proyectos():
 # =========================
 # ELIMINAR PROYECTO
 # =========================
+
 @proyectos_bp.route("/eliminar_proyecto/<int:proyecto_id>", methods=["DELETE"])
 def eliminar_proyecto(proyecto_id):
 
@@ -125,6 +131,7 @@ def eliminar_proyecto(proyecto_id):
 # =========================
 # BUSQUEDA REAL EN INTERNET
 # =========================
+
 def maia_live_energy_search(query):
 
     url = "https://duckduckgo.com/html/"
@@ -142,7 +149,6 @@ def maia_live_energy_search(query):
         if r.status_code == 200:
 
             html = r.text
-
             bloques = html.split("result__a")
 
             for b in bloques[1:4]:
@@ -150,11 +156,9 @@ def maia_live_energy_search(query):
                 try:
 
                     titulo = b.split(">")[1].split("<")[0]
-
                     link = b.split('href="')[1].split('"')[0]
 
                     resultados.append({
-
                         "titulo": titulo,
                         "pais": "Detectado en web",
                         "tipo_activo": "Energia",
@@ -164,7 +168,6 @@ def maia_live_energy_search(query):
                         "fuente": "DuckDuckGo",
                         "contacto": link,
                         "fecha_publicacion": str(datetime.today().date())
-
                     })
 
                 except:
@@ -178,17 +181,16 @@ def maia_live_energy_search(query):
 # =========================
 # MAIA GLOBAL HYDRO DEAL HUNTER
 # =========================
+
 def maia_hydro_deal_hunter():
 
     queries = [
-
         "hydropower project for sale",
         "small hydro power plant for sale",
         "run of river hydro investment",
         "hydropower investors wanted",
         "hydropower concession project",
         "small hydro project investment opportunity"
-
     ]
 
     resultados = []
@@ -198,9 +200,7 @@ def maia_hydro_deal_hunter():
         r = maia_live_energy_search(q)
 
         for item in r:
-
             item["tipo_activo"] = "Hidro / PCH"
-
             resultados.append(item)
 
     return resultados
@@ -208,6 +208,7 @@ def maia_hydro_deal_hunter():
 # =========================
 # REGISTRAR ALERTAS
 # =========================
+
 def registrar_alertas(oportunidades):
 
     conn = get_db()
@@ -236,6 +237,7 @@ def registrar_alertas(oportunidades):
 # =========================
 # ALERTAS
 # =========================
+
 @proyectos_bp.route("/maia_alertas")
 def maia_alertas():
 
@@ -252,6 +254,7 @@ def maia_alertas():
 # =========================
 # BOTON BUSCAR OPORTUNIDADES
 # =========================
+
 @proyectos_bp.route("/maia_buscar_oportunidades")
 def maia_buscar_oportunidades():
 
@@ -260,27 +263,24 @@ def maia_buscar_oportunidades():
     registrar_alertas(oportunidades)
 
     return jsonify({
-
         "motor": "MAIA Hydro Deal Hunter",
         "total": len(oportunidades),
         "resultados": oportunidades
-
     })
 
 # =========================
 # BOTON ACTIVOS TEMPRANOS
 # =========================
+
 @proyectos_bp.route("/maia_activos_tempranos")
 def maia_activos_tempranos():
 
     queries = [
-
         "hydropower project permitting",
         "small hydro project prefeasibility",
         "hydropower concession project",
         "run of river license application",
         "hydropower environmental permit"
-
     ]
 
     oportunidades = []
@@ -288,22 +288,20 @@ def maia_activos_tempranos():
     for q in queries:
 
         resultados = maia_live_energy_search(q)
-
         oportunidades.extend(resultados)
 
     registrar_alertas(oportunidades)
 
     return jsonify({
-
         "motor": "MAIA Early Energy Asset Detector",
         "total": len(oportunidades),
         "resultados": oportunidades
-
     })
 
 # =========================
 # CHAT MAIA
 # =========================
+
 @proyectos_bp.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
@@ -320,14 +318,10 @@ def maia_chat():
         registrar_alertas(resultados)
 
         return jsonify({
-
             "reply": f"MAIA encontró {len(resultados)} resultados para: {query}",
             "resultados": resultados
-
         })
 
     return jsonify({
-
         "reply": "Puedes decir por ejemplo: buscar pch colombia o buscar hydropower chile"
-
     })

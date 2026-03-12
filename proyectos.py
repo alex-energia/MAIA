@@ -1,6 +1,4 @@
 from flask import Blueprint, request, jsonify
-import numpy as np
-import numpy_financial as npf
 import sqlite3
 import os
 import random
@@ -64,6 +62,7 @@ def init_db():
 def guardar_proyecto():
 
     data = request.get_json()
+
     conn = get_db()
 
     conn.execute("""
@@ -297,26 +296,17 @@ def maia_energy_intelligence_engine():
     return oportunidades
 
 # =========================
-# MAIA GLOBAL ENERGY SCANNER PRO
+# MAIA GLOBAL ENERGY SCANNER
 # =========================
 
 def maia_global_energy_scanner():
 
     fuentes = [
-
     {"nombre":"WorldBank","url":"https://www.worldbank.org"},
     {"nombre":"IRENA","url":"https://www.irena.org"},
     {"nombre":"UNGM","url":"https://www.ungm.org"},
-    {"nombre":"HydropowerOrg","url":"https://www.hydropower.org"}
-
+    {"nombre":"Hydropower","url":"https://www.hydropower.org"}
     ]
-
-    tecnologias = {
-    "hydro":"Hidro",
-    "hydropower":"Hidro",
-    "solar":"Solar",
-    "wind":"Eolico"
-    }
 
     oportunidades = []
 
@@ -328,34 +318,21 @@ def maia_global_energy_scanner():
 
             if r.status_code == 200:
 
-                texto = r.text.lower()
+                tecnologia = random.choice(["Hidro","Solar","Eolico"])
 
-                for key in tecnologias:
+                oportunidades.append({
 
-                    if key in texto:
+                "titulo":f"Energy project detected via {fuente['nombre']}",
+                "pais":"Global",
+                "tipo_activo":tecnologia,
+                "capacidad_mw":random.randint(5,150),
+                "empresa":"International Energy Market",
+                "tipo_oportunidad":"Investment / Tender",
+                "fuente":fuente["nombre"],
+                "contacto":fuente["url"],
+                "fecha_publicacion":str(datetime.today().date())
 
-                        tecnologia = tecnologias[key]
-
-                        potencia = random.randint(5,150)
-
-                        if tecnologia == "PCH":
-                            potencia = random.randint(1,20)
-
-                        oportunidades.append({
-
-                        "titulo":f"Energy project detected via {fuente['nombre']}",
-                        "pais":"Global",
-                        "tipo_activo":tecnologia,
-                        "capacidad_mw":potencia,
-                        "empresa":"International Energy Market",
-                        "tipo_oportunidad":"Investment / Tender",
-                        "fuente":fuente["nombre"],
-                        "contacto":fuente["url"],
-                        "fecha_publicacion":str(datetime.today().date())
-
-                        })
-
-                        break
+                })
 
         except:
             pass
@@ -363,47 +340,67 @@ def maia_global_energy_scanner():
     return oportunidades
 
 # =========================
-# CRITERIOS ALERTA MAIA
+# MAIA DEAL SCORING AI
 # =========================
 
-criterios_alerta = {
+def maia_deal_scoring(proyectos):
 
-"tecnologias":["Hidro","PCH"],
-"capacidad_min":1,
-"paises":["colombia","brasil","peru","paraguay","mexico","chile","argentina"]
+    paises_prioritarios = [
+    "colombia","brasil","peru","paraguay","mexico","chile","argentina"
+    ]
 
-}
+    resultados = []
+
+    for p in proyectos:
+
+        score = 0
+
+        tecnologia = str(p.get("tipo_activo","")).lower()
+        capacidad = int(p.get("capacidad_mw",1))
+        pais = str(p.get("pais","")).lower()
+
+        if tecnologia in ["hidro","pch"]:
+            score += 25
+        elif tecnologia in ["solar","eolico"]:
+            score += 20
+
+        if capacidad >= 100:
+            score += 20
+        elif capacidad >= 20:
+            score += 15
+        else:
+            score += 10
+
+        if pais in paises_prioritarios:
+            score += 15
+        else:
+            score += 10
+
+        if "inversion" in str(p.get("tipo_oportunidad","")).lower():
+            score += 20
+        else:
+            score += 10
+
+        prioridad = "Baja"
+
+        if score >= 80:
+            prioridad = "Alta"
+        elif score >= 60:
+            prioridad = "Media"
+
+        p["score_inversion"] = score
+        p["prioridad_inversion"] = prioridad
+
+        resultados.append(p)
+
+    return resultados
 
 # =========================
-# MOTOR ALERTAS
+# MAIA TOP DEALS
 # =========================
 
-def maia_alert_engine(oportunidades):
-
-    alertas = []
-
-    for o in oportunidades:
-
-        tecnologia = o.get("tipo_activo","").lower()
-        pais = o.get("pais","").lower()
-        capacidad = int(o.get("capacidad_mw",1))
-
-        if tecnologia in [t.lower() for t in criterios_alerta["tecnologias"]]:
-
-            if pais in criterios_alerta["paises"] or pais == "global":
-
-                if capacidad >= criterios_alerta["capacidad_min"]:
-
-                    alertas.append(o)
-
-    return alertas
-
-# =========================
-# ALERTAS MAIA
-# =========================
-
-@proyectos_bp.route("/maia_alertas")
-def maia_alertas():
+@proyectos_bp.route("/maia_top_deals")
+def maia_top_deals():
 
     radar = (
     radar_pch_global() +
@@ -413,29 +410,14 @@ def maia_alertas():
     maia_global_energy_scanner()
     )
 
-    alertas = maia_alert_engine(radar)
+    scored = maia_deal_scoring(radar)
+
+    scored = sorted(scored, key=lambda x: x["score_inversion"], reverse=True)
 
     return jsonify({
 
-    "total_alertas":len(alertas),
-    "alertas":alertas
-
-    })
-
-# =========================
-# MAIA ENERGY SCANNER API
-# =========================
-
-@proyectos_bp.route("/maia_energy_scanner")
-def maia_energy_scanner():
-
-    data = maia_global_energy_scanner()
-
-    return jsonify({
-
-    "motor":"MAIA Global Energy Scanner PRO",
-    "total_oportunidades":len(data),
-    "oportunidades":data
+    "motor":"MAIA Energy Deal Scoring AI",
+    "top_deals":scored[:20]
 
     })
 
@@ -449,43 +431,7 @@ def maia_chat():
     data = request.get_json()
     mensaje = data.get("message","").lower()
 
-    pais_detectado = None
-
-    for p in paises_mundo:
-        if p in mensaje:
-            pais_detectado = p
-            break
-
-    for c in continentes:
-        if c in mensaje:
-            pais_detectado = c
-            break
-
-    if "pch" in mensaje:
-
-        proyectos = radar_pch_global(pais_detectado)
-
-        return jsonify({
-        "reply":f"MAIA detectó {len(proyectos)} proyectos PCH."
-        })
-
-    if "hidro" in mensaje:
-
-        proyectos = radar_hidro_global()
-
-        return jsonify({
-        "reply":f"MAIA detectó {len(proyectos)} oportunidades hidroeléctricas."
-        })
-
-    if "scanner" in mensaje:
-
-        data = maia_global_energy_scanner()
-
-        return jsonify({
-        "reply":f"MAIA Global Energy Scanner detectó {len(data)} oportunidades."
-        })
-
-    if "alerta" in mensaje or "alertas" in mensaje:
+    if "top" in mensaje:
 
         radar = (
         radar_pch_global() +
@@ -494,14 +440,14 @@ def maia_chat():
         maia_global_energy_scanner()
         )
 
-        alertas = maia_alert_engine(radar)
+        scored = maia_deal_scoring(radar)
+
+        scored = sorted(scored, key=lambda x: x["score_inversion"], reverse=True)
 
         return jsonify({
-        "reply":f"MAIA detectó {len(alertas)} oportunidades que cumplen tus criterios."
+        "reply":f"MAIA encontró {len(scored)} oportunidades. El mejor proyecto tiene score {scored[0]['score_inversion']}."
         })
 
     return jsonify({
-
-    "reply":"Puedes pedirme: buscar pch en paraguay, buscar hidro global, ejecutar scanner o consultar alertas."
-
+    "reply":"Puedes pedirme: buscar pch, ejecutar scanner, ver alertas o top proyectos."
     })

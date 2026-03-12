@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
 from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 from maia_global_scanner import escanear_mercado_global
+
 import requests
 import os
 
@@ -31,8 +32,9 @@ app.register_blueprint(proyectos_bp)
 def home():
     return render_template("index.html")
 
+
 # =========================
-# PAGINA PROYECTOS (ARREGLA EL 404)
+# PAGINA PROYECTOS
 # =========================
 
 @app.route("/proyectos")
@@ -47,6 +49,46 @@ def proyectos():
     conn.close()
 
     return render_template("proyectos.html", proyectos=proyectos)
+
+
+# =========================
+# CREAR PROYECTO
+# =========================
+
+@app.route("/proyectos/nuevo")
+def nuevo_proyecto():
+
+    return """
+    <h2>Crear nuevo proyecto</h2>
+
+    <form method="post" action="/guardar_proyecto">
+
+    Nombre del proyecto:<br>
+    <input name="nombre"><br><br>
+
+    <button type="submit">Guardar</button>
+
+    </form>
+    """
+
+
+@app.route("/guardar_proyecto", methods=["POST"])
+def guardar_proyecto():
+
+    nombre = request.form.get("nombre")
+
+    conn = get_db()
+
+    conn.execute(
+        "INSERT INTO proyectos_guardados (titulo) VALUES (?)",
+        (nombre,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return redirect("/proyectos")
+
 
 # =========================
 # ALERTAS MAIA
@@ -64,6 +106,7 @@ def maia_alertas():
     conn.close()
 
     return jsonify([dict(a) for a in alertas])
+
 
 # =========================
 # ENERGY HARVESTER
@@ -86,9 +129,9 @@ def maia_energy_harvester():
 
     resultados = []
 
-    try:
+    for q in queries:
 
-        for q in queries:
+        try:
 
             r = requests.get(
                 "https://duckduckgo.com/html/",
@@ -110,10 +153,10 @@ def maia_energy_harvester():
                         resultados.append({
 
                             "titulo": titulo,
-                            "pais": "Detectado en web",
+                            "pais": "web",
                             "tipo_activo": "energia",
                             "capacidad_mw": "N/D",
-                            "empresa": "Fuente web",
+                            "empresa": "fuente web",
                             "contacto": link
 
                         })
@@ -121,14 +164,103 @@ def maia_energy_harvester():
                     except:
                         pass
 
-    except:
-        pass
+        except:
+            pass
 
     return resultados
 
+
+# =========================
+# HYDRO DEAL HUNTER
+# =========================
+
+def maia_hydro_deal_hunter():
+
+    queries = [
+
+        "hydropower project for sale colombia",
+        "hydropower concession latin america",
+        "small hydro plant investment 1 mw",
+        "hydropower asset acquisition",
+        "hydro project seeking investors"
+
+    ]
+
+    deals = []
+
+    for q in queries:
+
+        try:
+
+            r = requests.get(
+                "https://duckduckgo.com/html/",
+                params={"q": q},
+                timeout=15
+            )
+
+            bloques = r.text.split("result__a")
+
+            for b in bloques[1:5]:
+
+                try:
+
+                    titulo = b.split(">")[1].split("<")[0]
+                    link = b.split('href="')[1].split('"')[0]
+
+                    deals.append({
+
+                        "titulo": titulo,
+                        "pais": "global",
+                        "tipo_activo": "hidroelectrica",
+                        "capacidad_mw": "1+ MW",
+                        "empresa": "market source",
+                        "contacto": link
+
+                    })
+
+                except:
+                    pass
+
+        except:
+            pass
+
+    return deals
+
+
+# =========================
+# MAIA OPORTUNIDADES
+# =========================
+
+@app.route("/maia_oportunidades")
+def maia_oportunidades():
+
+    resultados = []
+
+    try:
+        resultados.extend(buscar_oportunidades())
+    except:
+        pass
+
+    try:
+        resultados.extend(maia_energy_harvester())
+    except:
+        pass
+
+    try:
+        resultados.extend(maia_hydro_deal_hunter())
+    except:
+        pass
+
+    return jsonify({
+
+        "total_oportunidades": len(resultados),
+        "oportunidades": resultados
+
+    })
+
+
 # =========================
 # MAIA MASTER SCANNER
-# ACTIVA TODOS LOS MOTORES
 # =========================
 
 @app.route("/maia_master_scan")
@@ -137,20 +269,29 @@ def maia_master_scan():
     oportunidades = []
 
     try:
+        oportunidades.extend(buscar_oportunidades())
+    except:
+        pass
 
-        a = buscar_oportunidades()
-        b = detectar_activos_tempranos()
-        c = escanear_mercado_global()
-        d = maia_energy_harvester()
+    try:
+        oportunidades.extend(detectar_activos_tempranos())
+    except:
+        pass
 
-        oportunidades.extend(a)
-        oportunidades.extend(b)
-        oportunidades.extend(c)
-        oportunidades.extend(d)
+    try:
+        oportunidades.extend(escanear_mercado_global())
+    except:
+        pass
 
-    except Exception as e:
+    try:
+        oportunidades.extend(maia_energy_harvester())
+    except:
+        pass
 
-        return jsonify({"error": str(e)})
+    try:
+        oportunidades.extend(maia_hydro_deal_hunter())
+    except:
+        pass
 
     return jsonify({
 
@@ -159,6 +300,7 @@ def maia_master_scan():
         "resultados": oportunidades
 
     })
+
 
 # =========================
 # CHAT MAIA
@@ -174,24 +316,19 @@ def maia_chat():
     respuesta = "MAIA no tiene suficiente información para responder."
 
     if "van" in pregunta:
-
         respuesta = "El VAN mide la rentabilidad descontando flujos futuros."
 
     elif "tir" in pregunta:
-
         respuesta = "La TIR es la tasa de retorno que iguala el VAN a cero."
 
     elif "riesgo" in pregunta:
-
         respuesta = "El riesgo depende de volatilidad de ingresos y CAPEX."
 
     elif "scan" in pregunta or "buscar proyectos" in pregunta:
-
-        resultados = maia_master_scan()
-
         respuesta = "MAIA ejecutó un escaneo global del mercado energético."
 
     return jsonify({"reply": respuesta})
+
 
 # =========================
 # HEALTH CHECK
@@ -200,6 +337,7 @@ def maia_chat():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
+
 
 # =========================
 # EJECUTAR APP

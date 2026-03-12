@@ -3,21 +3,38 @@
 
 <head>
 <title>Nuevo Proyecto</title>
+
+<style>
+body{
+font-family:Arial;
+margin:40px;
+}
+
+input,select{
+padding:6px;
+width:220px;
+margin-bottom:10px;
+}
+
+button{
+padding:8px 15px;
+}
+</style>
+
 </head>
 
 <body>
 
 <h1>Crear Proyecto</h1>
 
-<form method="POST">
+<form method="POST" action="/guardar_proyecto">
 
 <label>Nombre del proyecto</label><br>
-<input type="text" name="nombre" required>
+<input type="text" name="titulo" required>
 <br><br>
 
 <label>Tipo de proyecto</label><br>
-<select name="sector" required>
-
+<select name="tipo_activo" required>
 <option value="">Seleccionar</option>
 <option value="Solar">Energía Solar</option>
 <option value="Hidro">Hidroeléctrico</option>
@@ -26,50 +43,39 @@
 <option value="Agro">Agrícola</option>
 <option value="Mineria">Minería</option>
 <option value="Infraestructura">Infraestructura</option>
-
 </select>
-
 <br><br>
 
 <label>País</label><br>
 <input type="text" name="pais" required>
-
 <br><br>
 
 <label>Ciudad</label><br>
 <input type="text" name="ciudad">
-
 <br><br>
 
 <label>Moneda</label><br>
 <select name="moneda">
-
 <option value="USD">USD</option>
 <option value="COP">COP</option>
 <option value="EUR">EUR</option>
-
 </select>
-
 <br><br>
 
 <label>Horizonte del proyecto (años)</label><br>
 <input type="number" name="horizonte" required>
-
 <br><br>
 
 <label>Capacidad del proyecto</label><br>
-<input type="number" name="capacidad" required>
-
+<input type="number" name="capacidad_mw" required>
 <br><br>
 
 <label>Unidad</label><br>
 <select name="unidad">
-
 <option value="MW">MW</option>
 <option value="hectareas">Hectáreas</option>
 <option value="ton">Toneladas/año</option>
 <option value="km">Kilómetros</option>
-
 </select>
 
 <br><br>

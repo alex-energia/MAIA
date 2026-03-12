@@ -30,6 +30,7 @@ def get_db():
 # =========================
 
 def init_db():
+
     conn = get_db()
 
     conn.execute("""
@@ -46,6 +47,15 @@ def init_db():
         contacto TEXT,
         fecha_publicacion TEXT,
         fecha_guardado TEXT
+    )
+    """)
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS maia_alertas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        titulo TEXT,
+        fuente TEXT,
+        fecha TEXT
     )
     """)
 
@@ -142,7 +152,6 @@ def maia_live_energy_search(query):
         if r.status_code == 200:
 
             html = r.text
-
             bloques = html.split("result__a")
 
             for b in bloques[1:8]:
@@ -175,33 +184,98 @@ def maia_live_energy_search(query):
     return resultados
 
 # =========================
+# MAIA GLOBAL HYDRO DEAL HUNTER
+# =========================
+
+def maia_hydro_deal_hunter():
+
+    queries = [
+
+        "hydropower project for sale",
+        "small hydro power plant for sale",
+        "run of river hydro investment",
+        "hydropower investors wanted",
+        "hydropower concession project",
+        "small hydro project investment opportunity"
+
+    ]
+
+    resultados = []
+
+    for q in queries:
+
+        r = maia_live_energy_search(q)
+
+        for item in r:
+
+            item["tipo_activo"] = "Hidro / PCH"
+
+            resultados.append(item)
+
+    return resultados
+
+# =========================
+# REGISTRAR ALERTAS
+# =========================
+
+def registrar_alertas(oportunidades):
+
+    conn = get_db()
+
+    for o in oportunidades:
+
+        existe = conn.execute(
+
+        "SELECT id FROM maia_alertas WHERE titulo=?",
+
+        (o["titulo"],)
+
+        ).fetchone()
+
+        if not existe:
+
+            conn.execute(
+
+            "INSERT INTO maia_alertas (titulo,fuente,fecha) VALUES (?,?,?)",
+
+            (o["titulo"], o["fuente"], str(datetime.today().date()))
+
+            )
+
+    conn.commit()
+    conn.close()
+
+# =========================
+# ALERTAS
+# =========================
+
+@proyectos_bp.route("/maia_alertas")
+def maia_alertas():
+
+    conn = get_db()
+
+    alertas = conn.execute(
+        "SELECT * FROM maia_alertas ORDER BY id DESC LIMIT 10"
+    ).fetchall()
+
+    conn.close()
+
+    return jsonify([dict(a) for a in alertas])
+
+# =========================
 # BOTON BUSCAR OPORTUNIDADES
 # =========================
 
 @proyectos_bp.route("/maia_buscar_oportunidades")
 def maia_buscar_oportunidades():
 
-    queries = [
+    oportunidades = maia_hydro_deal_hunter()
 
-        "hydropower project for sale",
-        "small hydro investors wanted",
-        "renewable energy project investment opportunity",
-        "energy project seeking investors",
-        "run of river hydro project investment"
-
-    ]
-
-    oportunidades = []
-
-    for q in queries:
-
-        resultados = maia_live_energy_search(q)
-
-        oportunidades.extend(resultados)
+    registrar_alertas(oportunidades)
 
     return jsonify({
 
-        "motor":"MAIA Global Energy Scanner",
+        "motor":"MAIA Hydro Deal Hunter",
         "resultados": oportunidades
 
     })
@@ -231,6 +305,8 @@ def maia_activos_tempranos():
 
         oportunidades.extend(resultados)
 
+    registrar_alertas(oportunidades)
+
     return jsonify({
 
         "motor":"MAIA Early Energy Asset Detector",
@@ -254,6 +330,8 @@ def maia_chat():
         query = mensaje.replace("buscar","").strip()
 
         resultados = maia_live_energy_search(query)
+
+        registrar_alertas(resultados)
 
         return jsonify({
 

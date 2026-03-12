@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, redirect
+from flask import Blueprint, request, jsonify, redirect, render_template
 import sqlite3
 import os
 import requests
@@ -7,7 +7,6 @@ from datetime import datetime
 # =========================
 # BLUEPRINT
 # =========================
-
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
@@ -19,7 +18,6 @@ if not os.path.exists(UPLOAD_FOLDER):
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
-
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -28,7 +26,6 @@ def get_db():
 # =========================
 # CREAR TABLAS
 # =========================
-
 def init_db():
 
     conn = get_db()
@@ -65,7 +62,6 @@ def init_db():
 # =========================
 # GUARDAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
@@ -95,7 +91,6 @@ def guardar_proyecto():
 # =========================
 # MEMORIA PROYECTOS
 # =========================
-
 @proyectos_bp.route("/memoria_proyectos")
 def memoria_proyectos():
 
@@ -112,7 +107,6 @@ def memoria_proyectos():
 # =========================
 # ELIMINAR PROYECTO
 # =========================
-
 @proyectos_bp.route("/eliminar_proyecto/<int:proyecto_id>", methods=["DELETE"])
 def eliminar_proyecto(proyecto_id):
 
@@ -129,13 +123,34 @@ def eliminar_proyecto(proyecto_id):
     return jsonify({"status": "eliminado"})
 
 # =========================
+# VER PROYECTO (DASHBOARD)
+# =========================
+@proyectos_bp.route("/proyectos/<int:proyecto_id>")
+def ver_proyecto(proyecto_id):
+
+    conn = get_db()
+
+    proyecto = conn.execute(
+        "SELECT * FROM proyectos_guardados WHERE id=?",
+        (proyecto_id,)
+    ).fetchone()
+
+    conn.close()
+
+    if not proyecto:
+        return "Proyecto no encontrado"
+
+    return render_template(
+        "proyecto_dashboard.html",
+        proyecto=proyecto
+    )
+
+# =========================
 # BUSQUEDA REAL EN INTERNET
 # =========================
-
 def maia_live_energy_search(query):
 
     url = "https://duckduckgo.com/html/"
-
     resultados = []
 
     try:
@@ -181,7 +196,6 @@ def maia_live_energy_search(query):
 # =========================
 # MAIA GLOBAL HYDRO DEAL HUNTER
 # =========================
-
 def maia_hydro_deal_hunter():
 
     queries = [
@@ -208,7 +222,6 @@ def maia_hydro_deal_hunter():
 # =========================
 # REGISTRAR ALERTAS
 # =========================
-
 def registrar_alertas(oportunidades):
 
     conn = get_db()
@@ -237,7 +250,6 @@ def registrar_alertas(oportunidades):
 # =========================
 # ALERTAS
 # =========================
-
 @proyectos_bp.route("/maia_alertas")
 def maia_alertas():
 
@@ -254,7 +266,6 @@ def maia_alertas():
 # =========================
 # BOTON BUSCAR OPORTUNIDADES
 # =========================
-
 @proyectos_bp.route("/maia_buscar_oportunidades")
 def maia_buscar_oportunidades():
 
@@ -271,7 +282,6 @@ def maia_buscar_oportunidades():
 # =========================
 # BOTON ACTIVOS TEMPRANOS
 # =========================
-
 @proyectos_bp.route("/maia_activos_tempranos")
 def maia_activos_tempranos():
 
@@ -301,12 +311,10 @@ def maia_activos_tempranos():
 # =========================
 # CHAT MAIA
 # =========================
-
 @proyectos_bp.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
     data = request.get_json()
-
     mensaje = data.get("message", "")
 
     if "buscar" in mensaje.lower():

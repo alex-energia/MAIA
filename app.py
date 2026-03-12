@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify
-from proyectos import proyectos_bp, init_db
+from proyectos import proyectos_bp, init_db, get_db
 from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 from maia_global_scanner import escanear_mercado_global
+import requests
 import os
 
 # =========================
@@ -31,13 +32,28 @@ def home():
     return render_template("index.html")
 
 # =========================
+# PAGINA PROYECTOS (ARREGLA EL 404)
+# =========================
+
+@app.route("/proyectos")
+def proyectos():
+
+    conn = get_db()
+
+    proyectos = conn.execute(
+        "SELECT id, titulo as nombre FROM proyectos_guardados ORDER BY id DESC"
+    ).fetchall()
+
+    conn.close()
+
+    return render_template("proyectos.html", proyectos=proyectos)
+
+# =========================
 # ALERTAS MAIA
 # =========================
 
 @app.route("/maia_alertas")
 def maia_alertas():
-
-    from proyectos import get_db
 
     conn = get_db()
 
@@ -50,6 +66,101 @@ def maia_alertas():
     return jsonify([dict(a) for a in alertas])
 
 # =========================
+# ENERGY HARVESTER
+# =========================
+
+def maia_energy_harvester():
+
+    queries = [
+
+        "hydropower project for sale",
+        "small hydro project investment",
+        "renewable energy project investment opportunity",
+        "energy project seeking investors",
+        "run of river hydro project investment",
+        "hydropower concession project",
+        "hydropower tender",
+        "renewable energy M&A project"
+
+    ]
+
+    resultados = []
+
+    try:
+
+        for q in queries:
+
+            r = requests.get(
+                "https://duckduckgo.com/html/",
+                params={"q": q},
+                timeout=15
+            )
+
+            if r.status_code == 200:
+
+                bloques = r.text.split("result__a")
+
+                for b in bloques[1:6]:
+
+                    try:
+
+                        titulo = b.split(">")[1].split("<")[0]
+                        link = b.split('href="')[1].split('"')[0]
+
+                        resultados.append({
+
+                            "titulo": titulo,
+                            "pais": "Detectado en web",
+                            "tipo_activo": "energia",
+                            "capacidad_mw": "N/D",
+                            "empresa": "Fuente web",
+                            "contacto": link
+
+                        })
+
+                    except:
+                        pass
+
+    except:
+        pass
+
+    return resultados
+
+# =========================
+# MAIA MASTER SCANNER
+# ACTIVA TODOS LOS MOTORES
+# =========================
+
+@app.route("/maia_master_scan")
+def maia_master_scan():
+
+    oportunidades = []
+
+    try:
+
+        a = buscar_oportunidades()
+        b = detectar_activos_tempranos()
+        c = escanear_mercado_global()
+        d = maia_energy_harvester()
+
+        oportunidades.extend(a)
+        oportunidades.extend(b)
+        oportunidades.extend(c)
+        oportunidades.extend(d)
+
+    except Exception as e:
+
+        return jsonify({"error": str(e)})
+
+    return jsonify({
+
+        "motor": "MAIA MASTER ENERGY SCANNER",
+        "total_oportunidades": len(oportunidades),
+        "resultados": oportunidades
+
+    })
+
+# =========================
 # CHAT MAIA
 # =========================
 
@@ -57,140 +168,33 @@ def maia_alertas():
 def maia_chat():
 
     data = request.get_json()
+
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información para responder."
 
-    # =========================
-    # ANALISIS FINANCIERO
-    # =========================
-
     if "van" in pregunta:
-        respuesta = "El VAN (Valor Actual Neto) mide la rentabilidad del proyecto descontando los flujos futuros."
+
+        respuesta = "El VAN mide la rentabilidad descontando flujos futuros."
 
     elif "tir" in pregunta:
-        respuesta = "La TIR es la tasa de retorno que iguala el VAN a cero. Si es mayor al costo de capital, el proyecto es rentable."
+
+        respuesta = "La TIR es la tasa de retorno que iguala el VAN a cero."
 
     elif "riesgo" in pregunta:
-        respuesta = "El riesgo del proyecto depende de la volatilidad de ingresos, el CAPEX y la estabilidad del flujo de caja."
 
-    elif "invertir" in pregunta:
-        respuesta = "MAIA recomienda evaluar VAN positivo, TIR mayor al WACC y probabilidad alta en la simulación Monte Carlo."
+        respuesta = "El riesgo depende de volatilidad de ingresos y CAPEX."
 
-    elif "capex" in pregunta:
-        respuesta = "El CAPEX corresponde a la inversión inicial necesaria para ejecutar el proyecto."
+    elif "scan" in pregunta or "buscar proyectos" in pregunta:
 
-    elif "payback" in pregunta:
-        respuesta = "El payback indica el tiempo necesario para recuperar la inversión inicial."
+        resultados = maia_master_scan()
 
-    elif "montecarlo" in pregunta:
-        respuesta = "La simulación Monte Carlo evalúa miles de escenarios posibles para estimar la probabilidad de rentabilidad."
-
-    # =========================
-    # INFORMACION SOBRE MAIA
-    # =========================
-
-    elif "maia" in pregunta:
-        respuesta = "MAIA es un motor de inteligencia energética que analiza proyectos, detecta oportunidades de inversión y realiza barridos globales del mercado energético."
-
-    # =========================
-    # SCANNER GLOBAL
-    # =========================
-
-    elif "barrido" in pregunta or "scan" in pregunta or "buscar proyectos" in pregunta:
-
-        resultados = escanear_mercado_global()
-
-        respuesta = f"MAIA realizó un barrido global y encontró {len(resultados)} oportunidades energéticas."
-
-    elif "smr" in pregunta or "nuclear" in pregunta:
-
-        resultados = escanear_mercado_global()
-
-        filtrados = [r for r in resultados if r.get("tipo_activo") == "nuclear_smr"]
-
-        respuesta = f"MAIA detectó {len(filtrados)} oportunidades relacionadas con reactores nucleares SMR."
-
-    elif "hidro" in pregunta or "hidroelectrica" in pregunta:
-
-        resultados = escanear_mercado_global()
-
-        filtrados = [r for r in resultados if r.get("tipo_activo") == "hidroelectrica"]
-
-        respuesta = f"MAIA detectó {len(filtrados)} oportunidades hidroeléctricas en el mercado global."
+        respuesta = "MAIA ejecutó un escaneo global del mercado energético."
 
     return jsonify({"reply": respuesta})
 
 # =========================
-# MAIA OPORTUNIDADES ENERGETICAS
-# =========================
-
-@app.route("/maia_oportunidades")
-def maia_oportunidades():
-
-    try:
-
-        data = buscar_oportunidades()
-
-        return jsonify({
-            "total_oportunidades": len(data),
-            "oportunidades": data
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "error": "Error buscando oportunidades",
-            "detalle": str(e)
-        })
-
-# =========================
-# MAIA DEAL FINDER
-# =========================
-
-@app.route("/maia_deal_finder")
-def maia_deal_finder():
-
-    try:
-
-        data = detectar_activos_tempranos()
-
-        return jsonify({
-            "deals_detectados": len(data),
-            "deals": data
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "error": "Error detectando activos",
-            "detalle": str(e)
-        })
-
-# =========================
-# MAIA GLOBAL SCANNER
-# =========================
-
-@app.route("/maia_global_scan")
-def maia_global_scan():
-
-    try:
-
-        data = escanear_mercado_global()
-
-        return jsonify({
-            "total_oportunidades": len(data),
-            "resultados": data
-        })
-
-    except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        })
-
-# =========================
-# HEALTH CHECK (IMPORTANTE PARA RENDER)
+# HEALTH CHECK
 # =========================
 
 @app.route("/health")

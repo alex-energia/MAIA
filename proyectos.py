@@ -8,7 +8,7 @@ from datetime import datetime
 # CONECTAR MOTOR FINANCIERO
 # =========================
 try:
-    from nexus_motor import evaluar_proyecto
+    evaluar_proyecto = None
 except:
     evaluar_proyecto = None
 

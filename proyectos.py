@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, redirect, render_template
 import sqlite3
 import os
 import requests
+import json
 from datetime import datetime
 
 # ======================================
@@ -9,7 +10,6 @@ from datetime import datetime
 # ======================================
 
 evaluar_proyecto = None
-
 
 # ======================================
 # BLUEPRINT
@@ -23,7 +23,6 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-
 # ======================================
 # BASE DE DATOS
 # ======================================
@@ -32,7 +31,6 @@ def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 # ======================================
 # CREAR TABLAS
@@ -71,7 +69,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 # ======================================
 # GUARDAR PROYECTO
 # ======================================
@@ -98,7 +95,6 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
-
 # ======================================
 # MEMORIA PROYECTOS
 # ======================================
@@ -115,7 +111,6 @@ def memoria_proyectos():
     conn.close()
 
     return jsonify([dict(p) for p in proyectos])
-
 
 # ======================================
 # ELIMINAR PROYECTO
@@ -135,7 +130,6 @@ def eliminar_proyecto(proyecto_id):
     conn.close()
 
     return jsonify({"status": "eliminado"})
-
 
 # ======================================
 # MOTOR FINANCIERO MAIA
@@ -161,13 +155,20 @@ def motor_financiero_simple(capacidad):
         "Deuda 70%": {"tir": 0.18, "van": van * 1.6}
     }
 
-    # datos simulados para Monte Carlo
     montecarlo = [
         van * 0.8,
         van * 0.9,
         van,
         van * 1.1,
         van * 1.2
+    ]
+
+    radar = [
+        tir * 100,
+        70,
+        65,
+        85,
+        75
     ]
 
     return {
@@ -178,9 +179,9 @@ def motor_financiero_simple(capacidad):
         "indicadores": indicadores,
         "escenarios": escenarios,
         "montecarlo": montecarlo,
+        "radar": radar,
         "semaforo": "verde" if tir > 0.1 else "amarillo"
     }
-
 
 # ======================================
 # DASHBOARD PROYECTO
@@ -233,21 +234,20 @@ def ver_proyecto(proyecto_id):
 
         "indicadores": resultado["indicadores"],
         "escenarios": resultado["escenarios"],
-        "montecarlo": resultado["montecarlo"],
+
+        "montecarlo": json.dumps(resultado["montecarlo"]),
+        "radar": json.dumps(resultado["radar"]),
 
         "semaforo": resultado["semaforo"],
 
-        # compatibilidad con dashboard existente
         "indicadores_financieros": resultado["indicadores"],
         "escenarios_apalancamiento": resultado["escenarios"]
-
     }
 
     return render_template(
         "proyecto_dashboard.html",
         **contexto
     )
-
 
 # ======================================
 # BUSQUEDA EN INTERNET

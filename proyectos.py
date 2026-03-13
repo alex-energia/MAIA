@@ -145,14 +145,21 @@ def ver_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado"
 
-    # VARIABLES QUE ESPERA EL DASHBOARD
+    indicadores_financieros = {
+        "VAN": 0,
+        "TIR": 0,
+        "Payback": 0,
+        "ROI": 0
+    }
+
     contexto = {
         "proyecto": proyecto,
         "semaforo": "amarillo",
         "capex": 0,
         "opex": 0,
         "van": 0,
-        "tir": 0
+        "tir": 0,
+        "indicadores_financieros": indicadores_financieros
     }
 
     return render_template(

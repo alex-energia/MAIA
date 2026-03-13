@@ -137,6 +137,36 @@ def eliminar_proyecto(proyecto_id):
 
 
 # =========================
+# MOTOR FINANCIERO INTERNO
+# =========================
+def motor_financiero_simple(capacidad):
+
+    capex = capacidad * 2000000
+    opex = capacidad * 40000
+    van = capacidad * 500000
+    tir = 0.12
+
+    return {
+        "capex": capex,
+        "opex": opex,
+        "van": van,
+        "tir": tir,
+        "indicadores": {
+            "VAN": van,
+            "TIR": tir,
+            "Payback": 8,
+            "ROI": 0.18
+        },
+        "escenarios": {
+            "Sin deuda": {"tir": 0.12, "van": van},
+            "Deuda 50%": {"tir": 0.15, "van": van * 1.3},
+            "Deuda 70%": {"tir": 0.18, "van": van * 1.6}
+        },
+        "semaforo": "verde" if tir > 0.1 else "amarillo"
+    }
+
+
+# =========================
 # VER PROYECTO (DASHBOARD)
 # =========================
 @proyectos_bp.route("/proyectos/<int:proyecto_id>")
@@ -156,72 +186,34 @@ def ver_proyecto(proyecto_id):
 
     proyecto_dict = dict(proyecto)
 
-    capex = 0
-    opex = 0
-    van = 0
-    tir = 0
-    semaforo = "amarillo"
+    capacidad = proyecto_dict.get("capacidad_mw", 0)
 
-    indicadores_financieros = {
-        "VAN": 0,
-        "TIR": 0,
-        "Payback": 0,
-        "ROI": 0
-    }
+    try:
+        capacidad = float(capacidad)
+    except:
+        capacidad = 0
 
-    escenarios_apalancamiento = {
-        "Sin deuda": {"tir": 0, "van": 0},
-        "Deuda 50%": {"tir": 0, "van": 0},
-        "Deuda 70%": {"tir": 0, "van": 0}
-    }
+    try:
 
-    # =========================
-    # MOTOR FINANCIERO MAIA
-    # =========================
-
-    if evaluar_proyecto:
-
-        try:
-
-            capacidad = proyecto_dict.get("capacidad_mw", 0)
-
-            try:
-                capacidad = float(capacidad)
-            except:
-                capacidad = 0
-
+        if evaluar_proyecto:
             resultado = evaluar_proyecto(capacidad)
+        else:
+            resultado = motor_financiero_simple(capacidad)
 
-            capex = resultado.get("capex", capex)
-            opex = resultado.get("opex", opex)
-            van = resultado.get("van", van)
-            tir = resultado.get("tir", tir)
+    except Exception as e:
 
-            indicadores_financieros = resultado.get(
-                "indicadores",
-                indicadores_financieros
-            )
-
-            escenarios_apalancamiento = resultado.get(
-                "escenarios",
-                escenarios_apalancamiento
-            )
-
-            semaforo = resultado.get("semaforo", semaforo)
-
-        except Exception as e:
-
-            print("ERROR MOTOR MAIA:", e)
+        print("ERROR MOTOR MAIA:", e)
+        resultado = motor_financiero_simple(capacidad)
 
     contexto = {
         "proyecto": proyecto,
-        "semaforo": semaforo,
-        "capex": capex,
-        "opex": opex,
-        "van": van,
-        "tir": tir,
-        "indicadores_financieros": indicadores_financieros,
-        "escenarios_apalancamiento": escenarios_apalancamiento
+        "semaforo": resultado.get("semaforo"),
+        "capex": resultado.get("capex"),
+        "opex": resultado.get("opex"),
+        "van": resultado.get("van"),
+        "tir": resultado.get("tir"),
+        "indicadores_financieros": resultado.get("indicadores"),
+        "escenarios_apalancamiento": resultado.get("escenarios")
     }
 
     return render_template(

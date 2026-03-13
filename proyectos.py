@@ -4,6 +4,13 @@ import os
 import requests
 from datetime import datetime
 
+# CONECTAR MOTOR FINANCIERO
+try:
+    from nexus_motor import evaluar_proyecto
+except:
+    evaluar_proyecto = None
+
+
 # =========================
 # BLUEPRINT
 # =========================
@@ -146,6 +153,14 @@ def ver_proyecto(proyecto_id):
     if not proyecto:
         return "Proyecto no encontrado"
 
+    proyecto_dict = dict(proyecto)
+
+    capex = 0
+    opex = 0
+    van = 0
+    tir = 0
+    semaforo = "amarillo"
+
     indicadores_financieros = {
         "VAN": 0,
         "TIR": 0,
@@ -159,13 +174,43 @@ def ver_proyecto(proyecto_id):
         "Deuda 70%": {"tir": 0, "van": 0}
     }
 
+    # =========================
+    # MOTOR FINANCIERO MAIA
+    # =========================
+    if evaluar_proyecto:
+
+        try:
+
+            resultado = evaluar_proyecto(proyecto_dict)
+
+            capex = resultado.get("capex", capex)
+            opex = resultado.get("opex", opex)
+            van = resultado.get("van", van)
+            tir = resultado.get("tir", tir)
+
+            indicadores_financieros = resultado.get(
+                "indicadores",
+                indicadores_financieros
+            )
+
+            escenarios_apalancamiento = resultado.get(
+                "escenarios",
+                escenarios_apalancamiento
+            )
+
+            semaforo = resultado.get("semaforo", semaforo)
+
+        except Exception as e:
+
+            print("ERROR MOTOR MAIA:", e)
+
     contexto = {
         "proyecto": proyecto,
-        "semaforo": "amarillo",
-        "capex": 0,
-        "opex": 0,
-        "van": 0,
-        "tir": 0,
+        "semaforo": semaforo,
+        "capex": capex,
+        "opex": opex,
+        "van": van,
+        "tir": tir,
         "indicadores_financieros": indicadores_financieros,
         "escenarios_apalancamiento": escenarios_apalancamiento
     }

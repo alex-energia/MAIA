@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>MAIA - Evaluación Proyecto</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,6 +12,7 @@
 <style>
 
 body{font-family:Arial;margin:40px;}
+
 h1{color:#2c3e50;}
 
 table{
@@ -27,7 +29,10 @@ text-align:left;
 
 th{background:#f4f4f4;}
 
-canvas{margin-bottom:40px;}
+canvas{
+margin-bottom:40px;
+max-width:900px;
+}
 
 .semaforo{
 padding:25px;
@@ -73,126 +78,36 @@ margin-bottom:10px;
 }
 
 </style>
-</head>
 
+</head>
 
 <body>
 
 <h1>Evaluación MAIA</h1>
-<h2>MAIA Inteligencia de Mercado</h2>
 
-<button onclick="buscarOportunidades()">
-🔎 Buscar oportunidades energéticas
-</button>
-
-<button onclick="buscarDeals()">
-🚨 Detectar activos antes del mercado
-</button>
-
-<div id="panelOportunidades" style="margin-top:20px;"></div>
-<h2>{{ proyecto["nombre"] }}</h2>
+<h2>{{ proyecto["titulo"] }}</h2>
 
 <div class="semaforo">
 
 <h2>Score MAIA</h2>
 
-<h1 style="color:{{ color_semaforo }}; font-size:48px;">
-● {{ semaforo.upper() }}
+<h1 style="color:{{ color_semaforo if color_semaforo else '#2ecc71' }}; font-size:48px;">
+● {{ semaforo.upper() if semaforo else "N/A" }}
 </h1>
 
-<h3>{{ score_maia }} / 100</h3>
+<h3>{{ score_maia if score_maia else 0 }} / 100</h3>
 
-<p>{{ decision_maia }}</p>
+<p>{{ decision_maia if decision_maia else "Evaluación automática MAIA" }}</p>
 
 </div>
 
 
-
-<h2>Rating de Riesgo</h2>
-
-<h1 style="font-size:40px;color:#34495e">
-{{ rating if rating else "N/A" }}
-</h1>
-
-<p>Score riesgo: {{ score_riesgo if score_riesgo else 0 }}/100</p>
-
-
-
 <h3>Indicadores Financieros</h3>
 
-<p><b>Flujo anual:</b> {{ flujo_anual }}</p>
-
-<p><b>VAN:</b> {{ van }}</p>
-
-<p><b>TIR:</b> {{ tir }} %</p>
-
-<p><b>Payback:</b> {{ payback }} años</p>
-
-
-
-<h2>Generación de Valor</h2>
-
-<table>
-
-<tr>
-<th>Driver</th>
-<th>Valor</th>
-</tr>
-
-{% for item in valor_generado %}
-
-<tr>
-<td>{{ item["driver"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-
-
-<h2>CAPEX</h2>
-
-<table>
-
-<tr>
-<th>Actividad</th>
-<th>Valor</th>
-</tr>
-
-{% for item in capex_detallado %}
-
-<tr>
-<td>{{ item["actividad"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
-
-
-
-<h2>OPEX</h2>
-
-<table>
-
-<tr>
-<th>Actividad</th>
-<th>Valor</th>
-</tr>
-
-{% for item in opex_detallado %}
-
-<tr>
-<td>{{ item["actividad"] }}</td>
-<td>{{ item["valor"] }}</td>
-</tr>
-
-{% endfor %}
-
-</table>
+<p><b>Flujo anual:</b> {{ flujo_anual if flujo_anual else 0 }}</p>
+<p><b>VAN:</b> {{ van if van else 0 }}</p>
+<p><b>TIR:</b> {{ tir if tir else 0 }} %</p>
+<p><b>Payback:</b> {{ payback if payback else 0 }} años</p>
 
 
 
@@ -224,18 +139,16 @@ margin-bottom:10px;
 
 <tr>
 <th>Escenario</th>
-<th>Deuda</th>
-<th>Capital</th>
-<th>WACC</th>
+<th>TIR</th>
+<th>VAN</th>
 </tr>
 
 {% for nombre, esc in escenarios_apalancamiento.items() %}
 
 <tr>
 <td>{{ nombre }}</td>
-<td>{{ esc.deuda }}</td>
-<td>{{ esc.capital }}</td>
-<td>{{ esc.wacc }}</td>
+<td>{{ esc["tir"] }}</td>
+<td>{{ esc["van"] }}</td>
 </tr>
 
 {% endfor %}
@@ -244,44 +157,17 @@ margin-bottom:10px;
 
 
 
-<h2>Simulación Monte Carlo</h2>
-
-<p>
-Probabilidad de rentabilidad:
-<b>{{ indicadores_financieros["Probabilidad Rentabilidad %"] }} %</b>
-</p>
-
-
-
 <h2>Gráficas del Proyecto</h2>
 
 <canvas id="montecarloChart"></canvas>
-<canvas id="sensIngresos"></canvas>
-<canvas id="sensCapex"></canvas>
-
-
-
-<h2>Radar Financiero</h2>
-
 <canvas id="radarProyecto"></canvas>
-
-
-
-<h2>VAN Acumulado</h2>
-
 <canvas id="vanAcumulado"></canvas>
-
-
-
-<h2>Ubicación del Proyecto</h2>
-
-<div id="mapaProyecto" style="height:400px;width:60%;"></div>
 
 
 
 <script>
 
-const prob = {{ indicadores_financieros["Probabilidad Rentabilidad %"] }};
+const prob = {{ indicadores_financieros.get("Probabilidad Rentabilidad %",50) }};
 
 new Chart(document.getElementById("montecarloChart"),{
 type:"bar",
@@ -295,34 +181,7 @@ data:[prob,100-prob]
 });
 
 
-
-const van = {{ van }};
-
-new Chart(document.getElementById("sensIngresos"),{
-type:"line",
-data:{
-labels:["-20%","-10%","Base","+10%","+20%"],
-datasets:[{
-label:"VAN vs Ingresos",
-data:[van*0.6,van*0.8,van,van*1.2,van*1.4]
-}]
-}
-});
-
-
-
-new Chart(document.getElementById("sensCapex"),{
-type:"line",
-data:{
-labels:["-20%","-10%","Base","+10%","+20%"],
-datasets:[{
-label:"VAN vs CAPEX",
-data:[van*1.4,van*1.2,van,van*0.8,van*0.6]
-}]
-}
-});
-
-
+const van = {{ van if van else 0 }};
 
 new Chart(document.getElementById("radarProyecto"),{
 type:"radar",
@@ -342,10 +201,9 @@ data:[
 });
 
 
+const flujo = {{ flujo_anual if flujo_anual else 0 }};
 
-const flujo = {{ flujo_anual }};
-
-let acumulado = -{{ proyecto["capex_inicial"] }};
+let acumulado = -1000000;
 
 let vanAcumulado = [];
 
@@ -357,77 +215,17 @@ vanAcumulado.push(acumulado);
 
 }
 
-
-
 new Chart(document.getElementById("vanAcumulado"),{
 
 type:"line",
 
 data:{
-
 labels:["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"],
-
 datasets:[{
-
 label:"VAN acumulado",
-
 data:vanAcumulado
-
 }]
-
 }
-
-});
-
-
-
-var municipio = "{{ proyecto['municipio'] }}";
-
-var pais = "{{ proyecto['pais'] }}";
-
-
-
-fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${municipio},${pais}`)
-
-.then(res=>res.json())
-
-.then(data=>{
-
-if(data.length==0){
-
-alert("No se pudo ubicar el municipio");
-
-return;
-
-}
-
-
-
-let lat = data[0].lat;
-
-let lon = data[0].lon;
-
-
-
-var mapa = L.map('mapaProyecto').setView([lat,lon],10);
-
-
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-
-maxZoom:18
-
-}).addTo(mapa);
-
-
-
-L.marker([lat,lon])
-
-.addTo(mapa)
-
-.bindPopup("Proyecto: {{ proyecto['nombre'] }}")
-
-.openPopup();
 
 });
 
@@ -447,12 +245,7 @@ L.marker([lat,lon])
 
 <button onclick="preguntar()">Enviar</button>
 
-<br><br>
-
-<input type="file" id="fileUpload">
-
 </div>
-
 
 
 <script>
@@ -464,7 +257,6 @@ let box=document.getElementById("chatBox");
 box.style.display=box.style.display=="none"?"block":"none";
 
 }
-
 
 
 function preguntar(){
@@ -494,40 +286,6 @@ chat.innerHTML+="<b>MAIA:</b> "+data.reply+"<br><br>";
 });
 
 }
-
-
-
-document.getElementById("fileUpload").addEventListener("change",function(){
-
-let file=this.files[0];
-
-let formData=new FormData();
-
-formData.append("file",file);
-
-
-
-fetch("/upload_proyecto",{
-
-method:"POST",
-
-body:formData
-
-})
-
-.then(r=>r.json())
-
-.then(data=>{
-
-let chat=document.getElementById("chatMessages");
-
-chat.innerHTML+="<b>Archivo:</b> "+file.name+"<br>";
-
-chat.innerHTML+="<b>MAIA:</b> "+data.mensaje+"<br><br>";
-
-});
-
-});
 
 </script>
 

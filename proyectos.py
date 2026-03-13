@@ -12,6 +12,7 @@ try:
 except:
     evaluar_proyecto = None
 
+
 # =========================
 # BLUEPRINT
 # =========================
@@ -23,6 +24,7 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
@@ -30,6 +32,7 @@ def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 # =========================
 # CREAR TABLAS
@@ -67,6 +70,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 # =========================
 # GUARDAR PROYECTO
 # =========================
@@ -83,10 +87,9 @@ def guardar_proyecto():
 
     conn.execute("""
     INSERT INTO proyectos_guardados
-    (titulo,fecha_guardado)
+    (titulo, fecha_guardado)
     VALUES (?,?)
-    """,
-    (
+    """, (
         titulo,
         str(datetime.today().date())
     ))
@@ -95,6 +98,7 @@ def guardar_proyecto():
     conn.close()
 
     return redirect("/proyectos")
+
 
 # =========================
 # MEMORIA PROYECTOS
@@ -111,6 +115,7 @@ def memoria_proyectos():
     conn.close()
 
     return jsonify([dict(p) for p in proyectos])
+
 
 # =========================
 # ELIMINAR PROYECTO
@@ -129,6 +134,7 @@ def eliminar_proyecto(proyecto_id):
     conn.close()
 
     return jsonify({"status": "eliminado"})
+
 
 # =========================
 # VER PROYECTO (DASHBOARD)
@@ -222,6 +228,7 @@ def ver_proyecto(proyecto_id):
         "proyecto_dashboard.html",
         **contexto
     )
+
 
 # =========================
 # BUSQUEDA REAL EN INTERNET

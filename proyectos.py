@@ -195,8 +195,9 @@ def ver_proyecto(proyecto_id):
 
     try:
 
-        resultado = evaluar_proyecto(capacidad)
-        except:
+        if evaluar_proyecto:
+            resultado = evaluar_proyecto(capacidad)
+        else:
             resultado = motor_financiero_simple(capacidad)
 
     except Exception as e:

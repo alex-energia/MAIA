@@ -15,6 +15,7 @@ UPLOAD_FOLDER = "uploads"
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
 # =========================
 # CONEXION BASE DE DATOS
 # =========================
@@ -152,6 +153,12 @@ def ver_proyecto(proyecto_id):
         "ROI": 0
     }
 
+    escenarios_apalancamiento = {
+        "Sin deuda": {"tir": 0, "van": 0},
+        "Deuda 50%": {"tir": 0, "van": 0},
+        "Deuda 70%": {"tir": 0, "van": 0}
+    }
+
     contexto = {
         "proyecto": proyecto,
         "semaforo": "amarillo",
@@ -159,7 +166,8 @@ def ver_proyecto(proyecto_id):
         "opex": 0,
         "van": 0,
         "tir": 0,
-        "indicadores_financieros": indicadores_financieros
+        "indicadores_financieros": indicadores_financieros,
+        "escenarios_apalancamiento": escenarios_apalancamiento
     }
 
     return render_template(

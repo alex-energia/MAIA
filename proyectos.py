@@ -4,18 +4,17 @@ import os
 import requests
 from datetime import datetime
 
-# =========================
-# CONECTAR MOTOR FINANCIERO
-# =========================
-try:
-    evaluar_proyecto = None
-except:
-    evaluar_proyecto = None
+# ======================================
+# MOTOR FINANCIERO
+# ======================================
+
+evaluar_proyecto = None
 
 
-# =========================
+# ======================================
 # BLUEPRINT
-# =========================
+# ======================================
+
 proyectos_bp = Blueprint("proyectos", __name__)
 
 DB = "maia.db"
@@ -25,18 +24,20 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 
-# =========================
-# CONEXION BASE DE DATOS
-# =========================
+# ======================================
+# BASE DE DATOS
+# ======================================
+
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
 
 
-# =========================
+# ======================================
 # CREAR TABLAS
-# =========================
+# ======================================
+
 def init_db():
 
     conn = get_db()
@@ -71,9 +72,10 @@ def init_db():
     conn.close()
 
 
-# =========================
+# ======================================
 # GUARDAR PROYECTO
-# =========================
+# ======================================
+
 @proyectos_bp.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
@@ -89,10 +91,7 @@ def guardar_proyecto():
     INSERT INTO proyectos_guardados
     (titulo, fecha_guardado)
     VALUES (?,?)
-    """, (
-        titulo,
-        str(datetime.today().date())
-    ))
+    """, (titulo, str(datetime.today().date())))
 
     conn.commit()
     conn.close()
@@ -100,9 +99,10 @@ def guardar_proyecto():
     return redirect("/proyectos")
 
 
-# =========================
+# ======================================
 # MEMORIA PROYECTOS
-# =========================
+# ======================================
+
 @proyectos_bp.route("/memoria_proyectos")
 def memoria_proyectos():
 
@@ -117,9 +117,10 @@ def memoria_proyectos():
     return jsonify([dict(p) for p in proyectos])
 
 
-# =========================
+# ======================================
 # ELIMINAR PROYECTO
-# =========================
+# ======================================
+
 @proyectos_bp.route("/eliminar_proyecto/<int:proyecto_id>", methods=["DELETE"])
 def eliminar_proyecto(proyecto_id):
 
@@ -136,9 +137,10 @@ def eliminar_proyecto(proyecto_id):
     return jsonify({"status": "eliminado"})
 
 
-# =========================
-# MOTOR FINANCIERO INTERNO
-# =========================
+# ======================================
+# MOTOR FINANCIERO MAIA
+# ======================================
+
 def motor_financiero_simple(capacidad):
 
     capex = capacidad * 2000000
@@ -146,29 +148,44 @@ def motor_financiero_simple(capacidad):
     van = capacidad * 500000
     tir = 0.12
 
+    indicadores = {
+        "VAN": van,
+        "TIR": tir,
+        "Payback": 8,
+        "ROI": 0.18
+    }
+
+    escenarios = {
+        "Sin deuda": {"tir": 0.12, "van": van},
+        "Deuda 50%": {"tir": 0.15, "van": van * 1.3},
+        "Deuda 70%": {"tir": 0.18, "van": van * 1.6}
+    }
+
+    # datos simulados para Monte Carlo
+    montecarlo = [
+        van * 0.8,
+        van * 0.9,
+        van,
+        van * 1.1,
+        van * 1.2
+    ]
+
     return {
         "capex": capex,
         "opex": opex,
         "van": van,
         "tir": tir,
-        "indicadores": {
-            "VAN": van,
-            "TIR": tir,
-            "Payback": 8,
-            "ROI": 0.18
-        },
-        "escenarios": {
-            "Sin deuda": {"tir": 0.12, "van": van},
-            "Deuda 50%": {"tir": 0.15, "van": van * 1.3},
-            "Deuda 70%": {"tir": 0.18, "van": van * 1.6}
-        },
+        "indicadores": indicadores,
+        "escenarios": escenarios,
+        "montecarlo": montecarlo,
         "semaforo": "verde" if tir > 0.1 else "amarillo"
     }
 
 
-# =========================
-# VER PROYECTO (DASHBOARD)
-# =========================
+# ======================================
+# DASHBOARD PROYECTO
+# ======================================
+
 @proyectos_bp.route("/proyectos/<int:proyecto_id>")
 def ver_proyecto(proyecto_id):
 
@@ -206,14 +223,24 @@ def ver_proyecto(proyecto_id):
         resultado = motor_financiero_simple(capacidad)
 
     contexto = {
+
         "proyecto": proyecto,
-        "semaforo": resultado.get("semaforo"),
-        "capex": resultado.get("capex"),
-        "opex": resultado.get("opex"),
-        "van": resultado.get("van"),
-        "tir": resultado.get("tir"),
-        "indicadores_financieros": resultado.get("indicadores"),
-        "escenarios_apalancamiento": resultado.get("escenarios")
+
+        "capex": resultado["capex"],
+        "opex": resultado["opex"],
+        "van": resultado["van"],
+        "tir": resultado["tir"],
+
+        "indicadores": resultado["indicadores"],
+        "escenarios": resultado["escenarios"],
+        "montecarlo": resultado["montecarlo"],
+
+        "semaforo": resultado["semaforo"],
+
+        # compatibilidad con dashboard existente
+        "indicadores_financieros": resultado["indicadores"],
+        "escenarios_apalancamiento": resultado["escenarios"]
+
     }
 
     return render_template(
@@ -222,9 +249,10 @@ def ver_proyecto(proyecto_id):
     )
 
 
-# =========================
-# BUSQUEDA REAL EN INTERNET
-# =========================
+# ======================================
+# BUSQUEDA EN INTERNET
+# ======================================
+
 def maia_live_energy_search(query):
 
     url = "https://duckduckgo.com/html/"

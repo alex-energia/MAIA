@@ -2,8 +2,10 @@ from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
 from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 from maia_global_scanner import escanear_mercado_global
+
 import requests
 import os
+
 
 # =========================
 # CREAR APP
@@ -11,17 +13,20 @@ import os
 
 app = Flask(__name__)
 
+
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
 
 init_db()
 
+
 # =========================
 # REGISTRAR BLUEPRINT
 # =========================
 
 app.register_blueprint(proyectos_bp)
+
 
 # =========================
 # PAGINA PRINCIPAL
@@ -30,6 +35,7 @@ app.register_blueprint(proyectos_bp)
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 # =========================
 # PAGINA PROYECTOS
@@ -47,6 +53,7 @@ def proyectos():
     conn.close()
 
     return render_template("proyectos.html", proyectos=proyectos)
+
 
 # =========================
 # VER PROYECTO INDIVIDUAL
@@ -72,6 +79,7 @@ def ver_proyecto(id):
         proyecto=proyecto
     )
 
+
 # =========================
 # FORMULARIO NUEVO PROYECTO
 # =========================
@@ -79,6 +87,7 @@ def ver_proyecto(id):
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
+
 
 # =========================
 # GUARDAR PROYECTO
@@ -112,6 +121,7 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
+
 # =========================
 # ALERTAS MAIA
 # =========================
@@ -128,6 +138,7 @@ def maia_alertas():
     conn.close()
 
     return jsonify([dict(a) for a in alertas])
+
 
 # =========================
 # ENERGY HARVESTER
@@ -183,6 +194,7 @@ def maia_energy_harvester():
 
     return resultados
 
+
 # =========================
 # MAIA OPORTUNIDADES
 # =========================
@@ -207,6 +219,7 @@ def maia_oportunidades():
         "oportunidades": resultados
     })
 
+
 # =========================
 # CHAT MAIA
 # =========================
@@ -215,6 +228,7 @@ def maia_oportunidades():
 def maia_chat():
 
     data = request.get_json()
+
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."
@@ -230,6 +244,16 @@ def maia_chat():
 
     return jsonify({"reply": respuesta})
 
+
+# =========================
+# MODULO MAIA DRONE
+# =========================
+
+@app.route("/maia_drone")
+def maia_drone():
+    return render_template("maia_drone.html")
+
+
 # =========================
 # HEALTH CHECK
 # =========================
@@ -237,6 +261,7 @@ def maia_chat():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
+
 
 # =========================
 # EJECUTAR APP

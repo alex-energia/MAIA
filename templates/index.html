@@ -5,7 +5,6 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>MAIA</title>
 
 <style>
@@ -61,13 +60,6 @@ border-radius:10px;
 border:none;
 }
 
-textarea{
-flex:1;
-padding:12px;
-border-radius:10px;
-border:none;
-}
-
 button.send{
 padding:12px 20px;
 border-radius:10px;
@@ -79,11 +71,6 @@ cursor:pointer;
 
 .hidden{
 display:none;
-}
-
-.upload-btn{
-font-size:22px;
-cursor:pointer;
 }
 
 .panel-oportunidades{
@@ -136,10 +123,10 @@ margin-left:10px;
 <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
 <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
 <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
+<button onclick="activarDrone()">🚁 MAIA DRONE</button>
 <button onclick="volverChat()">🏠 Inicio</button>
 
 </div>
-
 </div>
 
 <div class="container">
@@ -151,14 +138,12 @@ margin-left:10px;
 <div id="chatBox" class="chat-box"></div>
 
 <div class="input-area">
-
 <input type="text" id="mensaje" placeholder="Escribe tu mensaje...">
-
 <button class="send" onclick="enviarMensaje()">Enviar</button>
-
 </div>
 
 </div>
+
 
 <!-- MODULO PROYECTOS -->
 
@@ -170,18 +155,14 @@ margin-left:10px;
 
 <p>Gestión de proyectos activa.</p>
 
-<a href="/proyectos" style="color:#2563eb;">
-Ir al módulo completo de Proyectos
-</a>
+<a href="/proyectos" style="color:#2563eb;">Ir al módulo completo de Proyectos</a>
 
 <hr>
 
 <h3>🔎 Inteligencia de Mercado Energético</h3>
 
 <button onclick="buscarOportunidades()">Buscar oportunidades energéticas</button>
-
 <button onclick="buscarDeals()">Detectar activos antes del mercado</button>
-
 <button onclick="verMemoria()">Memoria MAIA</button>
 
 <div id="panelOportunidades" class="panel-oportunidades"></div>
@@ -193,11 +174,32 @@ Ir al módulo completo de Proyectos
 <div id="chatMaia" class="chat-box" style="height:250px"></div>
 
 <div class="input-area">
-
-<input type="text" id="mensajeMaia"
-placeholder="Pregunta a MAIA sobre proyectos energéticos">
-
+<input type="text" id="mensajeMaia" placeholder="Pregunta a MAIA sobre proyectos energéticos">
 <button class="send" onclick="enviarMensajeMaia()">Enviar</button>
+</div>
+
+</div>
+</div>
+
+
+<!-- MODULO DRONE -->
+
+<div id="moduloDrone" class="hidden">
+
+<h3>🚁 MAIA DRONE</h3>
+
+<div class="chat-box">
+
+<p>Módulo de análisis con drones.</p>
+
+<p>Este módulo permitirá analizar imágenes aéreas para detectar:</p>
+
+<ul>
+<li>Ganado</li>
+<li>Cultivos</li>
+<li>Paneles solares</li>
+<li>Infraestructura energética</li>
+</ul>
 
 </div>
 
@@ -205,127 +207,74 @@ placeholder="Pregunta a MAIA sobre proyectos energéticos">
 
 </div>
 
-</div>
 
 <script>
 
-function activarProyectos(){
+function ocultarTodo(){
 
-ocultarTodo()
-
-document.getElementById("moduloProyectos").classList.remove("hidden")
+document.getElementById("chatNormal").classList.add("hidden");
+document.getElementById("moduloProyectos").classList.add("hidden");
+document.getElementById("moduloDrone").classList.add("hidden");
 
 }
 
 function volverChat(){
 
-ocultarTodo()
+ocultarTodo();
+document.getElementById("chatNormal").classList.remove("hidden");
 
-document.getElementById("chatNormal").classList.remove("hidden")
+}
+
+function activarProyectos(){
+
+ocultarTodo();
+document.getElementById("moduloProyectos").classList.remove("hidden");
 
 }
 
-function ocultarTodo(){
+function activarDrone(){
 
-document.getElementById("chatNormal").classList.add("hidden")
-
-document.getElementById("moduloProyectos").classList.add("hidden")
+ocultarTodo();
+document.getElementById("moduloDrone").classList.remove("hidden");
 
 }
+
 
 async function buscarOportunidades(){
 
-const panel = document.getElementById("panelOportunidades")
+const panel = document.getElementById("panelOportunidades");
 
-panel.innerHTML="Buscando oportunidades..."
+panel.innerHTML="Buscando oportunidades...";
 
-const res = await fetch("/maia_oportunidades")
+const res = await fetch("/maia_oportunidades");
 
-const data = await res.json()
+const data = await res.json();
 
-panel.innerHTML="<h4>Oportunidades detectadas</h4>"
+panel.innerHTML="<h4>Oportunidades detectadas</h4>";
 
 data.oportunidades.forEach(o=>{
 
 panel.innerHTML += `
-
 <div class="card-oportunidad">
 
 <b>${o.titulo}</b><br>
-
 Pais: ${o.pais}<br>
-
 Tipo activo: ${o.tipo_activo}<br>
-
-Potencia: ${o.potencia_mw}<br>
-
 Empresa: ${o.empresa}<br>
 
-<a href="${o.contacto}" target="_blank">Ver fuente</a>
+<a href="${o.contacto}" target="_blank">Ver fuente</a><br>
 
-<br>
-
-<button class="btn-guardar"
-onclick='guardarProyecto(${JSON.stringify(o)})'>
-
+<button class="btn-guardar" onclick='guardarProyecto(${JSON.stringify(o)})'>
 Guardar proyecto
-
 </button>
 
 </div>
-
 `
 
 })
 
 }
 
-async function buscarDeals(){
-
-const panel = document.getElementById("panelOportunidades")
-
-panel.innerHTML="Buscando activos..."
-
-const res = await fetch("/maia_deal_finder")
-
-const data = await res.json()
-
-panel.innerHTML="<h4>Activos detectados antes del mercado</h4>"
-
-data.deals.forEach(o=>{
-
-panel.innerHTML += `
-
-<div class="card-oportunidad">
-
-<b>${o.titulo}</b><br>
-
-Pais: ${o.pais}<br>
-
-Tipo activo: ${o.tipo_activo}<br>
-
-Prioridad: ${o.prioridad}<br>
-
-Empresa: ${o.empresa}<br>
-
-<a href="${o.contacto}" target="_blank">Ver fuente</a>
-
-<br>
-
-<button class="btn-guardar"
-onclick='guardarProyecto(${JSON.stringify(o)})'>
-
-Guardar proyecto
-
-</button>
-
-</div>
-
-`
-
-})
-
-}
 
 async function guardarProyecto(proyecto){
 
@@ -333,11 +282,9 @@ await fetch("/guardar_proyecto",{
 
 method:"POST",
 
-headers:{
-"Content-Type":"application/json"
-},
+headers:{"Content-Type":"application/json"},
 
-body: JSON.stringify(proyecto)
+body:JSON.stringify(proyecto)
 
 })
 
@@ -345,102 +292,63 @@ alert("Proyecto guardado en memoria MAIA")
 
 }
 
+
 async function verMemoria(){
 
-const panel = document.getElementById("panelOportunidades")
+const panel = document.getElementById("panelOportunidades");
 
-panel.innerHTML="Cargando memoria..."
+panel.innerHTML="Cargando memoria...";
 
-const res = await fetch("/memoria_proyectos")
+const res = await fetch("/memoria_proyectos");
 
-const data = await res.json()
+const data = await res.json();
 
-panel.innerHTML="<h4>Memoria MAIA</h4>"
+panel.innerHTML="<h4>Memoria MAIA</h4>";
 
 data.forEach(p=>{
 
 panel.innerHTML += `
-
 <div class="card-oportunidad">
 
-<input type="checkbox" class="pdfcheck" value="${p.id}">
-
 <b>${p.titulo}</b><br>
-
 Pais: ${p.pais}<br>
-
 Tipo activo: ${p.tipo_activo}<br>
-
 Empresa: ${p.empresa}<br>
 
-<a href="${p.contacto}" target="_blank">Contacto</a>
-
-<button class="btn-eliminar"
-onclick="eliminarProyecto(${p.id})">
-
+<button class="btn-eliminar" onclick="eliminarProyecto(${p.id})">
 Eliminar
-
 </button>
 
 </div>
-
 `
 
 })
 
-panel.innerHTML += `<br>
-
-<button onclick="crearPDF()">Crear PDF</button>
-
-`
-
 }
+
 
 async function eliminarProyecto(id){
 
-await fetch("/eliminar_proyecto/"+id)
+await fetch("/eliminar_proyecto/"+id,{method:"DELETE"});
 
-verMemoria()
-
-}
-
-async function crearPDF(){
-
-let checks = document.querySelectorAll(".pdfcheck:checked")
-
-let ids = []
-
-checks.forEach(c=> ids.push(c.value))
-
-await fetch("/crear_pdf",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body: JSON.stringify({ids:ids})
-
-})
-
-alert("PDF generado")
+verMemoria();
 
 }
+
 
 async function enviarMensajeMaia(){
 
-let input = document.getElementById("mensajeMaia")
+let input = document.getElementById("mensajeMaia");
 
-let chat = document.getElementById("chatMaia")
+let chat = document.getElementById("chatMaia");
 
-let mensaje = input.value
+let mensaje = input.value;
 
-if(!mensaje) return
+if(!mensaje) return;
 
-chat.innerHTML += `<div><b>Tú:</b> ${mensaje}</div>`
+chat.innerHTML += `<div><b>Tú:</b> ${mensaje}</div>`;
 
-input.value=""
+input.value="";
 
 const res = await fetch("/maia_chat",{
 
@@ -448,20 +356,19 @@ method:"POST",
 
 headers:{"Content-Type":"application/json"},
 
-body: JSON.stringify({message: mensaje})
+body:JSON.stringify({message:mensaje})
 
-})
+});
 
-const data = await res.json()
+const data = await res.json();
 
-chat.innerHTML += `<div><b>MAIA:</b> ${data.reply}</div>`
+chat.innerHTML += `<div><b>MAIA:</b> ${data.reply}</div>`;
 
-chat.scrollTop = chat.scrollHeight
+chat.scrollTop = chat.scrollHeight;
 
 }
 
 </script>
 
 </body>
-
 </html>

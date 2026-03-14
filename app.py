@@ -1,10 +1,26 @@
 from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
-from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
-from maia_global_scanner import escanear_mercado_global
-
 import requests
 import os
+
+# =========================
+# IMPORTS OPCIONALES MAIA
+# =========================
+
+try:
+    from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
+except:
+    def buscar_oportunidades():
+        return []
+
+    def detectar_activos_tempranos():
+        return []
+
+try:
+    from maia_global_scanner import escanear_mercado_global
+except:
+    def escanear_mercado_global():
+        return []
 
 
 # =========================
@@ -13,13 +29,11 @@ import os
 
 app = Flask(__name__)
 
-
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
 
 init_db()
-
 
 # =========================
 # REGISTRAR BLUEPRINT
@@ -56,7 +70,7 @@ def proyectos():
 
 
 # =========================
-# VER PROYECTO INDIVIDUAL
+# VER PROYECTO
 # =========================
 
 @app.route("/proyectos/<int:id>")
@@ -81,7 +95,7 @@ def ver_proyecto(id):
 
 
 # =========================
-# FORMULARIO NUEVO PROYECTO
+# NUEVO PROYECTO
 # =========================
 
 @app.route("/proyectos/nuevo")
@@ -96,14 +110,16 @@ def nuevo_proyecto():
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
-    nombre = request.form.get("nombre")
-    tecnologia = request.form.get("tecnologia")
-    pais = request.form.get("pais")
-    ciudad = request.form.get("ciudad")
-    moneda = request.form.get("moneda")
-    horizonte = request.form.get("horizonte")
-    potencia = request.form.get("potencia")
-    unidad = request.form.get("unidad")
+    data = request.form or request.get_json()
+
+    nombre = data.get("nombre")
+    tecnologia = data.get("tecnologia")
+    pais = data.get("pais")
+    ciudad = data.get("ciudad")
+    moneda = data.get("moneda")
+    horizonte = data.get("horizonte")
+    potencia = data.get("potencia")
+    unidad = data.get("unidad")
 
     conn = get_db()
 
@@ -196,7 +212,7 @@ def maia_energy_harvester():
 
 
 # =========================
-# MAIA OPORTUNIDADES
+# OPORTUNIDADES MAIA
 # =========================
 
 @app.route("/maia_oportunidades")

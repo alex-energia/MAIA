@@ -7,7 +7,6 @@
 <title>MAIA DRONE SIM</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
-
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 
 <style>
@@ -24,16 +23,21 @@ height:100vh;
 }
 
 .panel{
+
 position:absolute;
 top:20px;
 left:20px;
-background:rgba(0,0,0,0.8);
+
+background:rgba(0,0,0,0.85);
 color:white;
+
 padding:20px;
 border-radius:10px;
+width:250px;
 }
 
 button{
+
 padding:10px 20px;
 margin:5px;
 background:#1e90ff;
@@ -41,6 +45,17 @@ border:none;
 border-radius:8px;
 color:white;
 cursor:pointer;
+width:100%;
+}
+
+button:hover{
+background:#0f6bd6;
+}
+
+#telemetria{
+margin-top:10px;
+font-size:14px;
+line-height:20px;
 }
 
 </style>
@@ -59,67 +74,139 @@ cursor:pointer;
 
 <button onclick="misionAuto()">Misión Automática</button>
 
-<p>Controles:</p>
+<button onclick="resetDrone()">Reset</button>
 
-<p>W / S / A / D mover</p>
+<div id="telemetria">
 
-<p>Q subir</p>
+Lat: -
+<br>
+Lon: -
+<br>
+Alt: -
 
-<p>E bajar</p>
+</div>
+
+<p style="font-size:12px;margin-top:10px;">
+
+Controles:
+<br>
+W / S / A / D mover
+<br>
+Q subir
+<br>
+E bajar
+
+</p>
 
 </div>
 
 <script>
 
-Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNjdlOWJkNC1lNDc2LTQzYjItYmUzZi05NmI3ZGExMzNlNDUiLCJpZCI6NDAzNzc1LCJpYXQiOjE3NzM1Mjc2NTF9.wbVrwCl5V6lx8H_RX-KsocLn1vwxGvwWsc6CZaLdoD4";
+Cesium.Ion.defaultAccessToken = "TU_TOKEN_CESIUM_AQUI";
 
-var viewer = new Cesium.Viewer('cesiumContainer', {
-terrainProvider: Cesium.createWorldTerrain()
+var viewer = new Cesium.Viewer('cesiumContainer',{
+
+terrainProvider: Cesium.createWorldTerrain(),
+
+timeline:false,
+animation:false
+
 });
 
+var lat = 4.5709;
+var lon = -74.2973;
+var alt = 100;
+
 var drone = viewer.entities.add({
+
 name:"Drone",
-position: Cesium.Cartesian3.fromDegrees(-74,4,100),
+
+position: Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+
 box:{
 dimensions:new Cesium.Cartesian3(10,10,5),
 material:Cesium.Color.RED
 }
+
 });
 
 viewer.trackedEntity = drone;
 
 var speed = 0.001;
 
-document.addEventListener("keydown", function(e){
+function actualizarDrone(){
 
-var pos = drone.position.getValue();
+drone.position = Cesium.Cartesian3.fromDegrees(lon,lat,alt);
 
-var cart = Cesium.Cartographic.fromCartesian(pos);
+document.getElementById("telemetria").innerHTML=
 
-if(e.key=="w") cart.latitude += speed;
-if(e.key=="s") cart.latitude -= speed;
-if(e.key=="a") cart.longitude -= speed;
-if(e.key=="d") cart.longitude += speed;
-if(e.key=="q") cart.height += 10;
-if(e.key=="e") cart.height -= 10;
+"Lat: "+lat.toFixed(6)+"<br>"+
+"Lon: "+lon.toFixed(6)+"<br>"+
+"Alt: "+alt.toFixed(0)
 
-drone.position = Cesium.Cartesian3.fromRadians(
-cart.longitude,
-cart.latitude,
-cart.height
-);
+}
+
+document.addEventListener("keydown",function(e){
+
+if(e.key=="w") lat += speed;
+if(e.key=="s") lat -= speed;
+if(e.key=="a") lon -= speed;
+if(e.key=="d") lon += speed;
+if(e.key=="q") alt += 10;
+if(e.key=="e") alt -= 10;
+
+actualizarDrone();
 
 });
 
 function modoManual(){
+
 alert("Modo manual activado");
+
+}
+
+function resetDrone(){
+
+lat = 4.5709;
+lon = -74.2973;
+alt = 100;
+
+actualizarDrone();
+
 }
 
 function misionAuto(){
+
 alert("Misión automática iniciada");
+
+var pasos = 0;
+
+var vuelo = setInterval(function(){
+
+lat += 0.0005;
+lon += 0.0005;
+alt += 1;
+
+actualizarDrone();
+
+pasos++;
+
+if(pasos > 200){
+
+clearInterval(vuelo);
+
+alert("Misión completada");
+
 }
+
+},100);
+
+}
+
+actualizarDrone();
 
 </script>
 
 </body>
+
 </html>

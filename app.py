@@ -12,7 +12,6 @@ try:
 except:
     def buscar_oportunidades():
         return []
-
     def detectar_activos_tempranos():
         return []
 
@@ -55,13 +54,10 @@ def home():
 @app.route("/proyectos")
 def proyectos():
     conn = get_db()
-
     proyectos = conn.execute(
         "SELECT id, titulo as nombre FROM proyectos_guardados ORDER BY id DESC"
     ).fetchall()
-
     conn.close()
-
     return render_template("proyectos.html", proyectos=proyectos)
 
 # =========================
@@ -70,7 +66,6 @@ def proyectos():
 
 @app.route("/proyectos/<int:id>")
 def ver_proyecto(id):
-
     conn = get_db()
 
     proyecto = conn.execute(
@@ -233,7 +228,6 @@ def maia_oportunidades():
 def maia_chat():
 
     data = request.get_json()
-
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."
@@ -264,6 +258,26 @@ def maia_drone():
 @app.route("/maia_simulador")
 def maia_simulador():
     return render_template("maia_simulador.html")
+
+# =========================
+# MOTOR DE SIMULACION
+# =========================
+
+@app.route("/maia_drone_simular", methods=["POST"])
+def maia_drone_simular():
+
+    data = request.get_json()
+
+    codigo = data.get("codigo", "")
+
+    resultado = {
+        "estado": "simulacion ejecutada",
+        "codigo_recibido": True,
+        "duracion": "30s",
+        "resultado": "exitoso"
+    }
+
+    return jsonify(resultado)
 
 # =========================
 # HEALTH CHECK

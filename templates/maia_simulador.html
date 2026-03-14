@@ -33,7 +33,7 @@ color:white;
 
 padding:20px;
 border-radius:10px;
-width:250px;
+width:270px;
 }
 
 button{
@@ -52,10 +52,30 @@ button:hover{
 background:#0f6bd6;
 }
 
+select{
+
+width:100%;
+padding:8px;
+margin-top:5px;
+}
+
+textarea{
+
+width:100%;
+height:120px;
+margin-top:10px;
+background:black;
+color:#00ff00;
+font-family:monospace;
+
+}
+
 #telemetria{
+
 margin-top:10px;
 font-size:14px;
 line-height:20px;
+
 }
 
 </style>
@@ -68,11 +88,40 @@ line-height:20px;
 
 <div class="panel">
 
-<h2>🚁 MAIA DRONE SIM</h2>
+<h2>🚁 MAIA DRONE</h2>
 
-<button onclick="modoManual()">Modo Manual</button>
+<label>Entorno</label>
 
-<button onclick="misionAuto()">Misión Automática</button>
+<select id="entorno">
+
+<option value="montana">Montaña</option>
+<option value="rio">Río</option>
+<option value="oceano">Océano</option>
+<option value="ciudad">Ciudad</option>
+
+</select>
+
+<label>Algoritmo</label>
+
+<select id="algoritmo">
+
+<option value="patrulla">Patrulla</option>
+<option value="explorar">Explorar</option>
+<option value="interceptor">Interceptor</option>
+
+</select>
+
+<button onclick="cargarEntorno()">Cargar entorno</button>
+
+<textarea id="codigo">
+
+subir(100)
+mover(0.002,0.002)
+subir(-50)
+
+</textarea>
+
+<button onclick="ejecutarAlgoritmo()">Ejecutar algoritmo</button>
 
 <button onclick="resetDrone()">Reset</button>
 
@@ -88,7 +137,7 @@ Alt: -
 
 <p style="font-size:12px;margin-top:10px;">
 
-Controles:
+Controles manuales
 <br>
 W / S / A / D mover
 <br>
@@ -102,41 +151,38 @@ E bajar
 
 <script>
 
-Cesium.Ion.defaultAccessToken = "TU_TOKEN_CESIUM_AQUI";
+Cesium.Ion.defaultAccessToken="TU_TOKEN_CESIUM_AQUI"
 
-var viewer = new Cesium.Viewer('cesiumContainer',{
-
-terrainProvider: Cesium.createWorldTerrain(),
-
+var viewer=new Cesium.Viewer('cesiumContainer',{
+terrainProvider:Cesium.createWorldTerrain(),
 timeline:false,
 animation:false
+})
 
-});
+var lat=4.5709
+var lon=-74.2973
+var alt=100
 
-var lat = 4.5709;
-var lon = -74.2973;
-var alt = 100;
-
-var drone = viewer.entities.add({
+var drone=viewer.entities.add({
 
 name:"Drone",
 
-position: Cesium.Cartesian3.fromDegrees(lon,lat,alt),
+position:Cesium.Cartesian3.fromDegrees(lon,lat,alt),
 
 box:{
 dimensions:new Cesium.Cartesian3(10,10,5),
 material:Cesium.Color.RED
 }
 
-});
+})
 
-viewer.trackedEntity = drone;
+viewer.trackedEntity=drone
 
-var speed = 0.001;
+var speed=0.001
 
 function actualizarDrone(){
 
-drone.position = Cesium.Cartesian3.fromDegrees(lon,lat,alt);
+drone.position=Cesium.Cartesian3.fromDegrees(lon,lat,alt)
 
 document.getElementById("telemetria").innerHTML=
 
@@ -148,65 +194,123 @@ document.getElementById("telemetria").innerHTML=
 
 document.addEventListener("keydown",function(e){
 
-if(e.key=="w") lat += speed;
-if(e.key=="s") lat -= speed;
-if(e.key=="a") lon -= speed;
-if(e.key=="d") lon += speed;
-if(e.key=="q") alt += 10;
-if(e.key=="e") alt -= 10;
+if(e.key=="w") lat+=speed
+if(e.key=="s") lat-=speed
+if(e.key=="a") lon-=speed
+if(e.key=="d") lon+=speed
+if(e.key=="q") alt+=10
+if(e.key=="e") alt-=10
 
-actualizarDrone();
+actualizarDrone()
 
-});
+})
 
-function modoManual(){
+function subir(m){
 
-alert("Modo manual activado");
+alt+=m
+actualizarDrone()
+
+}
+
+function mover(dlat,dlon){
+
+lat+=dlat
+lon+=dlon
+actualizarDrone()
+
+}
+
+function ejecutarAlgoritmo(){
+
+let codigo=document.getElementById("codigo").value
+
+let lineas=codigo.split("\n")
+
+let i=0
+
+function ejecutarLinea(){
+
+if(i>=lineas.length) return
+
+try{
+
+eval(lineas[i])
+
+}catch(e){
+
+console.log("error en algoritmo")
+
+}
+
+i++
+
+setTimeout(ejecutarLinea,800)
+
+}
+
+ejecutarLinea()
+
+}
+
+function cargarEntorno(){
+
+var entorno=document.getElementById("entorno").value
+
+if(entorno=="montana"){
+
+lat=-13.163
+lon=-72.545
+alt=200
+
+}
+
+if(entorno=="rio"){
+
+lat=-3.465
+lon=-62.215
+alt=150
+
+}
+
+if(entorno=="oceano"){
+
+lat=0
+lon=-140
+alt=200
+
+}
+
+if(entorno=="ciudad"){
+
+lat=40.7128
+lon=-74.006
+alt=150
+
+}
+
+viewer.camera.flyTo({
+
+destination:Cesium.Cartesian3.fromDegrees(lon,lat,alt*10)
+
+})
+
+actualizarDrone()
 
 }
 
 function resetDrone(){
 
-lat = 4.5709;
-lon = -74.2973;
-alt = 100;
+lat=4.5709
+lon=-74.2973
+alt=100
 
-actualizarDrone();
-
-}
-
-function misionAuto(){
-
-alert("Misión automática iniciada");
-
-var pasos = 0;
-
-var vuelo = setInterval(function(){
-
-lat += 0.0005;
-lon += 0.0005;
-alt += 1;
-
-actualizarDrone();
-
-pasos++;
-
-if(pasos > 200){
-
-clearInterval(vuelo);
-
-alert("Misión completada");
+actualizarDrone()
 
 }
 
-},100);
-
-}
-
-actualizarDrone();
+actualizarDrone()
 
 </script>
 
 </body>
-
 </html>

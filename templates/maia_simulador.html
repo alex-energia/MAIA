@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<title>MAIA Drone Simulator</title>
+
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.111/Build/Cesium/Cesium.js"></script>
+<link href="https://cesium.com/downloads/cesiumjs/releases/1.111/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+<style>
+
+html, body, #cesiumContainer{
+width:100%;
+height:100%;
+margin:0;
+padding:0;
+overflow:hidden;
+}
+
+.panel{
+position:absolute;
+top:10px;
+left:10px;
+background:#111;
+color:white;
+padding:10px;
+border-radius:10px;
+}
+
+button{
+margin:5px;
+padding:8px;
+border:none;
+border-radius:6px;
+background:#2563eb;
+color:white;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="cesiumContainer"></div>
+
+<div class="panel">
+
+<h3>🚁 MAIA DRONE SIM</h3>
+
+<button onclick="modoManual()">Modo Manual</button>
+<button onclick="misionAuto()">Misión Automática</button>
+
+<p>Controles:</p>
+<p>W / S / A / D mover</p>
+<p>Q subir</p>
+<p>E bajar</p>
+
+</div>
+
+<script>
+
+const viewer = new Cesium.Viewer('cesiumContainer',{
+terrainProvider: Cesium.createWorldTerrain()
+})
+
+const drone = viewer.entities.add({
+
+name:'Drone',
+
+position: Cesium.Cartesian3.fromDegrees(-75.6811,4.5339,200),
+
+box:{
+dimensions:new Cesium.Cartesian3(10,10,5),
+material:Cesium.Color.RED
+}
+
+})
+
+viewer.trackedEntity = drone
+
+let modo = "manual"
+
+function modoManual(){
+
+modo="manual"
+alert("Modo manual activado")
+
+}
+
+function misionAuto(){
+
+modo="auto"
+
+alert("Misión automática iniciada")
+
+let destino = Cesium.Cartesian3.fromDegrees(-75.70,4.55,300)
+
+drone.position = destino
+
+}
+
+document.addEventListener("keydown",function(e){
+
+if(modo!="manual") return
+
+let pos = drone.position.getValue(Cesium.JulianDate.now())
+
+let carto = Cesium.Cartographic.fromCartesian(pos)
+
+let lat = Cesium.Math.toDegrees(carto.latitude)
+let lon = Cesium.Math.toDegrees(carto.longitude)
+let alt = carto.height
+
+if(e.key=="w") lat+=0.01
+if(e.key=="s") lat-=0.01
+if(e.key=="a") lon-=0.01
+if(e.key=="d") lon+=0.01
+if(e.key=="q") alt+=50
+if(e.key=="e") alt-=50
+
+drone.position = Cesium.Cartesian3.fromDegrees(lon,lat,alt)
+
+})
+
+</script>
+
+</body>
+</html>

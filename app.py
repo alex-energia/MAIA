@@ -22,7 +22,6 @@ except:
     def escanear_mercado_global():
         return []
 
-
 # =========================
 # CREAR APP
 # =========================
@@ -41,7 +40,6 @@ init_db()
 
 app.register_blueprint(proyectos_bp)
 
-
 # =========================
 # PAGINA PRINCIPAL
 # =========================
@@ -50,14 +48,12 @@ app.register_blueprint(proyectos_bp)
 def home():
     return render_template("index.html")
 
-
 # =========================
 # PAGINA PROYECTOS
 # =========================
 
 @app.route("/proyectos")
 def proyectos():
-
     conn = get_db()
 
     proyectos = conn.execute(
@@ -67,7 +63,6 @@ def proyectos():
     conn.close()
 
     return render_template("proyectos.html", proyectos=proyectos)
-
 
 # =========================
 # VER PROYECTO
@@ -93,7 +88,6 @@ def ver_proyecto(id):
         proyecto=proyecto
     )
 
-
 # =========================
 # NUEVO PROYECTO
 # =========================
@@ -101,7 +95,6 @@ def ver_proyecto(id):
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
-
 
 # =========================
 # GUARDAR PROYECTO
@@ -137,7 +130,6 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
-
 # =========================
 # ALERTAS MAIA
 # =========================
@@ -154,7 +146,6 @@ def maia_alertas():
     conn.close()
 
     return jsonify([dict(a) for a in alertas])
-
 
 # =========================
 # ENERGY HARVESTER
@@ -210,7 +201,6 @@ def maia_energy_harvester():
 
     return resultados
 
-
 # =========================
 # OPORTUNIDADES MAIA
 # =========================
@@ -234,7 +224,6 @@ def maia_oportunidades():
         "total_oportunidades": len(resultados),
         "oportunidades": resultados
     })
-
 
 # =========================
 # CHAT MAIA
@@ -260,7 +249,6 @@ def maia_chat():
 
     return jsonify({"reply": respuesta})
 
-
 # =========================
 # MODULO MAIA DRONE
 # =========================
@@ -269,6 +257,13 @@ def maia_chat():
 def maia_drone():
     return render_template("maia_drone.html")
 
+# =========================
+# SIMULADOR MAIA DRONE
+# =========================
+
+@app.route("/maia_simulador")
+def maia_simulador():
+    return render_template("maia_simulador.html")
 
 # =========================
 # HEALTH CHECK
@@ -277,7 +272,6 @@ def maia_drone():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
-
 
 # =========================
 # EJECUTAR APP

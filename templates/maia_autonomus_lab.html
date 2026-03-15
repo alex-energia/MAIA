@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>MAIA Autonomous Drone Lab</title>
+
+<style>
+
+body{
+background:#0a0a0a;
+color:white;
+font-family:Arial;
+padding:40px;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+background:#f59e0b;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🚀 MAIA Autonomous Drone Lab</h1>
+
+<p>Laboratorio autónomo de innovación de drones.</p>
+
+<button onclick="crear()">Crear drone autónomo</button>
+
+<div id="resultado" style="margin-top:30px"></div>
+
+<script>
+
+async function crear(){
+
+const res = await fetch("/maia_generar_drone")
+
+const data = await res.json()
+
+document.getElementById("resultado").innerHTML = `
+
+<h3>Drone creado por MAIA</h3>
+
+Nombre: ${data.nombre}
+
+Tipo: ${data.tipo}
+
+Autonomía: ${data.autonomia}
+
+Sensores:
+${data.sensores.join("<br>")}
+
+<button onclick="aprobar('${data.nombre}','${data.ruta}')">
+Aprobar drone
+</button>
+
+`
+
+}
+
+async function aprobar(nombre,ruta){
+
+await fetch("/aprobar_drone",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+nombre:nombre,
+ruta:ruta
+})
+})
+
+alert("Drone aprobado")
+
+}
+
+</script>
+
+</body>
+
+</html>

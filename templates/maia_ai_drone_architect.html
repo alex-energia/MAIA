@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>MAIA AI Drone Architect</title>
+
+<style>
+
+body{
+background:#0a0a0a;
+color:white;
+font-family:Arial;
+padding:40px;
+}
+
+button{
+padding:12px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+background:#00c3ff;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🧠 MAIA AI Drone Architect</h1>
+
+<p>MAIA diseña drones automáticamente.</p>
+
+<button onclick="generarDrone()">
+Generar drone con IA
+</button>
+
+<div id="resultado" style="margin-top:30px"></div>
+
+<script>
+
+async function generarDrone(){
+
+const res = await fetch("/maia_generar_drone")
+
+const data = await res.json()
+
+document.getElementById("resultado").innerHTML = `
+
+<h3>Drone generado por MAIA</h3>
+
+Nombre: ${data.nombre}
+
+Tipo: ${data.tipo}
+
+Autonomía: ${data.autonomia}
+
+Sensores:
+${data.sensores.join("<br>")}
+
+<button onclick="aprobar('${data.nombre}','${data.ruta}')">
+Aprobar drone
+</button>
+
+`
+
+}
+
+async function aprobar(nombre,ruta){
+
+await fetch("/aprobar_drone",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+nombre:nombre,
+ruta:ruta
+})
+})
+
+alert("Drone aprobado y agregado a drones industriales")
+
+}
+
+</script>
+
+</body>
+
+</html>

@@ -4,7 +4,6 @@
 <head>
 
 <meta charset="UTF-8">
-
 <title>MAIA DRONE SIM</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
@@ -35,6 +34,7 @@ background:rgba(0,0,0,0.85);
 color:white;
 
 padding:20px;
+
 border-radius:10px;
 
 width:280px;
@@ -61,23 +61,20 @@ width:100%;
 }
 
 button:hover{
-
 background:#0f6bd6;
-
 }
 
 select{
-
 width:100%;
 padding:8px;
 margin-top:5px;
-
 }
 
 textarea{
 
 width:100%;
 height:140px;
+
 margin-top:10px;
 
 background:black;
@@ -91,7 +88,9 @@ font-family:monospace;
 #telemetria{
 
 margin-top:10px;
+
 font-size:14px;
+
 line-height:20px;
 
 }
@@ -155,8 +154,11 @@ Viento: -
 <p style="font-size:12px;margin-top:10px;">
 
 Controles manuales<br>
+
 W / S / A / D mover<br>
+
 Q subir<br>
+
 E bajar
 
 </p>
@@ -181,6 +183,7 @@ var lon = -74.2973;
 var alt = 100;
 
 var velocidad = 0;
+
 var bateria = 100;
 
 var viento = (Math.random()*20).toFixed(1);
@@ -296,41 +299,31 @@ function cargarEntorno(){
 var entorno = document.getElementById("entorno").value;
 
 if(entorno=="montana"){
-
 lat=-13.163;
 lon=-72.545;
 alt=200;
-
 }
 
 if(entorno=="rio"){
-
 lat=-3.465;
 lon=-62.215;
 alt=150;
-
 }
 
 if(entorno=="oceano"){
-
 lat=0;
 lon=-140;
 alt=200;
-
 }
 
 if(entorno=="ciudad"){
-
 lat=40.7128;
 lon=-74.006;
 alt=150;
-
 }
 
 viewer.camera.flyTo({
-
 destination: Cesium.Cartesian3.fromDegrees(lon,lat,alt*10)
-
 });
 
 actualizarDrone();

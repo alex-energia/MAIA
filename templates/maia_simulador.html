@@ -7,7 +7,6 @@
 <title>MAIA DRONE SIM</title>
 
 <script src="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Cesium.js"></script>
-
 <link href="https://cesium.com/downloads/cesiumjs/releases/1.118/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 
 <style>
@@ -24,40 +23,25 @@ height:100vh;
 }
 
 .panel{
-
 position:absolute;
 top:20px;
 left:20px;
-
 background:rgba(0,0,0,0.85);
-
 color:white;
-
 padding:20px;
-
 border-radius:10px;
-
 width:280px;
-
 }
 
 button{
-
-padding:10px 20px;
-margin:5px;
-
+padding:10px;
+margin:5px 0;
 background:#1e90ff;
-
 border:none;
-
 border-radius:8px;
-
 color:white;
-
 cursor:pointer;
-
 width:100%;
-
 }
 
 button:hover{
@@ -71,32 +55,21 @@ margin-top:5px;
 }
 
 textarea{
-
 width:100%;
 height:140px;
-
 margin-top:10px;
-
 background:black;
-
 color:#00ff00;
-
 font-family:monospace;
-
 }
 
 #telemetria{
-
 margin-top:10px;
-
 font-size:14px;
-
 line-height:20px;
-
 }
 
 </style>
-
 </head>
 
 <body>
@@ -108,27 +81,16 @@ line-height:20px;
 <h2>🚁 MAIA DRONE</h2>
 
 <label>Entorno</label>
-
 <select id="entorno">
-
 <option value="montana">Montaña</option>
 <option value="rio">Río</option>
 <option value="oceano">Océano</option>
 <option value="ciudad">Ciudad</option>
-
-</select>
-
-<label>Algoritmo</label>
-
-<select id="algoritmo">
-
-<option value="patrulla">Patrulla</option>
-<option value="explorar">Explorar</option>
-<option value="interceptor">Interceptor</option>
-
 </select>
 
 <button onclick="cargarEntorno()">Cargar entorno</button>
+
+<label>Algoritmo</label>
 
 <textarea id="codigo">
 subir(100)
@@ -152,30 +114,22 @@ Viento: -
 </div>
 
 <p style="font-size:12px;margin-top:10px;">
-
 Controles manuales<br>
-
 W / S / A / D mover<br>
-
 Q subir<br>
-
 E bajar
-
 </p>
 
 </div>
 
 <script>
 
-Cesium.Ion.defaultAccessToken = "TU_TOKEN_CESIUM_AQUI";
+Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyNjdlOWJkNC1lNDc2LTQzYjItYmUzZi05NmI3ZGExMzNlNDUiLCJpZCI6NDAzNzc1LCJpYXQiOjE3NzM1Mjc2NTF9.wbVrwCl5V6lx8H_RX-KsocLn1vwxGvwWsc6CZaLdoD4";
 
 var viewer = new Cesium.Viewer('cesiumContainer',{
-
 terrainProvider: Cesium.createWorldTerrain(),
-
 timeline:false,
 animation:false
-
 });
 
 var lat = 4.5709;
@@ -183,9 +137,7 @@ var lon = -74.2973;
 var alt = 100;
 
 var velocidad = 0;
-
 var bateria = 100;
-
 var viento = (Math.random()*20).toFixed(1);
 
 var drone = viewer.entities.add({
@@ -210,7 +162,6 @@ function actualizarDrone(){
 drone.position = Cesium.Cartesian3.fromDegrees(lon,lat,alt);
 
 document.getElementById("telemetria").innerHTML =
-
 "Lat: "+lat.toFixed(6)+"<br>"+
 "Lon: "+lon.toFixed(6)+"<br>"+
 "Alt: "+alt.toFixed(0)+"<br>"+
@@ -222,15 +173,15 @@ document.getElementById("telemetria").innerHTML =
 
 document.addEventListener("keydown",function(e){
 
-if(e.key=="w"){lat += speed; velocidad=speed;}
-if(e.key=="s"){lat -= speed; velocidad=speed;}
-if(e.key=="a"){lon -= speed; velocidad=speed;}
-if(e.key=="d"){lon += speed; velocidad=speed;}
+if(e.key=="w"){lat+=speed;velocidad=speed;}
+if(e.key=="s"){lat-=speed;velocidad=speed;}
+if(e.key=="a"){lon-=speed;velocidad=speed;}
+if(e.key=="d"){lon+=speed;velocidad=speed;}
 
-if(e.key=="q"){alt += 10;}
-if(e.key=="e"){alt -= 10;}
+if(e.key=="q"){alt+=10;}
+if(e.key=="e"){alt-=10;}
 
-bateria -= 0.1;
+bateria-=0.1;
 
 actualizarDrone();
 
@@ -251,7 +202,6 @@ actualizarDrone();
 function mover(dlat,dlon){
 
 lat += dlat + (viento/100000);
-
 lon += dlon + (viento/100000);
 
 velocidad = Math.sqrt(dlat*dlat + dlon*dlon);
@@ -266,21 +216,49 @@ function ejecutarAlgoritmo(){
 
 let codigo = document.getElementById("codigo").value;
 
-let lineas = codigo.split("\n");
+let lineas = codigo.split("\n")
+.map(l=>l.trim())
+.filter(l=>l.length>0);
 
 let i = 0;
 
 function ejecutarLinea(){
 
-if(i >= lineas.length) return;
+if(i>=lineas.length) return;
+
+let linea = lineas[i];
 
 try{
 
-eval(lineas[i]);
+if(linea.startsWith("subir(")){
 
-}catch(e){
+let v=parseFloat(linea.replace("subir(","").replace(")",""));
+subir(v);
 
-alert("Error en algoritmo: "+lineas[i]);
+}
+
+else if(linea.startsWith("mover(")){
+
+let p=linea.replace("mover(","").replace(")","").split(",");
+
+let x=parseFloat(p[0]);
+let y=parseFloat(p[1]);
+
+mover(x,y);
+
+}
+
+else{
+
+alert("Comando no reconocido: "+linea);
+
+}
+
+}
+
+catch(e){
+
+alert("Error en algoritmo: "+linea);
 
 }
 
@@ -296,7 +274,7 @@ ejecutarLinea();
 
 function cargarEntorno(){
 
-var entorno = document.getElementById("entorno").value;
+var entorno=document.getElementById("entorno").value;
 
 if(entorno=="montana"){
 lat=-13.163;
@@ -323,7 +301,9 @@ alt=150;
 }
 
 viewer.camera.flyTo({
+
 destination: Cesium.Cartesian3.fromDegrees(lon,lat,alt*10)
+
 });
 
 actualizarDrone();
@@ -332,11 +312,10 @@ actualizarDrone();
 
 function resetDrone(){
 
-lat = 4.5709;
-lon = -74.2973;
-alt = 100;
-
-bateria = 100;
+lat=4.5709;
+lon=-74.2973;
+alt=100;
+bateria=100;
 
 actualizarDrone();
 
@@ -347,5 +326,4 @@ actualizarDrone();
 </script>
 
 </body>
-
 </html>

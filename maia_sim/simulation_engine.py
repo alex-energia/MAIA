@@ -1,57 +1,68 @@
-import random
+from maia_sim.environment_engine import EnvironmentEngine
+from maia_sim.physics_engine import PhysicsEngine
+from maia_sim.sensor_engine import SensorEngine
+from maia_sim.energy_engine import EnergyEngine
+from maia_sim.algorithm_engine import AlgorithmEngine
+
 
 class Drone:
 
-    def __init__(self, drone_id):
+    def __init__(self,id):
 
-        self.id = drone_id
-        self.lat = 4.5709
-        self.lon = -74.2973
-        self.alt = 100
-        self.speed = 0.00005
+        self.id=id
 
-    def move(self):
+        self.lat=4.57
+        self.lon=-74.29
+        self.alt=100
 
-        self.lat += random.uniform(-self.speed, self.speed)
-        self.lon += random.uniform(-self.speed, self.speed)
+        self.speed=0.00005
 
-    def telemetry(self):
-
-        return {
-            "id": self.id,
-            "lat": self.lat,
-            "lon": self.lon,
-            "alt": self.alt
-        }
+        self.energy=100
 
 
 class SimulationEngine:
 
     def __init__(self):
 
-        self.drones = []
+        self.environment=EnvironmentEngine()
 
-        self.create_default_drones()
+        self.physics=PhysicsEngine()
 
-    def create_default_drones(self):
+        self.sensors=SensorEngine()
 
-        for i in range(3):
+        self.energy=EnergyEngine()
 
-            drone = Drone(i+1)
+        self.algorithms=AlgorithmEngine()
 
-            self.drones.append(drone)
+        self.drones=[Drone(1)]
 
     def update(self):
 
-        data = []
+        entorno=self.environment.update()
+
+        data=[]
 
         for drone in self.drones:
 
-            drone.move()
+            self.algorithms.ejecutar("ejemplo_algoritmo",drone)
 
-            data.append(drone.telemetry())
+            self.physics.apply_physics(drone,entorno)
+
+            self.energy.update(drone)
+
+            sensores=self.sensors.read_sensors(drone)
+
+            data.append({
+                "id":drone.id,
+                "lat":drone.lat,
+                "lon":drone.lon,
+                "alt":drone.alt,
+                "energia":drone.energy,
+                "sensores":sensores,
+                "entorno":entorno
+            })
 
         return data
 
 
-sim_engine = SimulationEngine()
+sim_engine=SimulationEngine()

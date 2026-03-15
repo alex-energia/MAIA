@@ -4,6 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
+
 <title>Drone Submarino de Detección de Petróleo</title>
 
 <style>
@@ -24,7 +25,6 @@ color:#ffd000;
 }
 
 .boton{
-
 background:#00c853;
 border:none;
 padding:12px 18px;
@@ -33,7 +33,10 @@ cursor:pointer;
 border-radius:8px;
 color:white;
 font-size:16px;
+}
 
+.boton:hover{
+background:#00a944;
 }
 
 .section{
@@ -46,11 +49,16 @@ display:none;
 
 code{
 background:black;
-padding:10px;
+padding:12px;
 display:block;
 margin-top:10px;
 color:#00ff00;
 white-space:pre-wrap;
+font-family:monospace;
+}
+
+.topbar{
+margin-bottom:20px;
 }
 
 </style>
@@ -59,11 +67,11 @@ white-space:pre-wrap;
 
 function mostrar(seccion){
 
-document.getElementById("intro").style.display="none"
-document.getElementById("software").style.display="none"
-document.getElementById("hardware").style.display="none"
+document.getElementById("intro").style.display="none";
+document.getElementById("software").style.display="none";
+document.getElementById("hardware").style.display="none";
 
-document.getElementById(seccion).style.display="block"
+document.getElementById(seccion).style.display="block";
 
 }
 
@@ -73,19 +81,21 @@ document.getElementById(seccion).style.display="block"
 
 <body>
 
+<div class="topbar">
+
+<button class="boton" onclick="window.location.href='/maia_drone'">
+← Volver a MAIA Drone
+</button>
+
+</div>
+
 <h1>Drone Submarino de Detección de Petróleo</h1>
 
-<button class="boton" onclick="mostrar('intro')">
-Introducción
-</button>
+<button class="boton" onclick="mostrar('intro')">Introducción</button>
 
-<button class="boton" onclick="mostrar('software')">
-Software
-</button>
+<button class="boton" onclick="mostrar('software')">Software</button>
 
-<button class="boton" onclick="mostrar('hardware')">
-Hardware
-</button>
+<button class="boton" onclick="mostrar('hardware')">Hardware</button>
 
 <div id="intro" class="section">
 
@@ -120,7 +130,8 @@ Este proyecto propone el desarrollo de un drone submarino autónomo capaz de det
 </ol>
 
 <p>
-Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceánica, aunque normalmente con sistemas extremadamente costosos. El objetivo del proyecto es investigar versiones más accesibles y autónomas.
+Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceánica, aunque normalmente con sistemas extremadamente costosos.
+El objetivo del proyecto es investigar versiones más accesibles y autónomas.
 </p>
 
 </div>
@@ -133,15 +144,10 @@ Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceán
 
 <code>
 navegar_ruta()
-
 mantener_profundidad()
-
 mapear_fondo()
-
 detectar_anomalias_geologicas()
-
 transmitir_datos()
-
 regresar_base()
 </code>
 

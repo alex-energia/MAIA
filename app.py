@@ -6,6 +6,7 @@ import os
 # =========================
 # MOTOR DE SIMULACION MAIA
 # =========================
+
 try:
     from maia_sim.simulation_engine import sim_engine
 except:
@@ -14,6 +15,7 @@ except:
 # =========================
 # IMPORTS OPCIONALES MAIA
 # =========================
+
 try:
     from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 except:
@@ -32,21 +34,25 @@ except:
 # =========================
 # CREAR APP
 # =========================
+
 app = Flask(__name__)
 
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
+
 init_db()
 
 # =========================
 # REGISTRAR BLUEPRINT
 # =========================
+
 app.register_blueprint(proyectos_bp)
 
 # =========================
 # PAGINA PRINCIPAL
 # =========================
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -54,6 +60,7 @@ def home():
 # =========================
 # PAGINA PROYECTOS
 # =========================
+
 @app.route("/proyectos")
 def proyectos():
 
@@ -65,11 +72,15 @@ def proyectos():
 
     conn.close()
 
-    return render_template("proyectos.html", proyectos=proyectos)
+    return render_template(
+        "proyectos.html",
+        proyectos=proyectos
+    )
 
 # =========================
 # VER PROYECTO
 # =========================
+
 @app.route("/proyectos/<int:id>")
 def ver_proyecto(id):
 
@@ -93,6 +104,7 @@ def ver_proyecto(id):
 # =========================
 # NUEVO PROYECTO
 # =========================
+
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
@@ -100,6 +112,7 @@ def nuevo_proyecto():
 # =========================
 # GUARDAR PROYECTO
 # =========================
+
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
@@ -133,6 +146,7 @@ def guardar_proyecto():
 # =========================
 # ALERTAS MAIA
 # =========================
+
 @app.route("/maia_alertas")
 def maia_alertas():
 
@@ -149,14 +163,14 @@ def maia_alertas():
 # =========================
 # ENERGY HARVESTER
 # =========================
+
 def maia_energy_harvester():
 
     queries = [
         "hydropower project for sale",
         "small hydro project investment",
         "renewable energy project investment opportunity",
-        "energy project seeking investors",
-        "run of river hydro project investment"
+        "energy project seeking investors"
     ]
 
     resultados = []
@@ -202,6 +216,7 @@ def maia_energy_harvester():
 # =========================
 # OPORTUNIDADES MAIA
 # =========================
+
 @app.route("/maia_oportunidades")
 def maia_oportunidades():
 
@@ -225,10 +240,12 @@ def maia_oportunidades():
 # =========================
 # CHAT MAIA
 # =========================
+
 @app.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
     data = request.get_json()
+
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."
@@ -247,13 +264,15 @@ def maia_chat():
 # =========================
 # MODULO MAIA DRONE
 # =========================
+
 @app.route("/maia_drone")
 def maia_drone():
     return render_template("maia_drone.html")
 
 # =========================
-# SIMULADOR MAIA DRONE
+# SIMULADOR DRONE
 # =========================
+
 @app.route("/maia_simulador")
 def maia_simulador():
     return render_template("maia_simulador.html")
@@ -261,13 +280,31 @@ def maia_simulador():
 # =========================
 # DRONE SUBMARINO PETROLEO
 # =========================
+
 @app.route("/dron_submarino_petroleo")
 def dron_submarino_petroleo():
     return render_template("drones/dron_submarino_petroleo.html")
 
 # =========================
-# MOTOR DE SIMULACION REAL
+# MAIA AI DRONE ARCHITECT
 # =========================
+
+@app.route("/maia_ai_drone_architect")
+def maia_ai_drone_architect():
+    return render_template("maia_ai_drone_architect.html")
+
+# =========================
+# MAIA AUTONOMOUS DRONE LAB
+# =========================
+
+@app.route("/maia_autonomous_lab")
+def maia_autonomous_lab():
+    return render_template("maia_autonomous_lab.html")
+
+# =========================
+# MOTOR DE SIMULACION
+# =========================
+
 @app.route("/maia_simulation_data")
 def maia_simulation_data():
 
@@ -280,11 +317,11 @@ def maia_simulation_data():
 # =========================
 # SIMULACION BASICA
 # =========================
+
 @app.route("/maia_drone_simular", methods=["POST"])
 def maia_drone_simular():
 
     data = request.get_json()
-    codigo = data.get("codigo", "")
 
     resultado = {
         "estado": "simulacion ejecutada",
@@ -298,6 +335,7 @@ def maia_drone_simular():
 # =========================
 # HEALTH CHECK
 # =========================
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -305,6 +343,7 @@ def health():
 # =========================
 # EJECUTAR APP
 # =========================
+
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 10000))

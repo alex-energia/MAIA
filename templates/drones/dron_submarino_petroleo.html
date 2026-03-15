@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
 <meta charset="UTF-8">
@@ -22,11 +23,25 @@ h2{
 color:#ffd000;
 }
 
+.boton{
+
+background:#00c853;
+border:none;
+padding:12px 18px;
+margin:8px;
+cursor:pointer;
+border-radius:8px;
+color:white;
+font-size:16px;
+
+}
+
 .section{
-margin-top:40px;
+margin-top:30px;
 padding:20px;
 background:#111;
 border-radius:10px;
+display:none;
 }
 
 code{
@@ -35,9 +50,24 @@ padding:10px;
 display:block;
 margin-top:10px;
 color:#00ff00;
+white-space:pre-wrap;
 }
 
 </style>
+
+<script>
+
+function mostrar(seccion){
+
+document.getElementById("intro").style.display="none"
+document.getElementById("software").style.display="none"
+document.getElementById("hardware").style.display="none"
+
+document.getElementById(seccion).style.display="block"
+
+}
+
+</script>
 
 </head>
 
@@ -45,32 +75,57 @@ color:#00ff00;
 
 <h1>Drone Submarino de Detección de Petróleo</h1>
 
-<div class="section">
+<button class="boton" onclick="mostrar('intro')">
+Introducción
+</button>
+
+<button class="boton" onclick="mostrar('software')">
+Software
+</button>
+
+<button class="boton" onclick="mostrar('hardware')">
+Hardware
+</button>
+
+<div id="intro" class="section">
 
 <h2>Introducción</h2>
 
-<p>Este proyecto propone el desarrollo de un drone submarino autónomo capaz de detectar posibles reservorios de petróleo bajo el fondo oceánico utilizando sensores geofísicos avanzados.</p>
+<p>
+Este proyecto propone el desarrollo de un drone submarino autónomo capaz de detectar posibles reservorios de petróleo bajo el fondo oceánico utilizando sensores geofísicos avanzados.
+</p>
 
 <ol>
 
 <li>El drone sería un vehículo submarino autónomo (AUV).</li>
+
 <li>Podría explorar grandes áreas del fondo oceánico.</li>
+
 <li>Utilizaría sonar de penetración del fondo (Sub Bottom Profiler).</li>
+
 <li>Detectaría estructuras geológicas donde podría existir petróleo.</li>
+
 <li>Incorporaría sonar multihaz para crear mapas 3D del fondo marino.</li>
+
 <li>Utilizaría magnetómetros para detectar variaciones geológicas.</li>
+
 <li>Podría integrar sensores químicos de hidrocarburos.</li>
+
 <li>La navegación sería completamente autónoma.</li>
+
 <li>Los datos se enviarían a superficie mediante boyas.</li>
+
 <li>Las boyas transmitirían información vía satélite al centro de control.</li>
 
 </ol>
 
-<p>Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceánica, aunque normalmente con sistemas extremadamente costosos. El objetivo del proyecto es investigar versiones más accesibles y autónomas.</p>
+<p>
+Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceánica, aunque normalmente con sistemas extremadamente costosos. El objetivo del proyecto es investigar versiones más accesibles y autónomas.
+</p>
 
 </div>
 
-<div class="section">
+<div id="software" class="section">
 
 <h2>Software</h2>
 
@@ -108,11 +163,13 @@ while mision_activa:
         transmitir_datos()
 </code>
 
-<p>El sistema puede integrarse con autopilotos open-source y módulos de inteligencia artificial para análisis geológico.</p>
+<p>
+El sistema puede integrarse con autopilotos open-source y módulos de inteligencia artificial para análisis geológico.
+</p>
 
 </div>
 
-<div class="section">
+<div id="hardware" class="section">
 
 <h2>Hardware</h2>
 

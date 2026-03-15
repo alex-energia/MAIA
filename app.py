@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
 import requests
 import os
+import json
 
 # =========================
 # MOTOR DE SIMULACION MAIA
@@ -302,6 +303,55 @@ def maia_autonomous_lab():
     return render_template("maia_autonomous_lab.html")
 
 # =========================
+# IDEAS APROBADAS DE DRONES
+# =========================
+
+@app.route("/maia_drones_aprobados")
+def maia_drones_aprobados():
+
+    try:
+
+        with open("ideas_drones.json", "r") as f:
+            ideas = json.load(f)
+
+        aprobados = [i for i in ideas if i["estado"] == "aprobado"]
+
+        return jsonify(aprobados)
+
+    except:
+        return jsonify([])
+
+# =========================
+# APROBAR NUEVO DRONE
+# =========================
+
+@app.route("/aprobar_drone", methods=["POST"])
+def aprobar_drone():
+
+    data = request.get_json()
+
+    nueva = {
+        "nombre": data.get("nombre"),
+        "ruta": data.get("ruta"),
+        "estado": "aprobado"
+    }
+
+    try:
+
+        with open("ideas_drones.json", "r") as f:
+            ideas = json.load(f)
+
+    except:
+        ideas = []
+
+    ideas.append(nueva)
+
+    with open("ideas_drones.json", "w") as f:
+        json.dump(ideas, f, indent=2)
+
+    return jsonify({"estado": "aprobado"})
+
+# =========================
 # MOTOR DE SIMULACION
 # =========================
 
@@ -321,11 +371,8 @@ def maia_simulation_data():
 @app.route("/maia_drone_simular", methods=["POST"])
 def maia_drone_simular():
 
-    data = request.get_json()
-
     resultado = {
         "estado": "simulacion ejecutada",
-        "codigo_recibido": True,
         "duracion": "30s",
         "resultado": "exitoso"
     }

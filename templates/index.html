@@ -127,10 +127,15 @@ font-size:15px;
 <div class="topbar-buttons">
 
 <button onclick="activarGanado()">🐄 MAIA GANADO</button>
+
 <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
+
 <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
+
 <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
+
 <button onclick="activarDrone()">🚁 MAIA DRONE</button>
+
 <button onclick="volverChat()">🏠 Inicio</button>
 
 </div>
@@ -163,7 +168,7 @@ font-size:15px;
 
 <div class="chat-box">
 
-<a href="/proyectos" style="color:#2563eb;">
+<a href="/proyectos" style="color:#2563eb">
 Ir al módulo completo de Proyectos
 </a>
 
@@ -233,6 +238,10 @@ Enviar
 🧠 MAIA AI Drone Architect
 </button>
 
+<button onclick="abrirAutonomous()" style="background:#f59e0b;color:black">
+🚀 MAIA Autonomous Drone Lab
+</button>
+
 </div>
 
 <div id="contenidoDrone" style="margin-top:20px"></div>
@@ -274,40 +283,37 @@ document.getElementById("moduloDrone").classList.remove("hidden")
 
 }
 
-function activarGanado(){
-alert("MAIA GANADO en construcción")
-}
+function activarGanado(){alert("MAIA GANADO en construcción")}
 
-function activarPlantas(){
-alert("MAIA PLANTAS en construcción")
-}
+function activarPlantas(){alert("MAIA PLANTAS en construcción")}
 
-function activarTraductor(){
-alert("MAIA TRADUCTOR en construcción")
-}
+function activarTraductor(){alert("MAIA TRADUCTOR en construcción")}
 
 function abrirSimulador(){
-
 window.open("/maia_simulador","_blank")
-
 }
 
 function abrirDroneAI(){
-
 window.open("/maia_ai_drone_architect","_blank")
+}
 
+function abrirAutonomous(){
+window.open("/maia_autonomous_lab","_blank")
 }
 
 function dronesComerciales(){
 
 document.getElementById("contenidoDrone").innerHTML = `
+
 <h3>🛩️ Drones comerciales</h3>
+
 <ul>
 <li>Fotografía aérea</li>
 <li>Eventos</li>
 <li>Turismo</li>
 <li>Video profesional</li>
 </ul>
+
 `
 
 }
@@ -316,24 +322,26 @@ function dronesIndustriales(){
 
 document.getElementById("contenidoDrone").innerHTML = `
 
-<h3>🏭 Drones industriales</h3>
+<h3>🏭 Drones industriales aprobados</h3>
 
 <ul>
 
 <li>
+
 🌊 <b>Drone submarino detección de petróleo</b>
-<br>
+
+<br><br>
+
 <button onclick="window.open('/dron_submarino_petroleo','_blank')">
+
 Abrir proyecto
+
 </button>
+
 </li>
 
-<li>⚡ Inspección energética</li>
-<li>🌱 Agricultura de precisión</li>
-<li>⛏ Minería</li>
-<li>🏗 Infraestructura</li>
-
 </ul>
+
 `
 
 }
@@ -341,13 +349,16 @@ Abrir proyecto
 function dronesMilitares(){
 
 document.getElementById("contenidoDrone").innerHTML = `
+
 <h3>🛡️ Drones militares</h3>
+
 <ul>
 <li>Reconocimiento</li>
 <li>Vigilancia</li>
 <li>Operaciones tácticas</li>
 <li>Seguridad fronteriza</li>
 </ul>
+
 `
 
 }
@@ -369,20 +380,20 @@ data.oportunidades.forEach(o=>{
 panel.innerHTML += `
 <div class="card-oportunidad">
 
-<b>${o.titulo}</b>
-<br>
-Pais: ${o.pais}
-<br>
-Tipo activo: ${o.tipo_activo}
-<br>
-Empresa: ${o.empresa}
-<br>
+<b>${o.titulo}</b><br>
+
+Pais: ${o.pais}<br>
+
+Tipo activo: ${o.tipo_activo}<br>
+
+Empresa: ${o.empresa}<br>
 
 <a href="${o.contacto}" target="_blank">
 Ver fuente
 </a>
 
-</div>`
+</div>
+`
 
 })
 
@@ -405,22 +416,20 @@ data.forEach(p=>{
 panel.innerHTML += `
 <div class="card-oportunidad">
 
-<b>${p.titulo}</b>
-<br>
-Pais: ${p.pais}
-<br>
-Tipo activo: ${p.tipo_activo}
-<br>
+<b>${p.titulo}</b><br>
+
+Pais: ${p.pais}<br>
+
+Tipo activo: ${p.tipo_activo}<br>
+
 Empresa: ${p.empresa}
 
-<button class="btn-eliminar"
-onclick="eliminarProyecto(${p.id})">
-
+<button class="btn-eliminar" onclick="eliminarProyecto(${p.id})">
 Eliminar
-
 </button>
 
-</div>`
+</div>
+`
 
 })
 
@@ -470,4 +479,5 @@ chat.scrollTop=chat.scrollHeight
 </script>
 
 </body>
+
 </html>

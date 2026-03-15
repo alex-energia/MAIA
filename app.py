@@ -19,6 +19,7 @@ try:
 except:
     def buscar_oportunidades():
         return []
+
     def detectar_activos_tempranos():
         return []
 
@@ -55,11 +56,15 @@ def home():
 # =========================
 @app.route("/proyectos")
 def proyectos():
+
     conn = get_db()
+
     proyectos = conn.execute(
         "SELECT id, titulo as nombre FROM proyectos_guardados ORDER BY id DESC"
     ).fetchall()
+
     conn.close()
+
     return render_template("proyectos.html", proyectos=proyectos)
 
 # =========================
@@ -254,15 +259,20 @@ def maia_simulador():
     return render_template("maia_simulador.html")
 
 # =========================
+# DRONE SUBMARINO PETROLEO
+# =========================
+@app.route("/dron_submarino_petroleo")
+def dron_submarino_petroleo():
+    return render_template("drones/dron_submarino_petroleo.html")
+
+# =========================
 # MOTOR DE SIMULACION REAL
 # =========================
 @app.route("/maia_simulation_data")
 def maia_simulation_data():
 
     if sim_engine:
-
         data = sim_engine.update()
-
         return jsonify(data)
 
     return jsonify([])
@@ -274,7 +284,6 @@ def maia_simulation_data():
 def maia_drone_simular():
 
     data = request.get_json()
-
     codigo = data.get("codigo", "")
 
     resultado = {

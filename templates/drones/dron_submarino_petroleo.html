@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<title>Drone Submarino de Detección de Petróleo</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0a0a0a;
+color:white;
+margin:40px;
+}
+
+h1{
+color:#00c3ff;
+}
+
+h2{
+color:#ffd000;
+}
+
+.section{
+margin-top:40px;
+padding:20px;
+background:#111;
+border-radius:10px;
+}
+
+code{
+background:black;
+padding:10px;
+display:block;
+margin-top:10px;
+color:#00ff00;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Drone Submarino de Detección de Petróleo</h1>
+
+<div class="section">
+
+<h2>Introducción</h2>
+
+<p>Este proyecto propone el desarrollo de un drone submarino autónomo capaz de detectar posibles reservorios de petróleo bajo el fondo oceánico utilizando sensores geofísicos avanzados.</p>
+
+<ol>
+
+<li>El drone sería un vehículo submarino autónomo (AUV).</li>
+<li>Podría explorar grandes áreas del fondo oceánico.</li>
+<li>Utilizaría sonar de penetración del fondo (Sub Bottom Profiler).</li>
+<li>Detectaría estructuras geológicas donde podría existir petróleo.</li>
+<li>Incorporaría sonar multihaz para crear mapas 3D del fondo marino.</li>
+<li>Utilizaría magnetómetros para detectar variaciones geológicas.</li>
+<li>Podría integrar sensores químicos de hidrocarburos.</li>
+<li>La navegación sería completamente autónoma.</li>
+<li>Los datos se enviarían a superficie mediante boyas.</li>
+<li>Las boyas transmitirían información vía satélite al centro de control.</li>
+
+</ol>
+
+<p>Esta arquitectura es técnicamente viable y ya se utiliza en exploración oceánica, aunque normalmente con sistemas extremadamente costosos. El objetivo del proyecto es investigar versiones más accesibles y autónomas.</p>
+
+</div>
+
+<div class="section">
+
+<h2>Software</h2>
+
+<p>Arquitectura conceptual del software del drone:</p>
+
+<code>
+navegar_ruta()
+
+mantener_profundidad()
+
+mapear_fondo()
+
+detectar_anomalias_geologicas()
+
+transmitir_datos()
+
+regresar_base()
+</code>
+
+<p>Ejemplo de lógica básica en Python para exploración autónoma:</p>
+
+<code>
+while mision_activa:
+
+    mantener_profundidad()
+
+    navegar_ruta()
+
+    datos = escanear_fondo()
+
+    if detectar_anomalia(datos):
+
+        marcar_zona()
+
+        transmitir_datos()
+</code>
+
+<p>El sistema puede integrarse con autopilotos open-source y módulos de inteligencia artificial para análisis geológico.</p>
+
+</div>
+
+<div class="section">
+
+<h2>Hardware</h2>
+
+<h3>Estructura</h3>
+
+<ul>
+<li>Casco presurizado de aluminio o titanio</li>
+<li>Sellos de alta presión</li>
+<li>Carcasa anticorrosión</li>
+</ul>
+
+<h3>Propulsión</h3>
+
+<ul>
+<li>4–6 motores thruster submarinos</li>
+<li>Controladores ESC marinos</li>
+</ul>
+
+<h3>Navegación</h3>
+
+<ul>
+<li>IMU de alta precisión</li>
+<li>Sensor de profundidad</li>
+<li>DVL (Doppler Velocity Log)</li>
+<li>GPS para superficie</li>
+</ul>
+
+<h3>Sensores geológicos</h3>
+
+<ul>
+<li>Sub-bottom profiler</li>
+<li>Sonar multihaz</li>
+<li>Magnetómetro</li>
+<li>Sensor químico de hidrocarburos</li>
+</ul>
+
+<h3>Computación</h3>
+
+<ul>
+<li>Computadora embarcada</li>
+<li>Autopiloto compatible con navegación submarina</li>
+</ul>
+
+<h3>Comunicación</h3>
+
+<ul>
+<li>Comunicación acústica submarina</li>
+<li>Boya de superficie</li>
+<li>Módem satelital en boya</li>
+</ul>
+
+</div>
+
+</body>
+</html>

@@ -4,9 +4,16 @@ import requests
 import os
 
 # =========================
+# MOTOR DE SIMULACION MAIA
+# =========================
+try:
+    from maia_sim.simulation_engine import sim_engine
+except:
+    sim_engine = None
+
+# =========================
 # IMPORTS OPCIONALES MAIA
 # =========================
-
 try:
     from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
 except:
@@ -24,25 +31,21 @@ except:
 # =========================
 # CREAR APP
 # =========================
-
 app = Flask(__name__)
 
 # =========================
 # INICIALIZAR BASE DE DATOS
 # =========================
-
 init_db()
 
 # =========================
 # REGISTRAR BLUEPRINT
 # =========================
-
 app.register_blueprint(proyectos_bp)
 
 # =========================
 # PAGINA PRINCIPAL
 # =========================
-
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -50,7 +53,6 @@ def home():
 # =========================
 # PAGINA PROYECTOS
 # =========================
-
 @app.route("/proyectos")
 def proyectos():
     conn = get_db()
@@ -63,9 +65,9 @@ def proyectos():
 # =========================
 # VER PROYECTO
 # =========================
-
 @app.route("/proyectos/<int:id>")
 def ver_proyecto(id):
+
     conn = get_db()
 
     proyecto = conn.execute(
@@ -86,7 +88,6 @@ def ver_proyecto(id):
 # =========================
 # NUEVO PROYECTO
 # =========================
-
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
@@ -94,7 +95,6 @@ def nuevo_proyecto():
 # =========================
 # GUARDAR PROYECTO
 # =========================
-
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
@@ -128,7 +128,6 @@ def guardar_proyecto():
 # =========================
 # ALERTAS MAIA
 # =========================
-
 @app.route("/maia_alertas")
 def maia_alertas():
 
@@ -145,7 +144,6 @@ def maia_alertas():
 # =========================
 # ENERGY HARVESTER
 # =========================
-
 def maia_energy_harvester():
 
     queries = [
@@ -199,7 +197,6 @@ def maia_energy_harvester():
 # =========================
 # OPORTUNIDADES MAIA
 # =========================
-
 @app.route("/maia_oportunidades")
 def maia_oportunidades():
 
@@ -223,7 +220,6 @@ def maia_oportunidades():
 # =========================
 # CHAT MAIA
 # =========================
-
 @app.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
@@ -246,7 +242,6 @@ def maia_chat():
 # =========================
 # MODULO MAIA DRONE
 # =========================
-
 @app.route("/maia_drone")
 def maia_drone():
     return render_template("maia_drone.html")
@@ -254,15 +249,27 @@ def maia_drone():
 # =========================
 # SIMULADOR MAIA DRONE
 # =========================
-
 @app.route("/maia_simulador")
 def maia_simulador():
     return render_template("maia_simulador.html")
 
 # =========================
-# MOTOR DE SIMULACION
+# MOTOR DE SIMULACION REAL
 # =========================
+@app.route("/maia_simulation_data")
+def maia_simulation_data():
 
+    if sim_engine:
+
+        data = sim_engine.update()
+
+        return jsonify(data)
+
+    return jsonify([])
+
+# =========================
+# SIMULACION BASICA
+# =========================
 @app.route("/maia_drone_simular", methods=["POST"])
 def maia_drone_simular():
 
@@ -282,7 +289,6 @@ def maia_drone_simular():
 # =========================
 # HEALTH CHECK
 # =========================
-
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -290,7 +296,6 @@ def health():
 # =========================
 # EJECUTAR APP
 # =========================
-
 if __name__ == "__main__":
 
     port = int(os.environ.get("PORT", 10000))

@@ -12,6 +12,8 @@ font-family:Arial;
 background:#0f172a;
 color:white;
 text-align:center;
+margin:0;
+padding:0;
 }
 
 h1{
@@ -39,51 +41,102 @@ transition:0.3s;
 background:#334155;
 }
 
+#mensaje{
+margin-top:30px;
+color:#94a3b8;
+}
+
+button{
+margin-top:20px;
+padding:10px 20px;
+background:#22c55e;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+background:#16a34a;
+}
+
 </style>
 
 </head>
+
 
 <body>
 
 <h1>🚁 MAIA Industrial Drone Lab</h1>
 
+<button onclick="cargarDrones()">Actualizar drones</button>
+
+<div id="mensaje">Cargando drones...</div>
+
 <div id="drones"></div>
+
 
 <script>
 
 async function cargarDrones(){
 
-let r = await fetch("/maia_drones_aprobados")
+    const container = document.getElementById("drones")
+    const mensaje = document.getElementById("mensaje")
 
-let drones = await r.json()
+    container.innerHTML=""
+    mensaje.innerHTML="Cargando drones..."
 
-let container = document.getElementById("drones")
+    try{
 
-container.innerHTML=""
+        let r = await fetch("/maia_drones_aprobados")
 
-drones.forEach(d => {
+        let drones = await r.json()
 
-let card = document.createElement("div")
+        if(!drones || drones.length === 0){
 
-card.className="drone-card"
+            mensaje.innerHTML="No hay drones industriales aprobados aún."
+            return
+        }
 
-card.innerHTML = "<h3>"+d.nombre+"</h3>"
+        mensaje.innerHTML=""
 
-card.onclick = () => {
+        drones.forEach(d => {
 
-window.location = d.ruta
+            let card = document.createElement("div")
 
-}
+            card.className="drone-card"
 
-container.appendChild(card)
+            card.innerHTML = `
+            <h3>${d.nombre}</h3>
+            <p>Click para abrir módulo</p>
+            `
 
-})
+            card.onclick = () => {
+
+                window.location = d.ruta
+
+            }
+
+            container.appendChild(card)
+
+        })
+
+    }
+
+    catch(error){
+
+        mensaje.innerHTML="Error conectando con MAIA."
+
+        console.error(error)
+
+    }
 
 }
 
 cargarDrones()
 
 </script>
+
 
 </body>
 

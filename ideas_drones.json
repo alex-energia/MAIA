@@ -8,5 +8,10 @@
     "nombre": "MAIA Punto Eléctrico",
     "ruta": "/maia_punto_electrico",
     "estado": "aprobado"
-  }
+  },
+{
+  "nombre": "Drone Purificador Atmosférico Urbano",
+  "ruta": "/drone_purificador_atmosferico",
+  "estado": "aprobado"
+}
 ]

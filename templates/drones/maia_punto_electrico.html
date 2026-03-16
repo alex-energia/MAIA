@@ -1,43 +1,189 @@
-<h1>⚡ MAIA Punto Eléctrico</h1>
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>MAIA Punto Eléctrico</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:0;
+padding:40px;
+text-align:center;
+}
+
+h1{
+color:#22c55e;
+}
+
+button{
+padding:12px 20px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+margin:10px;
+font-size:16px;
+}
+
+.boton{
+background:#22c55e;
+color:white;
+}
+
+.boton:hover{
+background:#16a34a;
+}
+
+.volver{
+position:absolute;
+top:20px;
+left:20px;
+background:#22c55e;
+}
+
+.contenido{
+margin-top:40px;
+max-width:900px;
+margin-left:auto;
+margin-right:auto;
+text-align:left;
+background:#1e293b;
+padding:30px;
+border-radius:10px;
+}
+
+</style>
+
+<script>
+
+function mostrarIntro(){
+
+document.getElementById("contenido").innerHTML = `
 
 <h2>Introducción</h2>
 
 <p>
-Drone autónomo diseñado para encontrar ubicaciones óptimas para
-centrales hidroeléctricas.
+<strong>MAIA Punto Eléctrico</strong> es un sistema autónomo basado en drones e inteligencia artificial diseñado para identificar ubicaciones óptimas para la construcción de centrales hidroeléctricas.
+</p>
+
+<p>
+El proyecto es <b>técnicamente viable</b> debido a la integración de tecnologías modernas de análisis geoespacial, sensores avanzados y simulación hidrológica.
+</p>
+
+<p>
+Las principales razones de su viabilidad son:
 </p>
 
 <ul>
 
-<li>Escaneo de ríos con IA</li>
-<li>Cálculo de pendiente del terreno</li>
-<li>Estimación de caudal</li>
-<li>Simulación de potencia hidroeléctrica</li>
-<li>Ubicación exacta en mapa</li>
+<li>Uso de <b>IA geoespacial</b> para analizar ríos y topografía.</li>
+
+<li>Integración de <b>LIDAR y sensores hidrológicos</b> para medir pendiente y caudal.</li>
+
+<li>Simulación automática de <b>potencial de generación hidroeléctrica</b>.</li>
+
+<li>Capacidad de localizar <b>puntos óptimos para bocatoma, conducción y casa de máquinas</b>.</li>
+
+<li>Integración con <b>MAIA Geo Scanner</b> para posicionamiento exacto en mapas.</li>
 
 </ul>
 
+<p>
+Esto permite reducir significativamente los tiempos y costos de exploración de proyectos hidroeléctricos, permitiendo detectar oportunidades energéticas de forma rápida y precisa.
+</p>
+
+`
+
+}
+
+function mostrarSoftware(){
+
+document.getElementById("contenido").innerHTML = `
+
 <h2>Software</h2>
 
-<pre>
+<ul>
 
-Python
-OpenCV
-GIS analysis
-Hydrology simulation
-MAIA Geo Scanner
-Autonomous navigation AI
+<li>Python</li>
 
-</pre>
+<li>OpenCV</li>
+
+<li>GIS Analysis</li>
+
+<li>Hydrology Simulation Engine</li>
+
+<li>MAIA Geo Scanner</li>
+
+<li>Autonomous Navigation AI</li>
+
+<li>Terrain slope calculation</li>
+
+<li>Hydropower potential simulator</li>
+
+</ul>
+
+`
+
+}
+
+function mostrarHardware(){
+
+document.getElementById("contenido").innerHTML = `
 
 <h2>Hardware</h2>
 
 <ul>
 
-<li>Drone VTOL largo alcance</li>
-<li>LIDAR topográfico</li>
-<li>Cámara térmica</li>
+<li>Drone VTOL de largo alcance</li>
+
+<li>Sensor LIDAR topográfico</li>
+
+<li>Cámara térmica multiespectral</li>
+
 <li>Sensor de flujo de agua</li>
-<li>GPS RTK alta precisión</li>
+
+<li>GPS RTK de alta precisión</li>
+
+<li>Computador de vuelo con IA integrada</li>
 
 </ul>
+
+`
+
+}
+
+</script>
+
+</head>
+
+<body>
+
+<button class="volver" onclick="window.location='/maia_drone'">
+← Volver a MAIA Drone
+</button>
+
+<h1>⚡ MAIA Punto Eléctrico</h1>
+
+<button class="boton" onclick="mostrarIntro()">Introducción</button>
+
+<button class="boton" onclick="mostrarSoftware()">Software</button>
+
+<button class="boton" onclick="mostrarHardware()">Hardware</button>
+
+<div id="contenido" class="contenido">
+
+<h2>Introducción</h2>
+
+<p>
+Drone autónomo diseñado para encontrar ubicaciones óptimas para centrales hidroeléctricas mediante análisis geoespacial, simulación hidrológica y sensores avanzados.
+</p>
+
+</div>
+
+</body>
+
+</html>

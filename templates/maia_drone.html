@@ -60,83 +60,106 @@ button:hover{
 background:#16a34a;
 }
 
+#top-buttons{
+display:flex;
+gap:20px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:20px;
+}
+
 </style>
 
 </head>
-
 
 <body>
 
 <h1>🚁 MAIA Industrial Drone Lab</h1>
 
-<button onclick="cargarDrones()">Actualizar drones</button>
+<div id="top-buttons">
+
+<button onclick="cargarDrones()">
+Actualizar drones
+</button>
+
+<button onclick="abrirInventor()">
+🤖 MAIA Drone Inventor
+</button>
+
+</div>
 
 <div id="mensaje">Cargando drones...</div>
 
 <div id="drones"></div>
 
-
 <script>
+
+function abrirInventor(){
+
+window.location="/maia_drone_inventor"
+
+}
 
 async function cargarDrones(){
 
-    const container = document.getElementById("drones")
-    const mensaje = document.getElementById("mensaje")
+const container = document.getElementById("drones")
+const mensaje = document.getElementById("mensaje")
 
-    container.innerHTML=""
-    mensaje.innerHTML="Cargando drones..."
+container.innerHTML=""
+mensaje.innerHTML="Cargando drones..."
 
-    try{
+try{
 
-        let r = await fetch("/maia_drones_aprobados")
+let r = await fetch("/maia_drones_aprobados")
 
-        let drones = await r.json()
+let drones = await r.json()
 
-        if(!drones || drones.length === 0){
+if(!drones || drones.length === 0){
 
-            mensaje.innerHTML="No hay drones industriales aprobados aún."
-            return
-        }
+mensaje.innerHTML="No hay drones industriales aprobados aún."
 
-        mensaje.innerHTML=""
+return
 
-        drones.forEach(d => {
+}
 
-            let card = document.createElement("div")
+mensaje.innerHTML=""
 
-            card.className="drone-card"
+drones.forEach(d => {
 
-            card.innerHTML = `
-            <h3>${d.nombre}</h3>
-            <p>Click para abrir módulo</p>
-            `
+let card = document.createElement("div")
 
-            card.onclick = () => {
+card.className="drone-card"
 
-                window.location = d.ruta
+card.innerHTML = `
+<h3>${d.nombre}</h3>
+<p>Click para abrir módulo</p>
+`
 
-            }
+card.onclick = () => {
 
-            container.appendChild(card)
+window.location = d.ruta
 
-        })
+}
 
-    }
+container.appendChild(card)
 
-    catch(error){
+})
 
-        mensaje.innerHTML="Error conectando con MAIA."
+}
 
-        console.error(error)
+catch(error){
 
-    }
+mensaje.innerHTML="Error conectando con MAIA."
+
+console.error(error)
+
+}
 
 }
 
 cargarDrones()
 
 </script>
-
 
 </body>
 

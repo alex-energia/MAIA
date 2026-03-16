@@ -1,0 +1,38 @@
+<h1>🤖 MAIA Drone Inventor</h1>
+
+<button onclick="inventar()">Inventar Drone</button>
+
+<div id="idea"></div>
+
+<button onclick="generar3d()">Generar diseño 3D</button>
+
+<div id="modelo"></div>
+
+<script>
+
+async function inventar(){
+
+let r = await fetch("/maia_inventar_drone")
+let d = await r.json()
+
+document.getElementById("idea").innerHTML =
+"<h2>"+d.nombre+"</h2>"+
+"<p>"+d.impacto+"</p>"+
+"<p>Tipo: "+d.tipo+"</p>"
+
+}
+
+async function generar3d(){
+
+let r = await fetch("/maia_generar_diseno_3d")
+let m = await r.json()
+
+document.getElementById("modelo").innerHTML =
+"<h3>Modelo 3D generado</h3>"+
+"<p>"+m.estructura+"</p>"+
+"<p>"+m.propulsores+"</p>"+
+"<p>"+m.soporte_camara+"</p>"
+
+}
+
+</script>

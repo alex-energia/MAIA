@@ -1,11 +1,9 @@
 from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
-
 import os
 import json
 import random
 import requests
-
 
 # =========================
 # MOTOR DE SIMULACION MAIA
@@ -14,7 +12,6 @@ try:
     from maia_sim.simulation_engine import sim_engine
 except:
     sim_engine = None
-
 
 # =========================
 # IMPORTS OPCIONALES MAIA
@@ -31,44 +28,41 @@ except:
     def escanear_mercado_global():
         return []
 
-
 # =========================
 # CREAR APP
 # =========================
 app = Flask(__name__)
-
 
 # =========================
 # INICIALIZAR DB
 # =========================
 init_db()
 
-
 # =========================
 # BLUEPRINT
 # =========================
 app.register_blueprint(proyectos_bp)
 
+# =========================
+# RUTA BASE DEL PROYECTO
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # =========================
-# DRONES BASE (fallback)
+# DRONES BASE (SI FALLA JSON)
 # =========================
 DRONES_BASE = [
-
     {
         "nombre": "Drone submarino detección de petróleo",
         "ruta": "/dron_submarino_petroleo",
         "estado": "aprobado"
     },
-
     {
         "nombre": "MAIA Punto Eléctrico",
         "ruta": "/maia_punto_electrico",
         "estado": "aprobado"
     }
-
 ]
-
 
 # =========================
 # HOME
@@ -77,23 +71,17 @@ DRONES_BASE = [
 def home():
     return render_template("index.html")
 
-
 # =========================
 # PROYECTOS
 # =========================
 @app.route("/proyectos")
 def proyectos():
-
     conn = get_db()
-
     proyectos = conn.execute(
         "SELECT id, titulo as nombre FROM proyectos_guardados ORDER BY id DESC"
     ).fetchall()
-
     conn.close()
-
     return render_template("proyectos.html", proyectos=proyectos)
-
 
 # =========================
 # VER PROYECTO
@@ -113,8 +101,10 @@ def ver_proyecto(id):
     if proyecto is None:
         return "Proyecto no encontrado"
 
-    return render_template("proyecto_detalle.html", proyecto=proyecto)
-
+    return render_template(
+        "proyecto_detalle.html",
+        proyecto=proyecto
+    )
 
 # =========================
 # NUEVO PROYECTO
@@ -122,7 +112,6 @@ def ver_proyecto(id):
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
-
 
 # =========================
 # GUARDAR PROYECTO
@@ -157,7 +146,6 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
-
 # =========================
 # ALERTAS MAIA
 # =========================
@@ -177,7 +165,6 @@ def maia_alertas():
 
     return jsonify([dict(a) for a in alertas])
 
-
 # =========================
 # CHAT MAIA
 # =========================
@@ -185,6 +172,7 @@ def maia_alertas():
 def maia_chat():
 
     data = request.get_json()
+
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."
@@ -200,7 +188,6 @@ def maia_chat():
 
     return jsonify({"reply": respuesta})
 
-
 # =========================
 # MAIA DRONE LAB
 # =========================
@@ -208,22 +195,12 @@ def maia_chat():
 def maia_drone():
     return render_template("maia_drone.html")
 
-
 # =========================
-# MAIA SIMULADOR
-# =========================
-@app.route("/maia_simulador")
-def maia_simulador():
-    return render_template("maia_simulador.html")
-
-
-# =========================
-# DRONE SUBMARINO PETROLEO
+# DRONE SUBMARINO
 # =========================
 @app.route("/dron_submarino_petroleo")
 def dron_submarino_petroleo():
     return render_template("drones/dron_submarino_petroleo.html")
-
 
 # =========================
 # MAIA PUNTO ELECTRICO
@@ -231,7 +208,6 @@ def dron_submarino_petroleo():
 @app.route("/maia_punto_electrico")
 def maia_punto_electrico():
     return render_template("drones/maia_punto_electrico.html")
-
 
 # =========================
 # GEO SCANNER
@@ -258,30 +234,12 @@ def maia_geo_scan():
         "potencia_kw": potencia
     })
 
-
 # =========================
-# MAIA AI DRONE ARCHITECT
-# =========================
-@app.route("/maia_ai_drone_architect")
-def maia_ai_drone_architect():
-    return render_template("maia_ai_drone_architect.html")
-
-
-# =========================
-# MAIA AUTONOMOUS LAB
-# =========================
-@app.route("/maia_autonomous_lab")
-def maia_autonomous_lab():
-    return render_template("maia_autonomous_lab.html")
-
-
-# =========================
-# MAIA DRONE INVENTOR
+# DRONE INVENTOR IA
 # =========================
 @app.route("/maia_drone_inventor")
 def maia_drone_inventor():
     return render_template("maia_drone_inventor.html")
-
 
 # =========================
 # IA INVENTA DRONES
@@ -290,35 +248,29 @@ def maia_drone_inventor():
 def maia_inventar_drone():
 
     ideas = [
-
         {
             "nombre": "Drone médico de emergencia",
             "impacto": "Entrega desfibriladores en ciudades",
             "energia": "batería rápida"
         },
-
         {
             "nombre": "Drone limpiador de océanos",
             "impacto": "Recolecta plástico del mar",
             "energia": "solar marino"
         },
-
         {
             "nombre": "Drone forestal anti incendios",
             "impacto": "Detecta incendios antes de propagarse",
             "energia": "batería industrial"
         },
-
         {
             "nombre": "Drone explorador geotérmico",
             "impacto": "Detecta energía geotérmica",
             "energia": "batería + solar"
         }
-
     ]
 
     return jsonify(random.choice(ideas))
-
 
 # =========================
 # GENERAR DISEÑO 3D
@@ -334,7 +286,6 @@ def maia_generar_diseno_3d():
 
     return jsonify(modelo)
 
-
 # =========================
 # DRONES APROBADOS
 # =========================
@@ -343,20 +294,26 @@ def maia_drones_aprobados():
 
     try:
 
-        with open("ideas_drones.json", "r") as f:
+        ruta = os.path.join(BASE_DIR, "ideas_drones.json")
+
+        with open(ruta, "r") as f:
             ideas = json.load(f)
 
-        aprobados = [i for i in ideas if i["estado"] == "aprobado"]
+        aprobados = [
+            i for i in ideas
+            if i.get("estado") == "aprobado"
+        ]
 
         if len(aprobados) == 0:
             return jsonify(DRONES_BASE)
 
         return jsonify(aprobados)
 
-    except:
+    except Exception as e:
+
+        print("ERROR drones:", e)
 
         return jsonify(DRONES_BASE)
-
 
 # =========================
 # APROBAR DRONE
@@ -372,22 +329,20 @@ def aprobar_drone():
         "estado": "aprobado"
     }
 
+    ruta = os.path.join(BASE_DIR, "ideas_drones.json")
+
     try:
-
-        with open("ideas_drones.json", "r") as f:
+        with open(ruta, "r") as f:
             ideas = json.load(f)
-
     except:
-
         ideas = []
 
     ideas.append(nueva)
 
-    with open("ideas_drones.json", "w") as f:
+    with open(ruta, "w") as f:
         json.dump(ideas, f, indent=2)
 
     return jsonify({"estado": "aprobado"})
-
 
 # =========================
 # HEALTH CHECK
@@ -395,7 +350,6 @@ def aprobar_drone():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
-
 
 # =========================
 # RUN

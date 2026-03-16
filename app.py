@@ -9,6 +9,7 @@ import random
 # =========================
 # MOTOR DE SIMULACION MAIA
 # =========================
+
 try:
     from maia_sim.simulation_engine import sim_engine
 except:
@@ -17,13 +18,11 @@ except:
 # =========================
 # IMPORTS OPCIONALES MAIA
 # =========================
+
 try:
-    from maia_market_intelligence import buscar_oportunidades, detectar_activos_tempranos
+    from maia_market_intelligence import buscar_oportunidades
 except:
     def buscar_oportunidades():
-        return []
-
-    def detectar_activos_tempranos():
         return []
 
 try:
@@ -35,28 +34,33 @@ except:
 # =========================
 # CREAR APP
 # =========================
+
 app = Flask(__name__)
 
 # =========================
-# INICIALIZAR BASE DE DATOS
+# INICIALIZAR DB
 # =========================
+
 init_db()
 
 # =========================
-# REGISTRAR BLUEPRINT
+# BLUEPRINT
 # =========================
+
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# PAGINA PRINCIPAL
+# HOME
 # =========================
+
 @app.route("/")
 def home():
     return render_template("index.html")
 
 # =========================
-# PAGINA PROYECTOS
+# PROYECTOS
 # =========================
+
 @app.route("/proyectos")
 def proyectos():
 
@@ -68,14 +72,12 @@ def proyectos():
 
     conn.close()
 
-    return render_template(
-        "proyectos.html",
-        proyectos=proyectos
-    )
+    return render_template("proyectos.html", proyectos=proyectos)
 
 # =========================
 # VER PROYECTO
 # =========================
+
 @app.route("/proyectos/<int:id>")
 def ver_proyecto(id):
 
@@ -91,14 +93,12 @@ def ver_proyecto(id):
     if proyecto is None:
         return "Proyecto no encontrado"
 
-    return render_template(
-        "proyecto_detalle.html",
-        proyecto=proyecto
-    )
+    return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 # =========================
 # NUEVO PROYECTO
 # =========================
+
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
@@ -106,19 +106,11 @@ def nuevo_proyecto():
 # =========================
 # GUARDAR PROYECTO
 # =========================
+
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
 
     data = request.form or request.get_json()
-
-    nombre = data.get("nombre")
-    tecnologia = data.get("tecnologia")
-    pais = data.get("pais")
-    ciudad = data.get("ciudad")
-    moneda = data.get("moneda")
-    horizonte = data.get("horizonte")
-    potencia = data.get("potencia")
-    unidad = data.get("unidad")
 
     conn = get_db()
 
@@ -128,7 +120,16 @@ def guardar_proyecto():
         (titulo, tecnologia, pais, ciudad, moneda, horizonte, potencia, unidad)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (nombre, tecnologia, pais, ciudad, moneda, horizonte, potencia, unidad)
+        (
+            data.get("nombre"),
+            data.get("tecnologia"),
+            data.get("pais"),
+            data.get("ciudad"),
+            data.get("moneda"),
+            data.get("horizonte"),
+            data.get("potencia"),
+            data.get("unidad"),
+        ),
     )
 
     conn.commit()
@@ -139,6 +140,7 @@ def guardar_proyecto():
 # =========================
 # ALERTAS MAIA
 # =========================
+
 @app.route("/maia_alertas")
 def maia_alertas():
 
@@ -156,86 +158,9 @@ def maia_alertas():
     return jsonify([dict(a) for a in alertas])
 
 # =========================
-# ENERGY HARVESTER
-# =========================
-def maia_energy_harvester():
-
-    queries = [
-        "hydropower project for sale",
-        "small hydro investment opportunity",
-        "renewable energy investment opportunity"
-    ]
-
-    resultados = []
-
-    for q in queries:
-
-        try:
-
-            r = requests.get(
-                "https://duckduckgo.com/html/",
-                params={"q": q},
-                timeout=5
-            )
-
-            if r.status_code == 200:
-
-                bloques = r.text.split("result__a")
-
-                for b in bloques[1:3]:
-
-                    try:
-
-                        titulo = b.split(">")[1].split("<")[0]
-                        link = b.split('href="')[1].split('"')[0]
-
-                        resultados.append({
-
-                            "titulo": titulo,
-                            "pais": "web",
-                            "tipo_activo": "energia",
-                            "capacidad_mw": "N/D",
-                            "empresa": "fuente web",
-                            "contacto": link
-
-                        })
-
-                    except:
-                        pass
-
-        except:
-            pass
-
-    return resultados
-
-# =========================
-# OPORTUNIDADES MAIA
-# =========================
-@app.route("/maia_oportunidades")
-def maia_oportunidades():
-
-    resultados = []
-
-    try:
-        resultados.extend(buscar_oportunidades())
-    except:
-        pass
-
-    try:
-        resultados.extend(maia_energy_harvester())
-    except:
-        pass
-
-    return jsonify({
-
-        "total_oportunidades": len(resultados),
-        "oportunidades": resultados
-
-    })
-
-# =========================
 # CHAT MAIA
 # =========================
+
 @app.route("/maia_chat", methods=["POST"])
 def maia_chat():
 
@@ -250,21 +175,20 @@ def maia_chat():
     elif "tir" in pregunta:
         respuesta = "La TIR es la tasa que hace VAN = 0."
 
-    elif "riesgo" in pregunta:
-        respuesta = "El riesgo depende del CAPEX, ingresos y mercado."
-
     return jsonify({"reply": respuesta})
 
 # =========================
-# MODULO MAIA DRONE
+# MAIA DRONE
 # =========================
+
 @app.route("/maia_drone")
 def maia_drone():
     return render_template("maia_drone.html")
 
 # =========================
-# SIMULADOR DRONE
+# MAIA DRONE SIMULADOR
 # =========================
+
 @app.route("/maia_simulador")
 def maia_simulador():
     return render_template("maia_simulador.html")
@@ -272,13 +196,46 @@ def maia_simulador():
 # =========================
 # DRONE SUBMARINO PETROLEO
 # =========================
+
 @app.route("/dron_submarino_petroleo")
 def dron_submarino_petroleo():
     return render_template("drones/dron_submarino_petroleo.html")
 
 # =========================
+# MAIA PUNTO ELECTRICO
+# =========================
+
+@app.route("/maia_punto_electrico")
+def maia_punto_electrico():
+    return render_template("drones/maia_punto_electrico.html")
+
+# =========================
+# MAIA GEO SCANNER
+# =========================
+
+@app.route("/maia_geo_scan")
+def maia_geo_scan():
+
+    lat = 4 + random.random()
+    lon = -75 + random.random()
+
+    caudal = round(random.uniform(0.5, 5), 2)
+    caida = round(random.uniform(10, 80), 2)
+
+    potencia = round(9.81 * caudal * caida * 0.85 / 1000, 2)
+
+    return jsonify({
+        "lat": lat,
+        "lon": lon,
+        "caudal": caudal,
+        "caida": caida,
+        "potencia_kw": potencia
+    })
+
+# =========================
 # MAIA AI DRONE ARCHITECT
 # =========================
+
 @app.route("/maia_ai_drone_architect")
 def maia_ai_drone_architect():
     return render_template("maia_ai_drone_architect.html")
@@ -286,13 +243,15 @@ def maia_ai_drone_architect():
 # =========================
 # MAIA AUTONOMOUS DRONE LAB
 # =========================
+
 @app.route("/maia_autonomous_lab")
 def maia_autonomous_lab():
     return render_template("maia_autonomous_lab.html")
 
 # =========================
-# GENERADOR IA DE DRONES
+# GENERAR DRONE IA
 # =========================
+
 @app.route("/maia_generar_drone")
 def maia_generar_drone():
 
@@ -300,39 +259,55 @@ def maia_generar_drone():
         "Ocean Explorer",
         "Petro Scanner",
         "DeepSea Hunter",
-        "Aqua Vision",
-        "Hydro Scout"
+        "Hydro Scout",
+        "River Hunter"
     ]
 
     sensores = [
         "Sonar multihaz",
-        "Detector de hidrocarburos",
-        "Cámara submarina 4K",
+        "Detector hidrocarburos",
+        "Cámara 4K",
         "Magnetómetro",
-        "Sensor químico oceánico"
+        "Sensor químico"
     ]
 
     drone = {
-
         "nombre": random.choice(nombres),
-        "tipo": "Drone submarino industrial",
+        "tipo": "Drone industrial",
         "autonomia": str(random.randint(24,72)) + " horas",
         "sensores": random.sample(sensores,3),
         "ruta": "/dron_submarino_petroleo"
-
     }
 
     return jsonify(drone)
 
 # =========================
+# GENERAR DISEÑO 3D
+# =========================
+
+@app.route("/maia_generar_diseno_3d")
+def maia_generar_diseno_3d():
+
+    modelo = {
+
+        "estructura": "frame_drone.stl",
+        "propulsores": "propellers.stl",
+        "soporte_camara": "camera_mount.stl"
+
+    }
+
+    return jsonify(modelo)
+
+# =========================
 # DRONES APROBADOS
 # =========================
+
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
 
     try:
 
-        with open("ideas_drones.json", "r") as f:
+        with open("ideas_drones.json","r") as f:
             ideas = json.load(f)
 
         aprobados = [i for i in ideas if i["estado"] == "aprobado"]
@@ -345,22 +320,21 @@ def maia_drones_aprobados():
 # =========================
 # APROBAR DRONE
 # =========================
+
 @app.route("/aprobar_drone", methods=["POST"])
 def aprobar_drone():
 
     data = request.get_json()
 
     nueva = {
-
         "nombre": data.get("nombre"),
         "ruta": data.get("ruta"),
         "estado": "aprobado"
-
     }
 
     try:
 
-        with open("ideas_drones.json", "r") as f:
+        with open("ideas_drones.json","r") as f:
             ideas = json.load(f)
 
     except:
@@ -369,53 +343,26 @@ def aprobar_drone():
 
     ideas.append(nueva)
 
-    with open("ideas_drones.json", "w") as f:
-        json.dump(ideas, f, indent=2)
+    with open("ideas_drones.json","w") as f:
+        json.dump(ideas,f,indent=2)
 
-    return jsonify({"estado": "aprobado"})
-
-# =========================
-# MOTOR DE SIMULACION
-# =========================
-@app.route("/maia_simulation_data")
-def maia_simulation_data():
-
-    if sim_engine:
-
-        data = sim_engine.update()
-        return jsonify(data)
-
-    return jsonify([])
-
-# =========================
-# SIMULACION BASICA
-# =========================
-@app.route("/maia_drone_simular", methods=["POST"])
-def maia_drone_simular():
-
-    resultado = {
-
-        "estado": "simulacion ejecutada",
-        "duracion": "30s",
-        "resultado": "exitoso"
-
-    }
-
-    return jsonify(resultado)
+    return jsonify({"estado":"aprobado"})
 
 # =========================
 # HEALTH CHECK
 # =========================
+
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"})
+    return jsonify({"status":"ok"})
 
 # =========================
-# EJECUTAR APP
+# RUN
 # =========================
+
 if __name__ == "__main__":
 
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT",10000))
 
     app.run(
         host="0.0.0.0",

@@ -1,3 +1,90 @@
-<h1>🚁 MAIA DRONE</h1>
+<!DOCTYPE html>
+<html>
 
-<p>Módulo de análisis con drones.</p>
+<head>
+
+<title>MAIA Drone Lab</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+h1{
+margin-top:40px;
+}
+
+#drones{
+margin-top:40px;
+display:flex;
+flex-direction:column;
+gap:20px;
+align-items:center;
+}
+
+.drone-card{
+background:#1e293b;
+padding:20px;
+width:350px;
+border-radius:10px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.drone-card:hover{
+background:#334155;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>🚁 MAIA Industrial Drone Lab</h1>
+
+<div id="drones"></div>
+
+<script>
+
+async function cargarDrones(){
+
+let r = await fetch("/maia_drones_aprobados")
+
+let drones = await r.json()
+
+let container = document.getElementById("drones")
+
+container.innerHTML=""
+
+drones.forEach(d => {
+
+let card = document.createElement("div")
+
+card.className="drone-card"
+
+card.innerHTML = "<h3>"+d.nombre+"</h3>"
+
+card.onclick = () => {
+
+window.location = d.ruta
+
+}
+
+container.appendChild(card)
+
+})
+
+}
+
+cargarDrones()
+
+</script>
+
+</body>
+
+</html>

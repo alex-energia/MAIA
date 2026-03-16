@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
 
-import requests
 import os
 import json
 import random
+import requests
 
 
 # =========================
@@ -51,6 +51,26 @@ app.register_blueprint(proyectos_bp)
 
 
 # =========================
+# DRONES BASE (fallback)
+# =========================
+DRONES_BASE = [
+
+    {
+        "nombre": "Drone submarino detección de petróleo",
+        "ruta": "/dron_submarino_petroleo",
+        "estado": "aprobado"
+    },
+
+    {
+        "nombre": "MAIA Punto Eléctrico",
+        "ruta": "/maia_punto_electrico",
+        "estado": "aprobado"
+    }
+
+]
+
+
+# =========================
 # HOME
 # =========================
 @app.route("/")
@@ -72,10 +92,7 @@ def proyectos():
 
     conn.close()
 
-    return render_template(
-        "proyectos.html",
-        proyectos=proyectos
-    )
+    return render_template("proyectos.html", proyectos=proyectos)
 
 
 # =========================
@@ -96,10 +113,7 @@ def ver_proyecto(id):
     if proyecto is None:
         return "Proyecto no encontrado"
 
-    return render_template(
-        "proyecto_detalle.html",
-        proyecto=proyecto
-    )
+    return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 
 # =========================
@@ -171,7 +185,6 @@ def maia_alertas():
 def maia_chat():
 
     data = request.get_json()
-
     pregunta = data.get("message", "").lower()
 
     respuesta = "MAIA no tiene suficiente información."
@@ -189,7 +202,7 @@ def maia_chat():
 
 
 # =========================
-# MAIA DRONE
+# MAIA DRONE LAB
 # =========================
 @app.route("/maia_drone")
 def maia_drone():
@@ -221,7 +234,7 @@ def maia_punto_electrico():
 
 
 # =========================
-# MAIA GEO SCANNER
+# GEO SCANNER
 # =========================
 @app.route("/maia_geo_scan")
 def maia_geo_scan():
@@ -263,46 +276,43 @@ def maia_autonomous_lab():
 
 
 # =========================
-# GENERAR DRONE IA
+# MAIA DRONE INVENTOR
 # =========================
-@app.route("/maia_generar_drone")
-def maia_generar_drone():
+@app.route("/maia_drone_inventor")
+def maia_drone_inventor():
+    return render_template("maia_drone_inventor.html")
+
+
+# =========================
+# IA INVENTA DRONES
+# =========================
+@app.route("/maia_inventar_drone")
+def maia_inventar_drone():
 
     ideas = [
 
         {
             "nombre": "Drone médico de emergencia",
             "impacto": "Entrega desfibriladores en ciudades",
-            "tipo": "Salud",
-            "ruta": "/maia_autonomous_lab"
+            "energia": "batería rápida"
         },
 
         {
             "nombre": "Drone limpiador de océanos",
             "impacto": "Recolecta plástico del mar",
-            "tipo": "Medio ambiente",
-            "ruta": "/maia_autonomous_lab"
+            "energia": "solar marino"
         },
 
         {
             "nombre": "Drone forestal anti incendios",
             "impacto": "Detecta incendios antes de propagarse",
-            "tipo": "Protección ambiental",
-            "ruta": "/maia_autonomous_lab"
+            "energia": "batería industrial"
         },
 
         {
             "nombre": "Drone explorador geotérmico",
             "impacto": "Detecta energía geotérmica",
-            "tipo": "Energía",
-            "ruta": "/maia_autonomous_lab"
-        },
-
-        {
-            "nombre": "Drone detector fugas de gas",
-            "impacto": "Previene explosiones en ciudades",
-            "tipo": "Seguridad urbana",
-            "ruta": "/maia_autonomous_lab"
+            "energia": "batería + solar"
         }
 
     ]
@@ -336,15 +346,16 @@ def maia_drones_aprobados():
         with open("ideas_drones.json", "r") as f:
             ideas = json.load(f)
 
-        aprobados = [
-            i for i in ideas
-            if i["estado"] == "aprobado"
-        ]
+        aprobados = [i for i in ideas if i["estado"] == "aprobado"]
+
+        if len(aprobados) == 0:
+            return jsonify(DRONES_BASE)
 
         return jsonify(aprobados)
 
     except:
-        return jsonify([])
+
+        return jsonify(DRONES_BASE)
 
 
 # =========================
@@ -367,6 +378,7 @@ def aprobar_drone():
             ideas = json.load(f)
 
     except:
+
         ideas = []
 
     ideas.append(nueva)

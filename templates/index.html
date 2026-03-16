@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
 <meta charset="UTF-8">
@@ -241,45 +242,29 @@ Memoria MAIA
 <script>
 
 function ocultarTodo(){
-
 document.getElementById("chatNormal").classList.add("hidden")
 document.getElementById("moduloProyectos").classList.add("hidden")
 document.getElementById("moduloDrone").classList.add("hidden")
-
 }
 
 function volverChat(){
-
 ocultarTodo()
 document.getElementById("chatNormal").classList.remove("hidden")
-
 }
 
 function activarProyectos(){
-
 ocultarTodo()
 document.getElementById("moduloProyectos").classList.remove("hidden")
-
 }
 
 function activarDrone(){
-
 ocultarTodo()
 document.getElementById("moduloDrone").classList.remove("hidden")
-
 }
 
-function activarGanado(){
-alert("MAIA GANADO en construcción")
-}
-
-function activarPlantas(){
-alert("MAIA PLANTAS en construcción")
-}
-
-function activarTraductor(){
-alert("MAIA TRADUCTOR en construcción")
-}
+function activarGanado(){alert("MAIA GANADO en construcción")}
+function activarPlantas(){alert("MAIA PLANTAS en construcción")}
+function activarTraductor(){alert("MAIA TRADUCTOR en construcción")}
 
 function abrirSimulador(){
 window.open("/maia_simulador","_blank")
@@ -295,27 +280,48 @@ window.open("/maia_autonomous_lab","_blank")
 
 function dronesComerciales(){
 
-document.getElementById("contenidoDrone").innerHTML =
-`<h3>🛩️ Drones comerciales</h3>
+document.getElementById("contenidoDrone").innerHTML = `
+
+<h3>🛩️ Drones comerciales aprobados</h3>
+
 <ul>
-<li>Fotografía aérea</li>
-<li>Eventos</li>
-<li>Turismo</li>
-<li>Video profesional</li>
-</ul>`
+
+<li>
+
+🚁🌊 <b>Drone Todo Terreno Aire-Agua</b>
+
+<br><br>
+
+<button onclick="window.open('/drone_todo_terreno','_blank')">
+Abrir proyecto
+</button>
+
+<br><br>
+
+</li>
+
+</ul>
+
+`
 
 }
 
 function dronesMilitares(){
 
-document.getElementById("contenidoDrone").innerHTML =
-`<h3>🛡️ Drones militares</h3>
+document.getElementById("contenidoDrone").innerHTML = `
+
+<h3>🛡️ Drones militares</h3>
+
 <ul>
+
 <li>Reconocimiento</li>
 <li>Vigilancia</li>
 <li>Operaciones tácticas</li>
 <li>Seguridad fronteriza</li>
-</ul>`
+
+</ul>
+
+`
 
 }
 
@@ -354,7 +360,6 @@ cont.innerHTML = html
 }catch(error){
 
 cont.innerHTML = "Error cargando drones."
-
 console.error(error)
 
 }
@@ -376,17 +381,11 @@ data.oportunidades.forEach(o=>{
 
 panel.innerHTML += `
 <div class="card-oportunidad">
-
 <b>${o.titulo}</b><br>
-
 Pais: ${o.pais}<br>
-
 Tipo activo: ${o.tipo_activo}<br>
-
 Empresa: ${o.empresa}<br>
-
 <a href="${o.contacto}" target="_blank">Ver fuente</a>
-
 </div>
 `
 
@@ -409,19 +408,13 @@ data.forEach(p=>{
 
 panel.innerHTML += `
 <div class="card-oportunidad">
-
 <b>${p.titulo}</b><br>
-
 Pais: ${p.pais}<br>
-
 Tipo activo: ${p.tipo_activo}<br>
-
 Empresa: ${p.empresa}
-
 <button class="btn-eliminar" onclick="eliminarProyecto(${p.id})">
 Eliminar
 </button>
-
 </div>
 `
 
@@ -466,4 +459,5 @@ chat.scrollTop=chat.scrollHeight
 </script>
 
 </body>
+
 </html>

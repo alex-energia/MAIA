@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
 
 <meta charset="UTF-8">
@@ -127,15 +126,10 @@ font-size:15px;
 <div class="topbar-buttons">
 
 <button onclick="activarGanado()">🐄 MAIA GANADO</button>
-
 <button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
-
 <button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
-
 <button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
-
 <button onclick="activarDrone()">🚁 MAIA DRONE</button>
-
 <button onclick="volverChat()">🏠 Inicio</button>
 
 </div>
@@ -151,11 +145,8 @@ font-size:15px;
 <div id="chatBox" class="chat-box"></div>
 
 <div class="input-area">
-
 <input type="text" id="mensaje" placeholder="Escribe tu mensaje...">
-
 <button class="send">Enviar</button>
-
 </div>
 
 </div>
@@ -193,13 +184,8 @@ Memoria MAIA
 <div id="chatMaia" class="chat-box" style="height:250px"></div>
 
 <div class="input-area">
-
 <input type="text" id="mensajeMaia" placeholder="Pregunta a MAIA">
-
-<button class="send" onclick="enviarMensajeMaia()">
-Enviar
-</button>
-
+<button class="send" onclick="enviarMensajeMaia()">Enviar</button>
 </div>
 
 </div>
@@ -283,11 +269,17 @@ document.getElementById("moduloDrone").classList.remove("hidden")
 
 }
 
-function activarGanado(){alert("MAIA GANADO en construcción")}
+function activarGanado(){
+alert("MAIA GANADO en construcción")
+}
 
-function activarPlantas(){alert("MAIA PLANTAS en construcción")}
+function activarPlantas(){
+alert("MAIA PLANTAS en construcción")
+}
 
-function activarTraductor(){alert("MAIA TRADUCTOR en construcción")}
+function activarTraductor(){
+alert("MAIA TRADUCTOR en construcción")
+}
 
 function abrirSimulador(){
 window.open("/maia_simulador","_blank")
@@ -303,63 +295,69 @@ window.open("/maia_autonomous_lab","_blank")
 
 function dronesComerciales(){
 
-document.getElementById("contenidoDrone").innerHTML = `
-
-<h3>🛩️ Drones comerciales</h3>
-
+document.getElementById("contenidoDrone").innerHTML =
+`<h3>🛩️ Drones comerciales</h3>
 <ul>
 <li>Fotografía aérea</li>
 <li>Eventos</li>
 <li>Turismo</li>
 <li>Video profesional</li>
-</ul>
-
-`
-
-}
-
-function dronesIndustriales(){
-
-document.getElementById("contenidoDrone").innerHTML = `
-
-<h3>🏭 Drones industriales aprobados</h3>
-
-<ul>
-
-<li>
-
-🌊 <b>Drone submarino detección de petróleo</b>
-
-<br><br>
-
-<button onclick="window.open('/dron_submarino_petroleo','_blank')">
-
-Abrir proyecto
-
-</button>
-
-</li>
-
-</ul>
-
-`
+</ul>`
 
 }
 
 function dronesMilitares(){
 
-document.getElementById("contenidoDrone").innerHTML = `
-
-<h3>🛡️ Drones militares</h3>
-
+document.getElementById("contenidoDrone").innerHTML =
+`<h3>🛡️ Drones militares</h3>
 <ul>
 <li>Reconocimiento</li>
 <li>Vigilancia</li>
 <li>Operaciones tácticas</li>
 <li>Seguridad fronteriza</li>
-</ul>
+</ul>`
 
+}
+
+async function dronesIndustriales(){
+
+const cont = document.getElementById("contenidoDrone")
+
+cont.innerHTML = "<h3>🏭 Cargando drones industriales...</h3>"
+
+try{
+
+let r = await fetch("/maia_drones_aprobados")
+let drones = await r.json()
+
+let html = "<h3>🏭 Drones industriales aprobados</h3><ul>"
+
+drones.forEach(d => {
+
+html += `
+<li>
+🚁 <b>${d.nombre}</b>
+<br><br>
+<button onclick="window.open('${d.ruta}','_blank')">
+Abrir proyecto
+</button>
+<br><br>
+</li>
 `
+
+})
+
+html += "</ul>"
+
+cont.innerHTML = html
+
+}catch(error){
+
+cont.innerHTML = "Error cargando drones."
+
+console.error(error)
+
+}
 
 }
 
@@ -370,7 +368,6 @@ const panel=document.getElementById("panelOportunidades")
 panel.innerHTML="Buscando oportunidades..."
 
 const res=await fetch("/maia_oportunidades")
-
 const data=await res.json()
 
 panel.innerHTML="<h4>Oportunidades detectadas</h4>"
@@ -388,9 +385,7 @@ Tipo activo: ${o.tipo_activo}<br>
 
 Empresa: ${o.empresa}<br>
 
-<a href="${o.contacto}" target="_blank">
-Ver fuente
-</a>
+<a href="${o.contacto}" target="_blank">Ver fuente</a>
 
 </div>
 `
@@ -406,7 +401,6 @@ const panel=document.getElementById("panelOportunidades")
 panel.innerHTML="Cargando memoria..."
 
 const res=await fetch("/memoria_proyectos")
-
 const data=await res.json()
 
 panel.innerHTML="<h4>Memoria MAIA</h4>"
@@ -438,7 +432,6 @@ Eliminar
 async function eliminarProyecto(id){
 
 await fetch("/eliminar_proyecto/"+id,{method:"DELETE"})
-
 verMemoria()
 
 }
@@ -457,15 +450,9 @@ chat.innerHTML += `<div><b>Tú:</b> ${mensaje}</div>`
 input.value=""
 
 const res=await fetch("/maia_chat",{
-
 method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
+headers:{"Content-Type":"application/json"},
 body:JSON.stringify({message:mensaje})
-
 })
 
 const data=await res.json()
@@ -479,5 +466,4 @@ chat.scrollTop=chat.scrollHeight
 </script>
 
 </body>
-
 </html>

@@ -14,6 +14,7 @@ try:
 except:
     sim_engine = None
 
+
 # =========================
 # IMPORTS OPCIONALES MAIA
 # =========================
@@ -30,11 +31,13 @@ except:
     def escanear_mercado_global():
         return []
 
+
 # =========================
 # CREAR APP
 # =========================
 
 app = Flask(__name__)
+
 
 # =========================
 # INICIALIZAR DB
@@ -42,11 +45,13 @@ app = Flask(__name__)
 
 init_db()
 
+
 # =========================
 # BLUEPRINT
 # =========================
 
 app.register_blueprint(proyectos_bp)
+
 
 # =========================
 # RUTA BASE DEL PROYECTO
@@ -54,22 +59,27 @@ app.register_blueprint(proyectos_bp)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 # =========================
 # DRONES BASE
 # =========================
 
 DRONES_BASE = [
+
     {
         "nombre": "Drone submarino detección de petróleo",
         "ruta": "/dron_submarino_petroleo",
         "estado": "aprobado"
     },
+
     {
         "nombre": "MAIA Punto Eléctrico",
         "ruta": "/maia_punto_electrico",
         "estado": "aprobado"
     }
+
 ]
+
 
 # =========================
 # HOME
@@ -78,6 +88,7 @@ DRONES_BASE = [
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 # =========================
 # PROYECTOS
@@ -95,6 +106,7 @@ def proyectos():
     conn.close()
 
     return render_template("proyectos.html", proyectos=proyectos)
+
 
 # =========================
 # VER PROYECTO
@@ -120,6 +132,7 @@ def ver_proyecto(id):
         proyecto=proyecto
     )
 
+
 # =========================
 # NUEVO PROYECTO
 # =========================
@@ -127,6 +140,7 @@ def ver_proyecto(id):
 @app.route("/proyectos/nuevo")
 def nuevo_proyecto():
     return render_template("nuevo_proyecto.html")
+
 
 # =========================
 # GUARDAR PROYECTO
@@ -162,6 +176,7 @@ def guardar_proyecto():
 
     return redirect("/proyectos")
 
+
 # =========================
 # ALERTAS MAIA
 # =========================
@@ -172,15 +187,18 @@ def maia_alertas():
     conn = get_db()
 
     try:
+
         alertas = conn.execute(
             "SELECT * FROM maia_alertas ORDER BY id DESC LIMIT 10"
         ).fetchall()
+
     except:
         alertas = []
 
     conn.close()
 
     return jsonify([dict(a) for a in alertas])
+
 
 # =========================
 # CHAT MAIA
@@ -206,6 +224,7 @@ def maia_chat():
 
     return jsonify({"reply": respuesta})
 
+
 # =========================
 # MAIA DRONE LAB
 # =========================
@@ -213,6 +232,7 @@ def maia_chat():
 @app.route("/maia_drone")
 def maia_drone():
     return render_template("maia_drone.html")
+
 
 # =========================
 # DRONE SUBMARINO
@@ -222,6 +242,7 @@ def maia_drone():
 def dron_submarino_petroleo():
     return render_template("drones/dron_submarino_petroleo.html")
 
+
 # =========================
 # MAIA PUNTO ELECTRICO
 # =========================
@@ -230,6 +251,7 @@ def dron_submarino_petroleo():
 def maia_punto_electrico():
     return render_template("drones/maia_punto_electrico.html")
 
+
 # =========================
 # DRONE TODO TERRENO
 # =========================
@@ -237,6 +259,16 @@ def maia_punto_electrico():
 @app.route("/drone_todo_terreno")
 def drone_todo_terreno():
     return render_template("drones/drone_todo_terreno.html")
+
+
+# =========================
+# DRONE DETECTOR DE MINAS
+# =========================
+
+@app.route("/drone_detector_minas")
+def drone_detector_minas():
+    return render_template("drones/drone_detector_minas.html")
+
 
 # =========================
 # GEO SCANNER
@@ -264,6 +296,7 @@ def maia_geo_scan():
         "potencia_kw": potencia
     })
 
+
 # =========================
 # DRONE INVENTOR IA
 # =========================
@@ -271,6 +304,7 @@ def maia_geo_scan():
 @app.route("/maia_drone_inventor")
 def maia_drone_inventor():
     return render_template("maia_drone_inventor.html")
+
 
 # =========================
 # IA INVENTA DRONES
@@ -309,6 +343,7 @@ def maia_inventar_drone():
 
     return jsonify(random.choice(ideas))
 
+
 # =========================
 # GENERAR DISEÑO 3D
 # =========================
@@ -317,12 +352,15 @@ def maia_inventar_drone():
 def maia_generar_diseno_3d():
 
     modelo = {
+
         "estructura": "frame_drone.stl",
         "propulsores": "propellers.stl",
         "soporte_camara": "camera_mount.stl"
+
     }
 
     return jsonify(modelo)
+
 
 # =========================
 # DRONES APROBADOS
@@ -354,6 +392,7 @@ def maia_drones_aprobados():
 
         return jsonify(DRONES_BASE)
 
+
 # =========================
 # APROBAR DRONE
 # =========================
@@ -364,17 +403,22 @@ def aprobar_drone():
     data = request.get_json()
 
     nueva = {
+
         "nombre": data.get("nombre"),
         "ruta": data.get("ruta"),
         "estado": "aprobado"
+
     }
 
     ruta = os.path.join(BASE_DIR, "ideas_drones.json")
 
     try:
+
         with open(ruta, "r") as f:
             ideas = json.load(f)
+
     except:
+
         ideas = []
 
     ideas.append(nueva)
@@ -384,6 +428,7 @@ def aprobar_drone():
 
     return jsonify({"estado": "aprobado"})
 
+
 # =========================
 # HEALTH CHECK
 # =========================
@@ -391,6 +436,7 @@ def aprobar_drone():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
+
 
 # =========================
 # RUN

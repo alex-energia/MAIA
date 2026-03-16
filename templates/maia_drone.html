@@ -20,6 +20,32 @@ h1{
 margin-top:40px;
 }
 
+#top-buttons{
+display:flex;
+gap:20px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:20px;
+}
+
+button{
+padding:10px 20px;
+background:#22c55e;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+#mensaje{
+margin-top:30px;
+color:#94a3b8;
+}
+
 #drones{
 margin-top:40px;
 display:flex;
@@ -41,33 +67,6 @@ transition:0.3s;
 background:#334155;
 }
 
-#mensaje{
-margin-top:30px;
-color:#94a3b8;
-}
-
-button{
-margin-top:20px;
-padding:10px 20px;
-background:#22c55e;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-size:16px;
-}
-
-button:hover{
-background:#16a34a;
-}
-
-#top-buttons{
-display:flex;
-gap:20px;
-justify-content:center;
-flex-wrap:wrap;
-margin-top:20px;
-}
-
 </style>
 
 </head>
@@ -78,13 +77,9 @@ margin-top:20px;
 
 <div id="top-buttons">
 
-<button onclick="cargarDrones()">
-Actualizar drones
-</button>
+<button onclick="cargarDrones()">Actualizar drones</button>
 
-<button onclick="abrirInventor()">
-🤖 MAIA Drone Inventor
-</button>
+<button onclick="abrirInventor()">🤖 MAIA Drone Inventor</button>
 
 </div>
 
@@ -95,9 +90,7 @@ Actualizar drones
 <script>
 
 function abrirInventor(){
-
-window.location="/maia_drone_inventor"
-
+window.location.href="/maia_drone_inventor"
 }
 
 async function cargarDrones(){
@@ -110,14 +103,15 @@ mensaje.innerHTML="Cargando drones..."
 
 try{
 
-let r = await fetch("/maia_drones_aprobados")
+let r = await fetch("/maia_drones_aprobados?nocache=" + Date.now())
 
 let drones = await r.json()
+
+console.log("Drones recibidos:", drones)
 
 if(!drones || drones.length === 0){
 
 mensaje.innerHTML="No hay drones industriales aprobados aún."
-
 return
 
 }
@@ -137,7 +131,9 @@ card.innerHTML = `
 
 card.onclick = () => {
 
-window.location = d.ruta
+console.log("Abriendo drone:", d.ruta)
+
+window.location.href = d.ruta
 
 }
 
@@ -150,8 +146,7 @@ container.appendChild(card)
 catch(error){
 
 mensaje.innerHTML="Error conectando con MAIA."
-
-console.error(error)
+console.error("Error:", error)
 
 }
 

@@ -1,4 +1,5 @@
 
+ [
   {
     "nombre": "Drone submarino detección de petróleo",
     "ruta": "/dron_submarino_petroleo",
@@ -9,14 +10,19 @@
     "ruta": "/maia_punto_electrico",
     "estado": "aprobado"
   },
-{
-  "nombre": "Drone Purificador Atmosférico Urbano",
-  "ruta": "/drone_purificador_atmosferico",
-  "estado": "aprobado"
-}
-{
-  "nombre": "Drone Generador de Agua Atmosférica",
-  "ruta": "/drone_generador_agua",
-  "estado": "aprobado"
-},
+  {
+    "nombre": "Drone Purificador Atmosférico",
+    "ruta": "/drone_purificador_atmosferico",
+    "estado": "aprobado"
+  },
+  {
+    "nombre": "Drone Generador de Agua Atmosférica",
+    "ruta": "/drone_generador_agua",
+    "estado": "aprobado"
+  },
+  {
+    "nombre": "Drone Autónomo de Control de Incendios",
+    "ruta": "/drone_control_incendios",
+    "estado": "aprobado"
+  }
 ]

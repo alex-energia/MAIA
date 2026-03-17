@@ -55,10 +55,17 @@ DRONES_BASE = [
         "estado": "aprobado"
     },
 
-    # 🔥 NUEVO DRONE RÍOS (ANEXADO)
+    # 🔥 DRONE RÍOS
     {
         "nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos",
         "ruta": "/drone_descontaminacion_rios",
+        "estado": "aprobado"
+    },
+
+    # 🔥 NUEVO DRONE VIGILANCIA (ANEXADO)
+    {
+        "nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre",
+        "ruta": "/drone_vigilancia_urbana",
         "estado": "aprobado"
     }
 
@@ -167,10 +174,15 @@ def drone_control_incendios():
 def drone_lluvia_ionizacion():
     return render_template("drones/drone_lluvia_ionizacion.html")
 
-# 🔥 NUEVO DRONE RÍOS
+# 🔥 DRONE RÍOS
 @app.route("/drone_descontaminacion_rios")
 def drone_descontaminacion_rios():
     return render_template("drones/drone_descontaminacion_rios.html")
+
+# 🔥 NUEVO DRONE VIGILANCIA
+@app.route("/drone_vigilancia_urbana")
+def drone_vigilancia_urbana():
+    return render_template("drones/drone_vigilancia_urbana.html")
 
 # =========================
 # EVALUADOR DE IDEAS DRONES MAIA

@@ -14,4 +14,9 @@
   "ruta": "/drone_purificador_atmosferico",
   "estado": "aprobado"
 }
+{
+  "nombre": "Drone Generador de Agua Atmosférica",
+  "ruta": "/drone_generador_agua",
+  "estado": "aprobado"
+},
 ]

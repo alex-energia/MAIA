@@ -272,6 +272,14 @@ def drone_purificador_atmosferico():
 
 
 # =========================
+# DRONE GENERADOR DE AGUA
+# =========================
+@app.route("/drone_generador_agua")
+def drone_generador_agua():
+    return render_template("drones/drone_generador_agua.html")
+
+
+# =========================
 # GEO SCANNER
 # =========================
 @app.route("/maia_geo_scan")

@@ -71,6 +71,11 @@ DRONES_BASE = [
         "nombre": "Drone Generador de Agua Atmosférica",
         "ruta": "/drone_generador_agua",
         "estado": "aprobado"
+    },
+    {
+        "nombre": "Drone Autónomo de Control de Incendios",
+        "ruta": "/drone_control_incendios",
+        "estado": "aprobado"
     }
 ]
 
@@ -104,10 +109,8 @@ def ver_proyecto(id):
         (id,)
     ).fetchone()
     conn.close()
-
     if proyecto is None:
         return "Proyecto no encontrado"
-
     return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 # =========================
@@ -159,7 +162,6 @@ def maia_alertas():
         ).fetchall()
     except:
         alertas = []
-
     conn.close()
     return jsonify([dict(a) for a in alertas])
 
@@ -213,8 +215,13 @@ def drone_purificador_atmosferico():
 def drone_generador_agua():
     return render_template("drones/drone_generador_agua.html")
 
+# ✅ NUEVO DRONE INCENDIOS
+@app.route("/drone_control_incendios")
+def drone_control_incendios():
+    return render_template("drones/drone_control_incendios.html")
+
 # =========================
-# DRONES APROBADOS (MEJORADO)
+# DRONES APROBADOS
 # =========================
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
@@ -222,14 +229,12 @@ def maia_drones_aprobados():
 
     try:
         ruta = os.path.join(BASE_DIR, "ideas_drones.json")
-
         if os.path.exists(ruta):
             with open(ruta, "r") as f:
                 ideas = json.load(f)
 
             aprobados = [i for i in ideas if i.get("estado") == "aprobado"]
 
-            # Evitar duplicados
             nombres_existentes = {d["nombre"] for d in drones}
 
             for drone in aprobados:

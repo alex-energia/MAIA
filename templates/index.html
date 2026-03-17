@@ -1,220 +1,86 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MAIA</title>
 
 <style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#1e1e1e;
-color:white;
-}
-
-.topbar{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:15px 25px;
-background:#111;
-}
-
-.topbar-buttons button{
-margin-left:10px;
-padding:8px 15px;
-border-radius:8px;
-border:none;
-cursor:pointer;
-background:#2563eb;
-color:white;
-}
-
-.container{
-padding:20px;
-}
-
-.chat-box{
-height:60vh;
-overflow-y:auto;
-background:#2a2a2a;
-padding:15px;
-border-radius:12px;
-}
-
-.input-area{
-margin-top:15px;
-display:flex;
-gap:10px;
-align-items:center;
-}
-
-input[type="text"]{
-flex:1;
-padding:12px;
-border-radius:10px;
-border:none;
-}
-
-button.send{
-padding:12px 20px;
-border-radius:10px;
-border:none;
-background:#2563eb;
-color:white;
-cursor:pointer;
-}
-
-.hidden{
-display:none;
-}
-
-.panel-oportunidades{
-margin-top:20px;
-background:#2a2a2a;
-padding:15px;
-border-radius:10px;
-}
-
-.card-oportunidad{
-border:1px solid #444;
-padding:12px;
-margin-top:10px;
-border-radius:8px;
-}
-
-.btn-eliminar{
-background:#dc2626;
-border:none;
-padding:5px 8px;
-border-radius:6px;
-cursor:pointer;
-color:white;
-margin-left:10px;
-}
-
-.drone-botones{
-display:flex;
-gap:20px;
-flex-wrap:wrap;
-margin-top:20px;
-}
-
-.drone-botones button{
-padding:15px;
-border-radius:10px;
-border:none;
-cursor:pointer;
-color:white;
-font-size:15px;
-}
-
+body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:#111;}
+.topbar-buttons button{margin-left:10px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;background:#2563eb;color:white;}
+.container{padding:20px;}
+.chat-box{height:60vh;overflow-y:auto;background:#2a2a2a;padding:15px;border-radius:12px;}
+.input-area{margin-top:15px;display:flex;gap:10px;align-items:center;}
+input[type="text"]{flex:1;padding:12px;border-radius:10px;border:none;}
+button.send{padding:12px 20px;border-radius:10px;border:none;background:#2563eb;color:white;cursor:pointer;}
+.hidden{display:none;}
+.panel-oportunidades{margin-top:20px;background:#2a2a2a;padding:15px;border-radius:10px;}
+.card-oportunidad{border:1px solid #444;padding:12px;margin-top:10px;border-radius:8px;}
+.btn-eliminar{background:#dc2626;border:none;padding:5px 8px;border-radius:6px;cursor:pointer;color:white;margin-left:10px;}
+.drone-botones{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;}
+.drone-botones button{padding:15px;border-radius:10px;border:none;cursor:pointer;color:white;font-size:15px;}
 </style>
-</head>
 
+</head>
 <body>
 
 <div class="topbar">
 <h2>🤖 MAIA IA</h2>
-
 <div class="topbar-buttons">
-<button onclick="activarGanado()">🐄 MAIA GANADO</button>
-<button onclick="activarPlantas()">🌿 MAIA PLANTAS</button>
-<button onclick="activarTraductor()">🌍 MAIA TRADUCTOR</button>
-<button onclick="activarProyectos()">📁 MAIA PROYECTOS</button>
-<button onclick="activarDrone()">🚁 MAIA DRONE</button>
-<button onclick="volverChat()">🏠 Inicio</button>
+<button onclick="activarGanado()">🐄</button>
+<button onclick="activarPlantas()">🌿</button>
+<button onclick="activarTraductor()">🌍</button>
+<button onclick="activarProyectos()">📁</button>
+<button onclick="activarDrone()">🚁</button>
+<button onclick="volverChat()">🏠</button>
 </div>
 </div>
 
 <div class="container">
 
-<!-- CHAT -->
 <div id="chatNormal">
-
 <div id="chatBox" class="chat-box"></div>
-
 <div class="input-area">
-<input type="text" id="mensaje" placeholder="Escribe tu mensaje...">
+<input type="text" id="mensaje">
 <button class="send">Enviar</button>
 </div>
-
 </div>
 
-
-<!-- MODULO PROYECTOS -->
 <div id="moduloProyectos" class="hidden">
-
 <h3>📁 MAIA PROYECTOS</h3>
 
 <div class="chat-box">
-
-<a href="/proyectos" style="color:#2563eb">
-Ir al módulo completo de Proyectos
-</a>
+<a href="/proyectos" style="color:#2563eb">Ir al módulo completo</a>
 
 <hr>
 
-<h3>🔎 Inteligencia de Mercado Energético</h3>
-
-<button onclick="buscarOportunidades()">Buscar oportunidades energéticas</button>
-<button onclick="verMemoria()">Memoria MAIA</button>
+<button onclick="buscarOportunidades()">Buscar</button>
+<button onclick="verMemoria()">Memoria</button>
 
 <div id="panelOportunidades" class="panel-oportunidades"></div>
 
 <hr>
 
-<h3>💬 Chat con MAIA</h3>
-
 <div id="chatMaia" class="chat-box" style="height:250px"></div>
 
 <div class="input-area">
-<input type="text" id="mensajeMaia" placeholder="Pregunta a MAIA">
+<input type="text" id="mensajeMaia">
 <button class="send" onclick="enviarMensajeMaia()">Enviar</button>
 </div>
 
 </div>
 </div>
 
-
-<!-- MODULO DRONE -->
 <div id="moduloDrone" class="hidden">
-
 <h3>🚁 MAIA DRONE</h3>
 
 <div class="chat-box">
 
-<h4>Selecciona el tipo de drones</h4>
-
 <div class="drone-botones">
-
-<button onclick="dronesComerciales()" style="background:#2563eb">
-🛩️ Drones comerciales
-</button>
-
-<button onclick="dronesIndustriales()" style="background:#16a34a">
-🏭 Drones industriales
-</button>
-
-<button onclick="dronesMilitares()" style="background:#dc2626">
-🛡️ Drones militares
-</button>
-
-<button onclick="abrirSimulador()" style="background:#9333ea">
-🧪 Simulador de drones
-</button>
-
-<button onclick="abrirDroneAI()" style="background:#00c3ff;color:black">
-🧠 MAIA AI Drone Architect
-</button>
-
-<button onclick="abrirAutonomous()" style="background:#f59e0b;color:black">
-🚀 MAIA Autonomous Drone Lab
-</button>
-
+<button onclick="dronesComerciales()">🛩️</button>
+<button onclick="dronesIndustriales()">🏭</button>
+<button onclick="dronesMilitares()">🛡️</button>
 </div>
 
 <div id="contenidoDrone" style="margin-top:20px"></div>
@@ -224,7 +90,6 @@ Ir al módulo completo de Proyectos
 
 </div>
 
-
 <script>
 
 function ocultarTodo(){
@@ -233,116 +98,65 @@ document.getElementById("moduloProyectos").classList.add("hidden")
 document.getElementById("moduloDrone").classList.add("hidden")
 }
 
-function volverChat(){
-ocultarTodo()
-document.getElementById("chatNormal").classList.remove("hidden")
-}
+function volverChat(){ocultarTodo();document.getElementById("chatNormal").classList.remove("hidden")}
+function activarProyectos(){ocultarTodo();document.getElementById("moduloProyectos").classList.remove("hidden")}
+function activarDrone(){ocultarTodo();document.getElementById("moduloDrone").classList.remove("hidden")}
 
-function activarProyectos(){
-ocultarTodo()
-document.getElementById("moduloProyectos").classList.remove("hidden")
-}
-
-function activarDrone(){
-ocultarTodo()
-document.getElementById("moduloDrone").classList.remove("hidden")
-}
-
-function activarGanado(){alert("MAIA GANADO en construcción")}
-function activarPlantas(){alert("MAIA PLANTAS en construcción")}
-function activarTraductor(){alert("MAIA TRADUCTOR en construcción")}
-
-function abrirSimulador(){
-window.open("/maia_simulador","_blank")
-}
-
-function abrirDroneAI(){
-window.open("/maia_ai_drone_architect","_blank")
-}
-
-function abrirAutonomous(){
-window.open("/maia_autonomous_lab","_blank")
-}
-
-
+function activarGanado(){alert("En construcción")}
+function activarPlantas(){alert("En construcción")}
+function activarTraductor(){alert("En construcción")}
 
 function dronesComerciales(){
-
 document.getElementById("contenidoDrone").innerHTML = `
-
-<h3>🛩️ Drones comerciales aprobados</h3>
-
+<h3>🛩️ Comerciales</h3>
 <ul>
-
-<li>
-🚁🌊 <b>Drone Todo Terreno Aire-Agua</b>
+<li>Drone Todo Terreno
 <br><br>
-<button onclick="window.open('/drone_todo_terreno','_blank')">
-Abrir proyecto
-</button>
-<br><br>
+<button onclick="window.open('/drone_todo_terreno','_blank')">Abrir</button>
 </li>
-
-</ul>
-
-`
+</ul>`
 }
-
-
 
 function dronesMilitares(){
-
 document.getElementById("contenidoDrone").innerHTML = `
-
-<h3>🛡️ Drones militares aprobados</h3>
-
+<h3>🛡️ Militares</h3>
 <ul>
-
-<li>
-🚁 <b>Drone Detector de Minas</b>
+<li>Drone Detector de Minas
 <br><br>
-Drone especializado en detectar minas antipersona ("quiebra patas") mediante sensores magnéticos, radar de penetración terrestre y análisis térmico.
-<br><br>
-<button onclick="window.open('/drone_detector_minas','_blank')">
-Abrir proyecto
-</button>
-<br><br>
+<button onclick="window.open('/drone_detector_minas','_blank')">Abrir</button>
 </li>
-
-</ul>
-
-`
-
+</ul>`
 }
-
-
 
 async function dronesIndustriales(){
 
 const cont = document.getElementById("contenidoDrone")
-
-cont.innerHTML = "<h3>🏭 Cargando drones industriales...</h3>"
+cont.innerHTML = "<h3>Cargando...</h3>"
 
 try{
 
 let r = await fetch("/maia_drones_aprobados")
-
 let drones = await r.json()
 
-let html = "<h3>🏭 Drones industriales aprobados</h3><ul>"
+let html = "<h3>🏭 Industriales</h3><ul>"
 
 drones.forEach(d => {
 
+if(
+d.nombre === "Drone submarino detección de petróleo" ||
+d.nombre === "MAIA Punto Eléctrico" ||
+d.nombre === "Drone Purificador Atmosférico" ||
+d.nombre === "Drone Generador de Agua Atmosférica"
+){
 html += `
-<li>
-🚁 <b>${d.nombre}</b>
+<li>🚁 <b>${d.nombre}</b>
 <br><br>
 <button onclick="window.open('${d.ruta}','_blank')">
 Abrir proyecto
 </button>
 <br><br>
-</li>
-`
+</li>`
+}
 
 })
 
@@ -350,138 +164,62 @@ html += "</ul>"
 
 cont.innerHTML = html
 
-}
-
-catch(error){
-
-cont.innerHTML = "Error cargando drones."
-
-console.error(error)
-
+}catch(e){
+cont.innerHTML = "Error cargando"
 }
 
 }
-
-
 
 async function buscarOportunidades(){
-
 const panel=document.getElementById("panelOportunidades")
-
-panel.innerHTML="Buscando oportunidades..."
-
 const res=await fetch("/maia_oportunidades")
-
 const data=await res.json()
-
-panel.innerHTML="<h4>Oportunidades detectadas</h4>"
-
+panel.innerHTML=""
 data.oportunidades.forEach(o=>{
-
-panel.innerHTML += `
-
-<div class="card-oportunidad">
-
-<b>${o.titulo}</b><br>
-
-Pais: ${o.pais}<br>
-
-Tipo activo: ${o.tipo_activo}<br>
-
-Empresa: ${o.empresa}<br>
-
-<a href="${o.contacto}" target="_blank">Ver fuente</a>
-
-</div>
-
-`
-
+panel.innerHTML += `<div>${o.titulo}</div>`
 })
-
 }
-
-
 
 async function verMemoria(){
-
 const panel=document.getElementById("panelOportunidades")
-
-panel.innerHTML="Cargando memoria..."
-
 const res=await fetch("/memoria_proyectos")
-
 const data=await res.json()
 
-panel.innerHTML="<h4>Memoria MAIA</h4>"
+panel.innerHTML=""
 
 data.forEach(p=>{
-
 panel.innerHTML += `
-
-<div class="card-oportunidad">
-
-<b>${p.titulo}</b><br>
-
-Pais: ${p.pais}<br>
-
-Tipo activo: ${p.tipo_activo}<br>
-
-Empresa: ${p.empresa}
-
-<button class="btn-eliminar" onclick="eliminarProyecto(${p.id})">
-Eliminar
-</button>
-
-</div>
-
-`
-
+<div>
+${p.titulo}
+<button onclick="eliminarProyecto(${p.id})">X</button>
+</div>`
 })
-
 }
-
-
 
 async function eliminarProyecto(id){
-
 await fetch("/eliminar_proyecto/"+id,{method:"DELETE"})
-
 verMemoria()
-
 }
 
-
-
 async function enviarMensajeMaia(){
-
 let input=document.getElementById("mensajeMaia")
-
 let chat=document.getElementById("chatMaia")
 
 let mensaje=input.value
-
 if(!mensaje) return
 
-chat.innerHTML += `<div><b>Tú:</b> ${mensaje}</div>`
-
+chat.innerHTML += `<div>Tú: ${mensaje}</div>`
 input.value=""
 
 const res=await fetch("/maia_chat",{
-
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
-
 body:JSON.stringify({message:mensaje})
-
 })
 
 const data=await res.json()
 
-chat.innerHTML += `<div><b>MAIA:</b> ${data.reply}</div>`
-
-chat.scrollTop=chat.scrollHeight
-
+chat.innerHTML += `<div>MAIA: ${data.reply}</div>`
 }
 
 </script>

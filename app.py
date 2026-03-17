@@ -48,10 +48,17 @@ DRONES_BASE = [
         "estado": "aprobado"
     },
 
-    # 🔥 NUEVO DRONE (ANEXADO)
+    # 🔥 DRONE LLUVIA
     {
         "nombre": "Drone de Lluvia por Ionización Atmosférica",
         "ruta": "/drone_lluvia_ionizacion",
+        "estado": "aprobado"
+    },
+
+    # 🔥 NUEVO DRONE RÍOS (ANEXADO)
+    {
+        "nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos",
+        "ruta": "/drone_descontaminacion_rios",
         "estado": "aprobado"
     }
 
@@ -84,8 +91,10 @@ def ver_proyecto(id):
         (id,)
     ).fetchone()
     conn.close()
+
     if proyecto is None:
         return "Proyecto no encontrado"
+
     return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 @app.route("/proyectos/nuevo")
@@ -153,10 +162,15 @@ def drone_generador_agua():
 def drone_control_incendios():
     return render_template("drones/drone_control_incendios.html")
 
-# 🔥 NUEVO DRONE LLUVIA (ANEXADO)
+# 🔥 DRONE LLUVIA
 @app.route("/drone_lluvia_ionizacion")
 def drone_lluvia_ionizacion():
     return render_template("drones/drone_lluvia_ionizacion.html")
+
+# 🔥 NUEVO DRONE RÍOS
+@app.route("/drone_descontaminacion_rios")
+def drone_descontaminacion_rios():
+    return render_template("drones/drone_descontaminacion_rios.html")
 
 # =========================
 # EVALUADOR DE IDEAS DRONES MAIA

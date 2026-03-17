@@ -135,9 +135,47 @@ function volverChat(){
   document.getElementById("chatNormal").classList.remove("hidden")
 }
 
+// 🔥 CORRECCIÓN + ANEXO AQUÍ
 function activarDrone(){
   ocultarTodo()
   document.getElementById("moduloDrone").classList.remove("hidden")
+
+  // 🔥 CONTENIDO INICIAL (ANEXADO)
+  document.getElementById("contenidoDrone").innerHTML = `
+    <h3>Selecciona el tipo de drones</h3>
+
+    <div style="display:flex;flex-direction:column;gap:15px;margin-top:20px">
+
+      <button onclick="dronesComerciales()" style="background:#2563eb;padding:15px;border:none;border-radius:10px;color:white;">
+        🛩️ Drones comerciales
+      </button>
+
+      <button onclick="dronesIndustriales()" style="background:#16a34a;padding:15px;border:none;border-radius:10px;color:white;">
+        🏭 Drones industriales
+      </button>
+
+      <button onclick="dronesMilitares()" style="background:#dc2626;padding:15px;border:none;border-radius:10px;color:white;">
+        🛡️ Drones militares
+      </button>
+
+      <button onclick="window.open('/maia_simulador','_blank')" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
+        🧪 Simulador de drones
+      </button>
+
+      <button onclick="window.open('/maia_architect','_blank')" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
+        🧠 MAIA AI Drone Architect
+      </button>
+
+      <button onclick="window.open('/maia_lab','_blank')" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
+        🚀 MAIA Autonomous Drone Lab
+      </button>
+
+      <button onclick="window.open('/maia_invent','_blank')" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
+        ⚙️ MAIA Invent
+      </button>
+
+    </div>
+  `
 }
 
 function activarGanado(){alert("En construcción")}
@@ -171,21 +209,19 @@ function dronesMilitares(){
   `
 }
 
-// 🔥 FUNCIÓN CORREGIDA (SIN FILTROS, SIN ERRORES)
+// 🔥 INDUSTRIALES CORREGIDO
 async function dronesIndustriales(){
 
   const cont = document.getElementById("contenidoDrone")
   cont.innerHTML = "<h3>Cargando drones...</h3>"
 
   try{
-
     let r = await fetch("/maia_drones_aprobados")
     let drones = await r.json()
 
     let html = "<h3>🏭 Drones Industriales</h3><ul>"
 
     drones.forEach(d => {
-
       html += `
         <li>
           🚁 <b>${d.nombre}</b><br><br>
@@ -195,11 +231,9 @@ async function dronesIndustriales(){
           <br><br>
         </li>
       `
-
     })
 
     html += "</ul>"
-
     cont.innerHTML = html
 
   }catch(e){

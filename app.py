@@ -21,6 +21,7 @@ app.register_blueprint(proyectos_bp)
 # DRONES BASE (OFICIAL)
 # =========================
 DRONES_BASE = [
+
     {
         "nombre": "Drone submarino detección de petróleo",
         "ruta": "/dron_submarino_petroleo",
@@ -45,7 +46,15 @@ DRONES_BASE = [
         "nombre": "Drone Autónomo de Control de Incendios",
         "ruta": "/drone_control_incendios",
         "estado": "aprobado"
+    },
+
+    # 🔥 NUEVO DRONE (ANEXADO)
+    {
+        "nombre": "Drone de Lluvia por Ionización Atmosférica",
+        "ruta": "/drone_lluvia_ionizacion",
+        "estado": "aprobado"
     }
+
 ]
 
 # =========================
@@ -75,10 +84,8 @@ def ver_proyecto(id):
         (id,)
     ).fetchone()
     conn.close()
-
     if proyecto is None:
         return "Proyecto no encontrado"
-
     return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 @app.route("/proyectos/nuevo")
@@ -146,16 +153,11 @@ def drone_generador_agua():
 def drone_control_incendios():
     return render_template("drones/drone_control_incendios.html")
 
-# =========================
-# HEALTH CHECK
-# =========================
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
+# 🔥 NUEVO DRONE LLUVIA (ANEXADO)
+@app.route("/drone_lluvia_ionizacion")
+def drone_lluvia_ionizacion():
+    return render_template("drones/drone_lluvia_ionizacion.html")
 
-# =========================
-# RUN
-# =========================
 # =========================
 # EVALUADOR DE IDEAS DRONES MAIA
 # =========================
@@ -172,7 +174,6 @@ def evaluar_drone():
         "mensaje": ""
     }
 
-    # 🔍 Reglas básicas MAIA
     if any(p in idea for p in ["agua","energía","energia","salud","medio ambiente","contaminación","alimentos","incendio"]):
         resultado["impacto"] += 3
 
@@ -182,7 +183,6 @@ def evaluar_drone():
     if any(p in idea for p in ["escalable","industrial","ciudad","global"]):
         resultado["viabilidad"] += 3
 
-    # 🧠 Evaluación final
     total = resultado["impacto"] + resultado["innovacion"] + resultado["viabilidad"]
 
     if total >= 7:
@@ -193,6 +193,17 @@ def evaluar_drone():
         resultado["mensaje"] = "❌ Idea débil, no cumple con la consigna MAIA"
 
     return jsonify(resultado)
+
+# =========================
+# HEALTH CHECK
+# =========================
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
+# =========================
+# RUN
+# =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

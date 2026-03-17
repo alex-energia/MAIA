@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MAIA Invent</title>
+<style>
+body{background:#1e1e1e;color:white;font-family:Arial;padding:20px}
+textarea{width:100%;height:120px;border-radius:10px;padding:10px}
+button{margin-top:10px;padding:10px 20px;border:none;border-radius:10px;background:#2563eb;color:white;cursor:pointer}
+.resultado{margin-top:20px;background:#2a2a2a;padding:15px;border-radius:10px}
+</style>
+</head>
+<body>
+
+<h2>⚙️ MAIA Invent</h2>
+
+<div style="background:#111;padding:15px;border-radius:10px;margin-bottom:20px;">
+  <h3>🚀 Consigna MAIA</h3>
+  <p>
+  Los drones deben ser disruptivos, impactar la humanidad y resolver problemas reales como agua, energía, salud o medio ambiente.
+  </p>
+</div>
+
+<textarea id="idea" placeholder="Escribe tu idea de drone..."></textarea>
+<button onclick="evaluar()">Evaluar idea</button>
+
+<div id="resultado" class="resultado"></div>
+
+<script>
+async function evaluar(){
+
+  let idea = document.getElementById("idea").value
+
+  let res = await fetch("/evaluar_drone",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({idea:idea})
+  })
+
+  let data = await res.json()
+
+  document.getElementById("resultado").innerHTML = `
+    <h3>Resultado:</h3>
+    <p>🌍 Impacto: ${data.impacto}</p>
+    <p>🚀 Innovación: ${data.innovacion}</p>
+    <p>⚙️ Viabilidad: ${data.viabilidad}</p>
+    <h2>${data.mensaje}</h2>
+  `
+}
+</script>
+
+</body>
+</html>

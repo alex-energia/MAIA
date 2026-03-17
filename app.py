@@ -156,6 +156,43 @@ def health():
 # =========================
 # RUN
 # =========================
+# =========================
+# EVALUADOR DE IDEAS DRONES MAIA
+# =========================
+@app.route("/evaluar_drone", methods=["POST"])
+def evaluar_drone():
+
+    data = request.get_json()
+    idea = data.get("idea", "").lower()
+
+    resultado = {
+        "impacto": 0,
+        "innovacion": 0,
+        "viabilidad": 0,
+        "mensaje": ""
+    }
+
+    # 🔍 Reglas básicas MAIA
+    if any(p in idea for p in ["agua","energía","energia","salud","medio ambiente","contaminación","alimentos","incendio"]):
+        resultado["impacto"] += 3
+
+    if any(p in idea for p in ["autónomo","enjambre","ia","inteligente","automatizado"]):
+        resultado["innovacion"] += 3
+
+    if any(p in idea for p in ["escalable","industrial","ciudad","global"]):
+        resultado["viabilidad"] += 3
+
+    # 🧠 Evaluación final
+    total = resultado["impacto"] + resultado["innovacion"] + resultado["viabilidad"]
+
+    if total >= 7:
+        resultado["mensaje"] = "🚀 Idea altamente disruptiva y viable"
+    elif total >= 4:
+        resultado["mensaje"] = "⚠️ Buena idea, pero se puede mejorar"
+    else:
+        resultado["mensaje"] = "❌ Idea débil, no cumple con la consigna MAIA"
+
+    return jsonify(resultado)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)

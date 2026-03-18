@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect
 from proyectos import proyectos_bp, init_db, get_db
 import os
+import random
 
 # =========================
 # CREAR APP
@@ -158,39 +159,59 @@ def maia_simulador():
     return render_template("maia_simulador.html")
 
 # =========================
-# VISTAS DRONES
+# 🚀 GENERADOR AUTOMÁTICO MAIA
 # =========================
-@app.route("/dron_submarino_petroleo")
-def dron_submarino_petroleo():
-    return render_template("drones/dron_submarino_petroleo.html")
+@app.route("/generar_drone_maia", methods=["GET"])
+def generar_drone_maia():
 
-@app.route("/maia_punto_electrico")
-def maia_punto_electrico():
-    return render_template("drones/maia_punto_electrico.html")
+    problemas = [
+        "escasez de agua",
+        "contaminación urbana",
+        "inseguridad ciudadana",
+        "incendios forestales",
+        "falta de energía en zonas rurales",
+        "contaminación de ríos"
+    ]
 
-@app.route("/drone_purificador_atmosferico")
-def drone_purificador_atmosferico():
-    return render_template("drones/drone_purificador_atmosferico.html")
+    tecnologias = [
+        "enjambre autónomo",
+        "inteligencia artificial distribuida",
+        "sensores avanzados",
+        "comunicación en red",
+        "sistemas híbridos aire-agua"
+    ]
 
-@app.route("/drone_generador_agua")
-def drone_generador_agua():
-    return render_template("drones/drone_generador_agua.html")
+    problema = random.choice(problemas)
+    tecnologia = random.choice(tecnologias)
 
-@app.route("/drone_control_incendios")
-def drone_control_incendios():
-    return render_template("drones/drone_control_incendios.html")
+    nombre = f"Drone Autónomo para {problema.title()}"
 
-@app.route("/drone_lluvia_ionizacion")
-def drone_lluvia_ionizacion():
-    return render_template("drones/drone_lluvia_ionizacion.html")
+    introduccion = f"Este drone ha sido diseñado para abordar el problema de {problema}, utilizando {tecnologia}, permitiendo una solución escalable y de alto impacto a nivel global."
 
-@app.route("/drone_descontaminacion_rios")
-def drone_descontaminacion_rios():
-    return render_template("drones/drone_descontaminacion_rios.html")
+    viabilidad = "El proyecto es viable debido a la disponibilidad actual de sensores, inteligencia artificial y sistemas de automatización, permitiendo su implementación progresiva en entornos urbanos e industriales."
 
-@app.route("/drone_vigilancia_urbana")
-def drone_vigilancia_urbana():
-    return render_template("drones/drone_vigilancia_urbana.html")
+    software = [
+        "IA de navegación autónoma",
+        "Sistema de toma de decisiones en tiempo real",
+        "Comunicación entre drones (enjambre)",
+        "Análisis de datos en la nube"
+    ]
+
+    hardware = [
+        "Sensores ambientales",
+        "Cámara de alta resolución",
+        "GPS de precisión",
+        "Batería de larga duración",
+        "Módulo de comunicación"
+    ]
+
+    return jsonify({
+        "nombre": nombre,
+        "introduccion": introduccion,
+        "viabilidad": viabilidad,
+        "software": software,
+        "hardware": hardware
+    })
 
 # =========================
 # EVALUADOR

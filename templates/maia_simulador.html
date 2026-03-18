@@ -4,8 +4,16 @@
     <title>MAIA SIMULADOR</title>
     <style>
         body { background: #111; color: white; font-family: Arial; }
-        canvas { background: black; display: block; margin: auto; }
+        canvas { background: black; display: block; margin: auto; border: 2px solid #444; }
         .panel { text-align: center; margin-bottom: 20px; }
+
+        /* HUD estilo videojuego */
+        #hud {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #00ffcc;
+        }
     </style>
 </head>
 <body>
@@ -13,7 +21,6 @@
 <h1 style="text-align:center;">🎮 MAIA SIMULADOR</h1>
 
 <div class="panel">
-
     <select id="drone">
         <option>Seleccionar Drone</option>
         <option>Control de Incendios</option>
@@ -36,10 +43,12 @@
     <br><br>
 
     <button onclick="iniciar()">🚀 Iniciar Simulación</button>
-
+    <button onclick="demo()">🎬 Ver Demo Automático</button>
 </div>
 
 <canvas id="game" width="800" height="500"></canvas>
+
+<div id="hud"></div>
 
 <script>
 let canvas = document.getElementById("game");
@@ -48,16 +57,31 @@ let ctx = canvas.getContext("2d");
 let drone = { x: 100, y: 250, energia: 100 };
 let objetivo = null;
 let escenario = "Ciudad";
+let corriendo = false;
+let viento = 0;
 
+// 🚀 INICIAR SIMULACIÓN
 function iniciar() {
     escenario = document.getElementById("escenario").value;
-    drone.energia = document.getElementById("bateria").value;
+    drone.energia = parseFloat(document.getElementById("bateria").value);
+    viento = parseFloat(document.getElementById("viento").value);
 
     generarEvento();
+    corriendo = true;
     loop();
 }
 
-// 🎯 Genera evento según tipo de drone
+// 🎬 DEMO AUTOMÁTICO (EJEMPLO REAL)
+function demo() {
+    document.getElementById("drone").value = "Control de Incendios";
+    document.getElementById("escenario").value = "Montaña";
+    document.getElementById("viento").value = 5;
+    document.getElementById("bateria").value = 100;
+
+    iniciar();
+}
+
+// 🎯 GENERAR EVENTO
 function generarEvento() {
     let tipo = document.getElementById("drone").value;
 
@@ -72,36 +96,53 @@ function generarEvento() {
     }
 }
 
-// 🎮 LOOP DEL JUEGO
+// 🎮 LOOP CONTROLADO (EVITA BUG)
 function loop() {
+    if (!corriendo) return;
+
     ctx.clearRect(0,0,800,500);
 
     dibujarEscenario();
     dibujarDrone();
     dibujarObjetivo();
-
     moverDrone();
+    actualizarHUD();
 
     requestAnimationFrame(loop);
 }
 
-// 🌍 Escenarios
+// 🌍 ESCENARIOS MEJORADOS
 function dibujarEscenario() {
+
     if (escenario === "Ciudad") {
-        ctx.fillStyle = "gray";
+        ctx.fillStyle = "#333";
         ctx.fillRect(0, 300, 800, 200);
+
+        // edificios
+        ctx.fillStyle = "#555";
+        ctx.fillRect(100, 200, 50, 100);
+        ctx.fillRect(300, 180, 60, 120);
     }
+
     if (escenario === "Montaña") {
         ctx.fillStyle = "green";
         ctx.fillRect(0, 300, 800, 200);
+
+        ctx.fillStyle = "#2e8b57";
+        ctx.beginPath();
+        ctx.moveTo(200,300);
+        ctx.lineTo(300,150);
+        ctx.lineTo(400,300);
+        ctx.fill();
     }
+
     if (escenario === "Océano") {
         ctx.fillStyle = "blue";
         ctx.fillRect(0, 300, 800, 200);
     }
 }
 
-// 🚁 Drone
+// 🚁 DRONE
 function dibujarDrone() {
     ctx.fillStyle = "white";
     ctx.beginPath();
@@ -109,7 +150,7 @@ function dibujarDrone() {
     ctx.fill();
 }
 
-// 🔥 Evento
+// 🔥 OBJETIVO
 function dibujarObjetivo() {
     if (!objetivo) return;
 
@@ -120,39 +161,49 @@ function dibujarObjetivo() {
     ctx.fillRect(objetivo.x, objetivo.y, 20, 20);
 }
 
-// 🧠 IA del drone
+// 🧠 IA DEL DRONE + VIENTO
 function moverDrone() {
     if (!objetivo) return;
 
     let dx = objetivo.x - drone.x;
     let dy = objetivo.y - drone.y;
 
-    drone.x += dx * 0.01;
+    // efecto viento (desviación realista)
+    drone.x += dx * 0.01 + (Math.random() * viento * 0.1);
     drone.y += dy * 0.01;
 
-    // consumir energía
-    drone.energia -= 0.02;
+    drone.energia -= 0.05;
 
     if (drone.energia <= 0) {
-        alert("🔋 Drone sin energía");
-        location.reload();
+        terminar("🔋 Drone sin energía");
     }
 
-    // llega al objetivo
     if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
         resolverEvento();
     }
 }
 
-// ⚡ Acción del drone
+// ⚡ RESOLVER EVENTO
 function resolverEvento() {
     let tipo = objetivo.tipo;
 
-    if (tipo === "fuego") alert("🔥 Incendio apagado");
-    if (tipo === "delito") alert("🚨 Evento detectado");
-    if (tipo === "contaminacion") alert("🌊 Contaminación tratada");
+    if (tipo === "fuego") terminar("🔥 Incendio apagado");
+    if (tipo === "delito") terminar("🚨 Delito detectado");
+    if (tipo === "contaminacion") terminar("🌊 Contaminación tratada");
+}
 
-    objetivo = null;
+// 🛑 TERMINAR SIMULACIÓN
+function terminar(msg) {
+    corriendo = false;
+    alert(msg);
+}
+
+// 📊 HUD (INFO EN TIEMPO REAL)
+function actualizarHUD() {
+    document.getElementById("hud").innerHTML =
+        "🔋 Energía: " + drone.energia.toFixed(1) +
+        " | 🌬️ Viento: " + viento +
+        " | 🌍 Escenario: " + escenario;
 }
 </script>
 

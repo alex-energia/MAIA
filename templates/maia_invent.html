@@ -8,10 +8,12 @@
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador autónomo de drones disruptivos</p>
 
-<button onclick="generar()">🚀 Generar Drone</button>
+<button onclick="generarDrone()">🚀 Generar Drone</button>
+<button onclick="limpiar()">🧹 Limpiar</button>
+
+<hr>
 
 <h2 id="nombre"></h2>
-
 <p id="intro"></p>
 <p id="viabilidad"></p>
 
@@ -21,28 +23,97 @@
 <h3>⚙️ Hardware</h3>
 <ul id="hardware"></ul>
 
+<hr>
+
+<h3>💾 Guardar Proyecto</h3>
+
+<select id="categoria">
+    <option value="">Seleccionar tipo</option>
+    <option value="comercial">Comercial</option>
+    <option value="industrial">Industrial</option>
+    <option value="militar">Militar</option>
+</select>
+
+<br><br>
+
+<button onclick="guardar()">💾 Guardar Drone</button>
+
+<p id="estado_guardado"></p>
+
 <script>
-function generar() {
-    fetch("/generar_drone_maia_avanzado")
-    .then(res => res.json())
-    .then(data => {
+let droneActual = null;
 
-        document.getElementById("nombre").innerText = data.nombre;
-        document.getElementById("intro").innerText = data.introduccion;
-        document.getElementById("viabilidad").innerText = data.viabilidad;
+// 🚀 Generar drone SIN repetir
+async function generarDrone() {
+    const res = await fetch("/generar_drone_maia");
+    const data = await res.json();
 
-        let soft = "";
-        data.software.forEach(s => {
-            soft += "<li>" + s + "</li>";
-        });
-        document.getElementById("software").innerHTML = soft;
+    droneActual = data;
 
-        let hard = "";
-        data.hardware.forEach(h => {
-            hard += "<li>" + h + "</li>";
-        });
-        document.getElementById("hardware").innerHTML = hard;
+    document.getElementById("nombre").innerText = data.nombre;
+    document.getElementById("intro").innerText = data.introduccion;
+    document.getElementById("viabilidad").innerText = data.viabilidad;
+
+    let sw = document.getElementById("software");
+    let hw = document.getElementById("hardware");
+
+    sw.innerHTML = "";
+    hw.innerHTML = "";
+
+    data.software.forEach(s => {
+        let li = document.createElement("li");
+        li.innerText = s;
+        sw.appendChild(li);
     });
+
+    data.hardware.forEach(h => {
+        let li = document.createElement("li");
+        li.innerText = h;
+        hw.appendChild(li);
+    });
+}
+
+// 🧹 Limpiar pantalla
+function limpiar() {
+    document.getElementById("nombre").innerText = "";
+    document.getElementById("intro").innerText = "";
+    document.getElementById("viabilidad").innerText = "";
+    document.getElementById("software").innerHTML = "";
+    document.getElementById("hardware").innerHTML = "";
+    document.getElementById("estado_guardado").innerText = "";
+    droneActual = null;
+}
+
+// 💾 Guardar drone
+async function guardar() {
+    if (!droneActual) {
+        alert("Primero genera un drone");
+        return;
+    }
+
+    let categoria = document.getElementById("categoria").value;
+
+    if (!categoria) {
+        alert("Selecciona categoría");
+        return;
+    }
+
+    const res = await fetch("/guardar_proyecto", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nombre: droneActual.nombre,
+            tecnologia: categoria,
+            pais: "N/A",
+            ciudad: "N/A",
+            moneda: "N/A",
+            horizonte: "N/A",
+            potencia: "N/A",
+            unidad: "N/A"
+        })
+    });
+
+    document.getElementById("estado_guardado").innerText = "✅ Guardado correctamente";
 }
 </script>
 

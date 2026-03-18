@@ -2,24 +2,76 @@
 <html>
 <head>
     <title>MAIA SIMULADOR</title>
+
+    <!-- Leaflet (MAPAS REALES) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
 
 <h1>🎮 MAIA SIMULADOR</h1>
-<p>Simulación conceptual del drone</p>
 
-<button onclick="run()">Ejecutar simulación</button>
+<button onclick="iniciar()">▶ Ejecutar simulación</button>
 
-<h2 id="sim"></h2>
+<p id="estado"></p>
+
+<h3>🌍 Entorno</h3>
+<label>Viento:</label>
+<input type="range" id="viento" min="0" max="100"><br>
+
+<label>Temperatura:</label>
+<input type="range" id="temp" min="-10" max="50"><br>
+
+<label>Energía:</label>
+<input type="range" id="energia" min="0" max="100"><br>
+
+<hr>
+
+<div id="map"></div>
 
 <script>
-function run() {
-    document.getElementById("sim").innerHTML =
-    "🚁 Drone desplegado...<br>" +
-    "📡 Analizando entorno...<br>" +
-    "🎯 Objetivo detectado...<br>" +
-    "🔄 Enjambre coordinado...<br>" +
-    "✅ Misión completada";
+let map = L.map('map').setView([4.5709, -74.2973], 6); // Colombia
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'MAIA'
+}).addTo(map);
+
+let drone = L.marker([4.5709, -74.2973]).addTo(map);
+
+function iniciar() {
+    document.getElementById("estado").innerText = "🚁 Iniciando simulación...";
+
+    let i = 0;
+
+    let intervalo = setInterval(() => {
+
+        let lat = drone.getLatLng().lat + (Math.random() - 0.5) * 0.1;
+        let lng = drone.getLatLng().lng + (Math.random() - 0.5) * 0.1;
+
+        drone.setLatLng([lat, lng]);
+
+        let viento = document.getElementById("viento").value;
+        let temp = document.getElementById("temp").value;
+        let energia = document.getElementById("energia").value;
+
+        document.getElementById("estado").innerText =
+            `📡 Viento: ${viento}% | 🌡 Temp: ${temp}°C | 🔋 Energía: ${energia}%`;
+
+        i++;
+
+        if (i > 20) {
+            clearInterval(intervalo);
+            document.getElementById("estado").innerText = "✅ Simulación completada";
+        }
+
+    }, 1000);
 }
 </script>
 

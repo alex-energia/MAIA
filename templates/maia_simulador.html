@@ -4,234 +4,199 @@
 <title>MAIA SIMULADOR GOD</title>
 
 <style>
-body { margin:0; overflow:hidden; background:black; font-family:Arial; }
-
-#panel {
+body { margin:0; background:black; color:white; font-family:Arial; }
+#ui {
     position:absolute;
     top:10px;
     left:10px;
-    background:rgba(0,0,0,0.8);
+    background:rgba(0,0,0,0.7);
     padding:15px;
     border-radius:10px;
-    color:white;
 }
-
 select, button {
-    margin-top:5px;
-    width:220px;
-}
-
-#selectorDrone {
-    display:none;
+    width:200px;
+    margin:5px 0;
 }
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body>
 
-<div id="panel">
-<h3>🧠 MAIA CORE</h3>
+<div id="ui">
+    <h3>🧠 MAIA CORE</h3>
 
-<label>Tipo</label><br>
-<select id="categoria">
-<option value="todos">Todos</option>
-<option value="comercial">Comercial</option>
-<option value="industrial">Industrial</option>
-<option value="militar">Militar</option>
-</select>
+    <select id="tipo">
+        <option value="industrial">Industrial</option>
+        <option value="comercial">Comercial</option>
+        <option value="militar">Militar</option>
+    </select>
 
-<br><br>
+    <button onclick="cargarDrones()">📡 Cargar Software</button>
 
-<button onclick="mostrarSelector()">🚀 Cargar Software</button>
+    <select id="drones"></select>
 
-<br>
+    <br>
 
-<select id="selectorDrone"></select>
+    <button onclick="setEscenario('ciudad')">🏙️ Ciudad</button>
+    <button onclick="setEscenario('oceano')">🌊 Océano</button>
 
-<p id="estado"></p>
-
-<hr>
-
-<button onclick="escenarioCiudad()">🌆 Ciudad</button>
-<button onclick="escenarioOceano()">🌊 Océano</button>
-
+    <p id="estado"></p>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-
 <script>
-// =====================
-// ESCENA
-// =====================
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 let renderer = new THREE.WebGLRenderer();
-
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// =====================
-// LUZ
-// =====================
-let light = new THREE.DirectionalLight(0xffffff,1);
-light.position.set(10,20,10);
-scene.add(light);
+camera.position.z = 50;
 
-// =====================
-// DRONE
-// =====================
-let drone = new THREE.Mesh(
-    new THREE.BoxGeometry(1,0.3,1),
-    new THREE.MeshStandardMaterial({color:0xffffff})
-);
-drone.position.y = 5;
-scene.add(drone);
+let drone;
+let objetos = [];
 
-// =====================
-// VARIABLES
-// =====================
-let drones = [];
-let comportamiento = "normal";
-
-// =====================
-// TRAER DRONES
-// =====================
-async function cargarDrones() {
-    let res = await fetch("/maia_drones_aprobados");
-    drones = await res.json();
-}
-cargarDrones();
-
-// =====================
-// MOSTRAR SELECTOR
-// =====================
-function mostrarSelector() {
-    let select = document.getElementById("selectorDrone");
-    let categoria = document.getElementById("categoria").value;
-
-    select.innerHTML = "";
-    select.style.display = "block";
-
-    drones.forEach(d => {
-
-        // 👇 FILTRO POR CATEGORIA
-        if (categoria !== "todos" && d.tipo !== categoria) return;
-
-        let op = document.createElement("option");
-        op.value = d.nombre;
-        op.textContent = d.nombre;
-
-        select.appendChild(op);
-    });
-
-    select.onchange = function() {
-        activarDrone(this.value);
-    };
-}
-
-// =====================
-// ACTIVAR DRONE
-// =====================
-function activarDrone(nombre) {
-
-    if (nombre.includes("Incendios")) comportamiento = "incendio";
-    else if (nombre.includes("Vigilancia")) comportamiento = "vigilancia";
-    else if (nombre.includes("Ríos")) comportamiento = "agua";
-    else if (nombre.includes("Submarino")) comportamiento = "submarino";
-    else comportamiento = "normal";
-
-    document.getElementById("estado").innerText = "Software cargado: " + nombre;
-}
-
-// =====================
-// ESCENARIOS
-// =====================
-function limpiar() {
-    while(scene.children.length > 0) scene.remove(scene.children[0]);
-    scene.add(light);
+// =========================
+// 🚁 CREAR DRONE REAL
+// =========================
+function crearDrone() {
+    let geo = new THREE.BoxGeometry(2,1,2);
+    let mat = new THREE.MeshBasicMaterial({color:0x00ffcc});
+    drone = new THREE.Mesh(geo, mat);
+    drone.position.y = 5;
     scene.add(drone);
 }
 
-function escenarioCiudad() {
-    limpiar();
-    for(let i=0;i<80;i++){
-        let b = new THREE.Mesh(
-            new THREE.BoxGeometry(2,Math.random()*10+2,2),
-            new THREE.MeshStandardMaterial({color:0x444444})
+// =========================
+// 🌍 ESCENARIOS
+// =========================
+function limpiarEscenario(){
+    objetos.forEach(o => scene.remove(o));
+    objetos = [];
+}
+
+function setEscenario(tipo){
+    limpiarEscenario();
+
+    if(tipo === "ciudad"){
+        document.getElementById("estado").innerText = "🌆 Ciudad cargada";
+
+        for(let i=0;i<20;i++){
+            let b = new THREE.Mesh(
+                new THREE.BoxGeometry(3, Math.random()*10+5,3),
+                new THREE.MeshBasicMaterial({color:0x888888})
+            );
+            b.position.set(
+                Math.random()*100-50,
+                b.geometry.parameters.height/2,
+                Math.random()*100-50
+            );
+            scene.add(b);
+            objetos.push(b);
+        }
+
+        // carros
+        for(let i=0;i<10;i++){
+            let car = new THREE.Mesh(
+                new THREE.BoxGeometry(2,1,1),
+                new THREE.MeshBasicMaterial({color:0xff0000})
+            );
+            car.position.set(Math.random()*80-40,1,Math.random()*80-40);
+            scene.add(car);
+            objetos.push(car);
+        }
+
+    }
+
+    if(tipo === "oceano"){
+        document.getElementById("estado").innerText = "🌊 Océano cargado";
+
+        let agua = new THREE.Mesh(
+            new THREE.BoxGeometry(200,1,200),
+            new THREE.MeshBasicMaterial({color:0x0000ff})
         );
-        b.position.set(Math.random()*100-50,b.geometry.parameters.height/2,Math.random()*100-50);
-        scene.add(b);
+        scene.add(agua);
+        objetos.push(agua);
+
+        // peces
+        for(let i=0;i<20;i++){
+            let pez = new THREE.Mesh(
+                new THREE.SphereGeometry(0.5),
+                new THREE.MeshBasicMaterial({color:0xffff00})
+            );
+            pez.position.set(Math.random()*100-50, Math.random()*10, Math.random()*100-50);
+            scene.add(pez);
+            objetos.push(pez);
+        }
     }
 }
 
-function escenarioOceano() {
-    limpiar();
+// =========================
+// 📡 CARGAR DRONES REALES
+// =========================
+async function cargarDrones(){
+    let tipo = document.getElementById("tipo").value;
 
-    let agua = new THREE.Mesh(
-        new THREE.PlaneGeometry(200,200),
-        new THREE.MeshStandardMaterial({color:0x0044ff})
-    );
-    agua.rotation.x = -Math.PI/2;
-    scene.add(agua);
+    let res = await fetch("/maia_drones_aprobados");
+    let data = await res.json();
+
+    let select = document.getElementById("drones");
+    select.innerHTML = "";
+
+    let filtrados = data.filter(d => d.tipo === tipo);
+
+    filtrados.forEach(d => {
+        let op = document.createElement("option");
+        op.text = d.nombre;
+        select.add(op);
+    });
+
+    document.getElementById("estado").innerText = "✅ Software cargado";
 }
 
-// =====================
-// CONTROLES
-// =====================
-let keys = {};
-window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+// =========================
+// 🎮 CONTROLES (WASD)
+// =========================
+document.addEventListener("keydown", e => {
 
-// =====================
-// MOVIMIENTO
-// =====================
-function mover() {
-    let speed = 0.2;
+    if(!drone) return;
 
-    if (keys["w"]) drone.position.z -= speed;
-    if (keys["s"]) drone.position.z += speed;
-    if (keys["a"]) drone.position.x -= speed;
-    if (keys["d"]) drone.position.x += speed;
-    if (keys["q"]) drone.position.y += speed;
-    if (keys["e"]) drone.position.y -= speed;
+    if(e.key === "w") drone.position.z -= 1;
+    if(e.key === "s") drone.position.z += 1;
+    if(e.key === "a") drone.position.x -= 1;
+    if(e.key === "d") drone.position.x += 1;
+
+});
+
+// =========================
+// 🤖 DEMO AUTOMÁTICO
+// =========================
+function demoIA(){
+    if(!drone) return;
+
+    drone.position.x += Math.sin(Date.now()*0.001)*0.2;
+    drone.position.z += Math.cos(Date.now()*0.001)*0.2;
 }
 
-// =====================
-// IA VISUAL
-// =====================
-function comportamientoDrone() {
-    if (comportamiento === "incendio") drone.material.color.set(0xff0000);
-    if (comportamiento === "vigilancia") drone.material.color.set(0xffff00);
-    if (comportamiento === "agua") drone.material.color.set(0x00ffff);
-    if (comportamiento === "submarino") drone.material.color.set(0x0000ff);
-}
-
-// =====================
-// CAMARA
-// =====================
-function camara() {
-    camera.position.x = drone.position.x + 5;
-    camera.position.y = drone.position.y + 5;
-    camera.position.z = drone.position.z + 10;
-
-    camera.lookAt(drone.position);
-}
-
-// =====================
-// LOOP
-// =====================
-function animate() {
+// =========================
+// 🎬 LOOP
+// =========================
+function animate(){
     requestAnimationFrame(animate);
 
-    mover();
-    camara();
-    comportamientoDrone();
+    demoIA();
 
     renderer.render(scene, camera);
 }
 
-camera.position.z = 10;
+// =========================
+// INIT
+// =========================
+crearDrone();
+setEscenario("ciudad");
 animate();
+
 </script>
 
 </body>

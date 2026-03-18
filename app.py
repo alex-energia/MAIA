@@ -19,33 +19,58 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# DRONES BASE (OFICIAL)
+# DRONES BASE (OFICIAL) 🔥 AHORA CON TIPO
 # =========================
 DRONES_BASE = [
-    {"nombre": "Drone submarino detección de petróleo", "ruta": "/dron_submarino_petroleo", "estado": "aprobado"},
-    {"nombre": "MAIA Punto Eléctrico", "ruta": "/maia_punto_electrico", "estado": "aprobado"},
-    {"nombre": "Drone Purificador Atmosférico", "ruta": "/drone_purificador_atmosferico", "estado": "aprobado"},
-    {"nombre": "Drone Generador de Agua Atmosférica", "ruta": "/drone_generador_agua", "estado": "aprobado"},
-    {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "estado": "aprobado"},
-    {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "estado": "aprobado"},
-    {"nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "estado": "aprobado"},
-    {"nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre", "ruta": "/drone_vigilancia_urbana", "estado": "aprobado"}
+    {
+        "nombre": "Drone submarino detección de petróleo",
+        "ruta": "/dron_submarino_petroleo",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "MAIA Punto Eléctrico",
+        "ruta": "/maia_punto_electrico",
+        "estado": "aprobado",
+        "tipo": "comercial"
+    },
+    {
+        "nombre": "Drone Purificador Atmosférico",
+        "ruta": "/drone_purificador_atmosferico",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "Drone Generador de Agua Atmosférica",
+        "ruta": "/drone_generador_agua",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "Drone Autónomo de Control de Incendios",
+        "ruta": "/drone_control_incendios",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "Drone de Lluvia por Ionización Atmosférica",
+        "ruta": "/drone_lluvia_ionizacion",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos",
+        "ruta": "/drone_descontaminacion_rios",
+        "estado": "aprobado",
+        "tipo": "industrial"
+    },
+    {
+        "nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre",
+        "ruta": "/drone_vigilancia_urbana",
+        "estado": "aprobado",
+        "tipo": "militar"
+    }
 ]
-
-# =========================
-# UTILIDAD CLAVE (ANTI-REPETICIÓN REAL)
-# =========================
-def obtener_nombres_existentes():
-    nombres = set([d["nombre"].lower() for d in DRONES_BASE])
-    try:
-        conn = get_db()
-        rows = conn.execute("SELECT titulo FROM proyectos_guardados").fetchall()
-        conn.close()
-        for r in rows:
-            nombres.add(r["titulo"].lower())
-    except:
-        pass
-    return nombres
 
 # =========================
 # HOME
@@ -118,12 +143,13 @@ def guardar_proyecto():
 def maia_drone():
     return render_template("maia_drone.html")
 
+# 🔥 AHORA ENTREGA TAMBIÉN EL TIPO
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
     return jsonify(DRONES_BASE)
 
 # =========================
-# MAIA MODULOS
+# 🔥 MAIA MODULOS
 # =========================
 @app.route("/maia_invent")
 def maia_invent():
@@ -142,78 +168,60 @@ def maia_simulador():
     return render_template("maia_simulador.html")
 
 # =========================
-# 🚀 GENERADOR MAIA (REEMPLAZA EL PROBLEMA)
+# 🚀 GENERADOR AVANZADO SIN REPETICIÓN REAL
 # =========================
-@app.route("/generar_drone_maia", methods=["GET"])
-def generar_drone_maia():
+@app.route("/generar_drone_maia_avanzado", methods=["GET"])
+def generar_drone_maia_avanzado():
 
-    existentes = obtener_nombres_existentes()
+    existentes = [d["nombre"].lower() for d in DRONES_BASE]
 
     problemas = [
-        "control de disturbios urbanos",
-        "seguridad en eventos masivos",
-        "detección de amenazas en fronteras",
-        "rescate en zonas de desastre",
-        "protección de fauna silvestre",
-        "optimización logística autónoma",
-        "inspección de infraestructura crítica",
-        "control de tráfico inteligente",
-        "vigilancia aérea estratégica",
-        "operaciones tácticas en entornos hostiles"
+        "crisis hídrica global",
+        "minería ilegal",
+        "tráfico de personas",
+        "microplásticos en océanos",
+        "colapso energético urbano",
+        "deforestación masiva",
+        "sequías extremas"
     ]
 
-    tecnologias = [
-        "IA adaptativa",
+    enfoques = [
         "enjambre autónomo",
-        "visión computacional avanzada",
-        "red neuronal distribuida",
-        "aprendizaje en tiempo real",
-        "arquitectura descentralizada"
+        "IA predictiva",
+        "arquitectura híbrida",
+        "red descentralizada",
+        "sistema auto-reparable"
     ]
 
-    funciones = [
-        "respuesta autónoma",
-        "detección predictiva",
-        "intervención táctica",
-        "coordinación inteligente",
-        "análisis en tiempo real",
-        "neutralización automatizada"
-    ]
-
-    for _ in range(50):
-
+    while True:
         problema = random.choice(problemas)
-        tecnologia = random.choice(tecnologias)
-        funcion = random.choice(funciones)
-
-        nombre = f"Sistema Autónomo de {funcion.title()} para {problema.title()} con {tecnologia.title()}"
+        enfoque = random.choice(enfoques)
+        nombre = f"Drone Estratégico para {problema.title()}"
 
         if nombre.lower() not in existentes:
             break
 
     return jsonify({
         "nombre": nombre,
-        "introduccion": f"Este sistema utiliza {tecnologia} para ejecutar {funcion} frente a {problema}.",
-        "viabilidad": "Alta viabilidad tecnológica y escalabilidad global.",
+        "introduccion": f"Soluciona {problema} mediante {enfoque}.",
+        "viabilidad": "Alta viabilidad escalable.",
         "software": [
-            "IA de toma de decisiones",
-            "visión computacional",
+            "IA predictiva",
             "coordinación en enjambre",
-            "análisis predictivo",
-            "respuesta automática"
+            "análisis en tiempo real",
+            "toma de decisiones autónoma"
         ],
         "hardware": [
-            "sensores multispectrales",
-            "cámara térmica",
-            "GPS de alta precisión",
-            "módulo de comunicación mesh",
+            "sensores avanzados",
+            "GPS",
+            "módulo mesh",
             "estructura resistente",
             "batería inteligente"
         ]
     })
 
 # =========================
-# GUARDAR DRONE MAIA
+# 💾 GUARDAR DRONE MAIA
 # =========================
 @app.route("/guardar_drone_maia", methods=["POST"])
 def guardar_drone_maia():
@@ -227,7 +235,7 @@ def guardar_drone_maia():
         """,
         (
             data.get("nombre"),
-            data.get("tipo"),
+            data.get("tipo"),  # 👈 IMPORTANTE
             "Global",
             "MAIA"
         )
@@ -245,7 +253,12 @@ def evaluar_drone():
     data = request.get_json()
     idea = data.get("idea", "").lower()
 
-    resultado = {"impacto": 0, "innovacion": 0, "viabilidad": 0, "mensaje": ""}
+    resultado = {
+        "impacto": 0,
+        "innovacion": 0,
+        "viabilidad": 0,
+        "mensaje": ""
+    }
 
     if any(p in idea for p in ["agua","energia","salud","medio ambiente"]):
         resultado["impacto"] += 3
@@ -256,7 +269,7 @@ def evaluar_drone():
     if any(p in idea for p in ["escalable","industrial","global"]):
         resultado["viabilidad"] += 3
 
-    total = sum(resultado.values())
+    total = resultado["impacto"] + resultado["innovacion"] + resultado["viabilidad"]
 
     if total >= 7:
         resultado["mensaje"] = "🚀 Alta calidad"

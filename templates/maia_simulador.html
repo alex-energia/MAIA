@@ -2,76 +2,157 @@
 <html>
 <head>
     <title>MAIA SIMULADOR</title>
-
-    <!-- Leaflet (MAPAS REALES) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
     <style>
-        #map {
-            height: 400px;
-            width: 100%;
-        }
+        body { background: #111; color: white; font-family: Arial; }
+        canvas { background: black; display: block; margin: auto; }
+        .panel { text-align: center; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-<h1>🎮 MAIA SIMULADOR</h1>
+<h1 style="text-align:center;">🎮 MAIA SIMULADOR</h1>
 
-<button onclick="iniciar()">▶ Ejecutar simulación</button>
+<div class="panel">
 
-<p id="estado"></p>
+    <select id="drone">
+        <option>Seleccionar Drone</option>
+        <option>Control de Incendios</option>
+        <option>Vigilancia Urbana</option>
+        <option>Descontaminación de Ríos</option>
+    </select>
 
-<h3>🌍 Entorno</h3>
-<label>Viento:</label>
-<input type="range" id="viento" min="0" max="100"><br>
+    <select id="escenario">
+        <option>Ciudad</option>
+        <option>Montaña</option>
+        <option>Océano</option>
+    </select>
 
-<label>Temperatura:</label>
-<input type="range" id="temp" min="-10" max="50"><br>
+    <br><br>
 
-<label>Energía:</label>
-<input type="range" id="energia" min="0" max="100"><br>
+    🌬️ Viento: <input type="range" id="viento" min="0" max="10">
+    🔋 Batería: <input type="range" id="bateria" min="0" max="100" value="100">
+    🌡️ Temp: <input type="range" id="temp" min="-10" max="50">
 
-<hr>
+    <br><br>
 
-<div id="map"></div>
+    <button onclick="iniciar()">🚀 Iniciar Simulación</button>
+
+</div>
+
+<canvas id="game" width="800" height="500"></canvas>
 
 <script>
-let map = L.map('map').setView([4.5709, -74.2973], 6); // Colombia
+let canvas = document.getElementById("game");
+let ctx = canvas.getContext("2d");
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'MAIA'
-}).addTo(map);
-
-let drone = L.marker([4.5709, -74.2973]).addTo(map);
+let drone = { x: 100, y: 250, energia: 100 };
+let objetivo = null;
+let escenario = "Ciudad";
 
 function iniciar() {
-    document.getElementById("estado").innerText = "🚁 Iniciando simulación...";
+    escenario = document.getElementById("escenario").value;
+    drone.energia = document.getElementById("bateria").value;
 
-    let i = 0;
+    generarEvento();
+    loop();
+}
 
-    let intervalo = setInterval(() => {
+// 🎯 Genera evento según tipo de drone
+function generarEvento() {
+    let tipo = document.getElementById("drone").value;
 
-        let lat = drone.getLatLng().lat + (Math.random() - 0.5) * 0.1;
-        let lng = drone.getLatLng().lng + (Math.random() - 0.5) * 0.1;
+    if (tipo === "Control de Incendios") {
+        objetivo = { x: 600, y: 250, tipo: "fuego" };
+    }
+    else if (tipo === "Vigilancia Urbana") {
+        objetivo = { x: 600, y: 200, tipo: "delito" };
+    }
+    else {
+        objetivo = { x: 600, y: 300, tipo: "contaminacion" };
+    }
+}
 
-        drone.setLatLng([lat, lng]);
+// 🎮 LOOP DEL JUEGO
+function loop() {
+    ctx.clearRect(0,0,800,500);
 
-        let viento = document.getElementById("viento").value;
-        let temp = document.getElementById("temp").value;
-        let energia = document.getElementById("energia").value;
+    dibujarEscenario();
+    dibujarDrone();
+    dibujarObjetivo();
 
-        document.getElementById("estado").innerText =
-            `📡 Viento: ${viento}% | 🌡 Temp: ${temp}°C | 🔋 Energía: ${energia}%`;
+    moverDrone();
 
-        i++;
+    requestAnimationFrame(loop);
+}
 
-        if (i > 20) {
-            clearInterval(intervalo);
-            document.getElementById("estado").innerText = "✅ Simulación completada";
-        }
+// 🌍 Escenarios
+function dibujarEscenario() {
+    if (escenario === "Ciudad") {
+        ctx.fillStyle = "gray";
+        ctx.fillRect(0, 300, 800, 200);
+    }
+    if (escenario === "Montaña") {
+        ctx.fillStyle = "green";
+        ctx.fillRect(0, 300, 800, 200);
+    }
+    if (escenario === "Océano") {
+        ctx.fillStyle = "blue";
+        ctx.fillRect(0, 300, 800, 200);
+    }
+}
 
-    }, 1000);
+// 🚁 Drone
+function dibujarDrone() {
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(drone.x, drone.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// 🔥 Evento
+function dibujarObjetivo() {
+    if (!objetivo) return;
+
+    if (objetivo.tipo === "fuego") ctx.fillStyle = "red";
+    if (objetivo.tipo === "delito") ctx.fillStyle = "yellow";
+    if (objetivo.tipo === "contaminacion") ctx.fillStyle = "purple";
+
+    ctx.fillRect(objetivo.x, objetivo.y, 20, 20);
+}
+
+// 🧠 IA del drone
+function moverDrone() {
+    if (!objetivo) return;
+
+    let dx = objetivo.x - drone.x;
+    let dy = objetivo.y - drone.y;
+
+    drone.x += dx * 0.01;
+    drone.y += dy * 0.01;
+
+    // consumir energía
+    drone.energia -= 0.02;
+
+    if (drone.energia <= 0) {
+        alert("🔋 Drone sin energía");
+        location.reload();
+    }
+
+    // llega al objetivo
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+        resolverEvento();
+    }
+}
+
+// ⚡ Acción del drone
+function resolverEvento() {
+    let tipo = objetivo.tipo;
+
+    if (tipo === "fuego") alert("🔥 Incendio apagado");
+    if (tipo === "delito") alert("🚨 Evento detectado");
+    if (tipo === "contaminacion") alert("🌊 Contaminación tratada");
+
+    objetivo = null;
 }
 </script>
 

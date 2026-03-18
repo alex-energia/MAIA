@@ -139,7 +139,7 @@ def maia_drones_aprobados():
     return jsonify(DRONES_BASE)
 
 # =========================
-# 🔥 MAIA MODULOS (ANEXADOS)
+# 🔥 MAIA MODULOS
 # =========================
 @app.route("/maia_invent")
 def maia_invent():
@@ -152,6 +152,10 @@ def maia_lab():
 @app.route("/maia_architect")
 def maia_architect():
     return render_template("maia_architect.html")
+
+@app.route("/maia_simulador")
+def maia_simulador():
+    return render_template("maia_simulador.html")
 
 # =========================
 # VISTAS DRONES
@@ -189,7 +193,7 @@ def drone_vigilancia_urbana():
     return render_template("drones/drone_vigilancia_urbana.html")
 
 # =========================
-# EVALUADOR DE IDEAS DRONES MAIA
+# EVALUADOR
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():

@@ -1,2 +1,43 @@
-<h1>MAIA LAB</h1>
-<p>Simulación y validación de drones</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAIA LAB</title>
+</head>
+<body>
+
+<h1>🧪 MAIA LAB</h1>
+<p>Validación de idea de drone</p>
+
+<textarea id="concepto" placeholder="Describe tu drone..."></textarea>
+<br><br>
+
+<button onclick="simular()">Analizar</button>
+
+<h2 id="salida"></h2>
+
+<script>
+function simular() {
+    let texto = document.getElementById("concepto").value;
+
+    let resultado = "";
+
+    if (texto.includes("enjambre")) {
+        resultado += "✔ Alta escalabilidad<br>";
+    } else {
+        resultado += "⚠️ Escalabilidad limitada<br>";
+    }
+
+    if (texto.includes("autónomo")) {
+        resultado += "✔ Automatización avanzada<br>";
+    }
+
+    if (texto.length < 20) {
+        resultado += "❌ Idea poco desarrollada<br>";
+    }
+
+    document.getElementById("salida").innerHTML = resultado;
+}
+</script>
+
+</body>
+</html>

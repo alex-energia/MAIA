@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAIA INVENT</title>
+</head>
+<body>
+
+<h1>🧠 MAIA INVENT</h1>
+<p>Generador de ideas disruptivas de drones</p>
+
+<textarea id="idea" placeholder="Ej: inseguridad urbana"></textarea>
+<br><br>
+<button onclick="evaluar()">Generar Idea</button>
+
+<h2 id="resultado"></h2>
+
+<script>
+function evaluar() {
+    const idea = document.getElementById("idea").value;
+
+    fetch("/evaluar_drone", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({idea: idea})
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("resultado").innerHTML =
+            "Impacto: " + data.impacto + "<br>" +
+            "Innovación: " + data.innovacion + "<br>" +
+            "Viabilidad: " + data.viabilidad + "<br><br>" +
+            data.mensaje;
+    });
+}
+</script>
+
+</body>
+</html>

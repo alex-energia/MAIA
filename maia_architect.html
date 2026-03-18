@@ -1,2 +1,43 @@
-<h1>MAIA ARCHITECT</h1>
-<p>Diseño técnico de drones</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAIA ARCHITECT</title>
+</head>
+<body>
+
+<h1>🏗️ MAIA ARCHITECT</h1>
+<p>Construcción técnica del drone</p>
+
+<textarea id="entrada" placeholder="Ej: drone enjambre autónomo de vigilancia"></textarea>
+<br><br>
+
+<button onclick="construir()">Diseñar</button>
+
+<h2 id="output"></h2>
+
+<script>
+function construir() {
+    let idea = document.getElementById("entrada").value;
+
+    let resultado = `
+    <b>Hardware:</b><br>
+    - Sensores ópticos<br>
+    - GPS<br>
+    - Batería LiPo<br><br>
+
+    <b>Software:</b><br>
+    - IA de navegación<br>
+    - Comunicación en red<br>
+    - Sistema de control autónomo<br><br>
+
+    <b>Arquitectura:</b><br>
+    - Sistema distribuido<br>
+    - Coordinación en enjambre
+    `;
+
+    document.getElementById("output").innerHTML = resultado;
+}
+</script>
+
+</body>
+</html>

@@ -21,7 +21,6 @@ app.register_blueprint(proyectos_bp)
 # DRONES BASE (OFICIAL)
 # =========================
 DRONES_BASE = [
-
     {
         "nombre": "Drone submarino detección de petróleo",
         "ruta": "/dron_submarino_petroleo",
@@ -47,28 +46,21 @@ DRONES_BASE = [
         "ruta": "/drone_control_incendios",
         "estado": "aprobado"
     },
-
-    # 🔥 DRONE LLUVIA
     {
         "nombre": "Drone de Lluvia por Ionización Atmosférica",
         "ruta": "/drone_lluvia_ionizacion",
         "estado": "aprobado"
     },
-
-    # 🔥 DRONE RÍOS
     {
         "nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos",
         "ruta": "/drone_descontaminacion_rios",
         "estado": "aprobado"
     },
-
-    # 🔥 NUEVO DRONE VIGILANCIA (ANEXADO)
     {
         "nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre",
         "ruta": "/drone_vigilancia_urbana",
         "estado": "aprobado"
     }
-
 ]
 
 # =========================
@@ -147,6 +139,21 @@ def maia_drones_aprobados():
     return jsonify(DRONES_BASE)
 
 # =========================
+# 🔥 MAIA MODULOS (ANEXADOS)
+# =========================
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
+
+@app.route("/maia_lab")
+def maia_lab():
+    return render_template("maia_lab.html")
+
+@app.route("/maia_architect")
+def maia_architect():
+    return render_template("maia_architect.html")
+
+# =========================
 # VISTAS DRONES
 # =========================
 @app.route("/dron_submarino_petroleo")
@@ -169,17 +176,14 @@ def drone_generador_agua():
 def drone_control_incendios():
     return render_template("drones/drone_control_incendios.html")
 
-# 🔥 DRONE LLUVIA
 @app.route("/drone_lluvia_ionizacion")
 def drone_lluvia_ionizacion():
     return render_template("drones/drone_lluvia_ionizacion.html")
 
-# 🔥 DRONE RÍOS
 @app.route("/drone_descontaminacion_rios")
 def drone_descontaminacion_rios():
     return render_template("drones/drone_descontaminacion_rios.html")
 
-# 🔥 NUEVO DRONE VIGILANCIA
 @app.route("/drone_vigilancia_urbana")
 def drone_vigilancia_urbana():
     return render_template("drones/drone_vigilancia_urbana.html")
@@ -189,7 +193,6 @@ def drone_vigilancia_urbana():
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-
     data = request.get_json()
     idea = data.get("idea", "").lower()
 

@@ -3,6 +3,7 @@
 <head>
     <title>MAIA INVENT</title>
 </head>
+
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
@@ -41,14 +42,51 @@
 <p id="estado_guardado"></p>
 
 <script>
+
+// =========================
+// 🧠 MEMORIA LOCAL ANTI-REPETICIÓN
+// =========================
 let droneActual = null;
+let historial = new Set();
 
-// 🚀 Generar drone SIN repetir
+// Cargar historial guardado en navegador
+if (localStorage.getItem("drones_generados")) {
+    historial = new Set(JSON.parse(localStorage.getItem("drones_generados")));
+}
+
+// =========================
+// 🚀 GENERAR DRONE SIN REPETIR (DOBLE FILTRO)
+// =========================
 async function generarDrone() {
-    const res = await fetch("/generar_drone_maia");
-    const data = await res.json();
 
-    droneActual = data;
+    for (let intento = 0; intento < 10; intento++) {
+
+        const res = await fetch("/generar_drone_maia");
+        const data = await res.json();
+
+        // 🚫 Si ya existe, intenta de nuevo
+        if (historial.has(data.nombre)) {
+            continue;
+        }
+
+        // ✅ Nuevo drone válido
+        droneActual = data;
+        historial.add(data.nombre);
+
+        // Guardar en navegador
+        localStorage.setItem("drones_generados", JSON.stringify([...historial]));
+
+        renderDrone(data);
+        return;
+    }
+
+    alert("⚠️ No se pudo generar un drone nuevo, intenta limpiar.");
+}
+
+// =========================
+// 🎨 RENDER
+// =========================
+function renderDrone(data) {
 
     document.getElementById("nombre").innerText = data.nombre;
     document.getElementById("intro").innerText = data.introduccion;
@@ -73,19 +111,30 @@ async function generarDrone() {
     });
 }
 
-// 🧹 Limpiar pantalla
+// =========================
+// 🧹 LIMPIAR TODO (INCLUYE HISTORIAL)
+// =========================
 function limpiar() {
+
     document.getElementById("nombre").innerText = "";
     document.getElementById("intro").innerText = "";
     document.getElementById("viabilidad").innerText = "";
     document.getElementById("software").innerHTML = "";
     document.getElementById("hardware").innerHTML = "";
     document.getElementById("estado_guardado").innerText = "";
+
     droneActual = null;
+
+    // 🔥 BORRA HISTORIAL COMPLETO
+    historial.clear();
+    localStorage.removeItem("drones_generados");
 }
 
-// 💾 Guardar drone
+// =========================
+// 💾 GUARDAR DRONE
+// =========================
 async function guardar() {
+
     if (!droneActual) {
         alert("Primero genera un drone");
         return;
@@ -98,7 +147,7 @@ async function guardar() {
         return;
     }
 
-    const res = await fetch("/guardar_proyecto", {
+    await fetch("/guardar_proyecto", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
@@ -115,6 +164,7 @@ async function guardar() {
 
     document.getElementById("estado_guardado").innerText = "✅ Guardado correctamente";
 }
+
 </script>
 
 </body>

@@ -1,210 +1,148 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MAIA SIMULADOR</title>
+    <title>MAIA SIMULADOR PRO</title>
     <style>
-        body { background: #111; color: white; font-family: Arial; }
-        canvas { background: black; display: block; margin: auto; border: 2px solid #444; }
-        .panel { text-align: center; margin-bottom: 20px; }
-
-        /* HUD estilo videojuego */
+        body { margin: 0; overflow: hidden; background: black; }
         #hud {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
             color: #00ffcc;
+            font-family: Arial;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-<h1 style="text-align:center;">🎮 MAIA SIMULADOR</h1>
-
-<div class="panel">
-    <select id="drone">
-        <option>Seleccionar Drone</option>
-        <option>Control de Incendios</option>
-        <option>Vigilancia Urbana</option>
-        <option>Descontaminación de Ríos</option>
-    </select>
-
-    <select id="escenario">
-        <option>Ciudad</option>
-        <option>Montaña</option>
-        <option>Océano</option>
-    </select>
-
-    <br><br>
-
-    🌬️ Viento: <input type="range" id="viento" min="0" max="10">
-    🔋 Batería: <input type="range" id="bateria" min="0" max="100" value="100">
-    🌡️ Temp: <input type="range" id="temp" min="-10" max="50">
-
-    <br><br>
-
-    <button onclick="iniciar()">🚀 Iniciar Simulación</button>
-    <button onclick="demo()">🎬 Ver Demo Automático</button>
+<div id="hud">
+🎮 WASD: mover | Q/E: subir/bajar | 1 Ciudad | 2 Océano
 </div>
 
-<canvas id="game" width="800" height="500"></canvas>
-
-<div id="hud"></div>
+<!-- THREE JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 
 <script>
-let canvas = document.getElementById("game");
-let ctx = canvas.getContext("2d");
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer();
 
-let drone = { x: 100, y: 250, energia: 100 };
-let objetivo = null;
-let escenario = "Ciudad";
-let corriendo = false;
-let viento = 0;
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// 🚀 INICIAR SIMULACIÓN
-function iniciar() {
-    escenario = document.getElementById("escenario").value;
-    drone.energia = parseFloat(document.getElementById("bateria").value);
-    viento = parseFloat(document.getElementById("viento").value);
+// 🌞 LUZ
+let light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10, 20, 10);
+scene.add(light);
 
-    generarEvento();
-    corriendo = true;
-    loop();
-}
+// 🌍 ESCENARIOS
+let escenario = "ciudad";
 
-// 🎬 DEMO AUTOMÁTICO (EJEMPLO REAL)
-function demo() {
-    document.getElementById("drone").value = "Control de Incendios";
-    document.getElementById("escenario").value = "Montaña";
-    document.getElementById("viento").value = 5;
-    document.getElementById("bateria").value = 100;
-
-    iniciar();
-}
-
-// 🎯 GENERAR EVENTO
-function generarEvento() {
-    let tipo = document.getElementById("drone").value;
-
-    if (tipo === "Control de Incendios") {
-        objetivo = { x: 600, y: 250, tipo: "fuego" };
-    }
-    else if (tipo === "Vigilancia Urbana") {
-        objetivo = { x: 600, y: 200, tipo: "delito" };
-    }
-    else {
-        objetivo = { x: 600, y: 300, tipo: "contaminacion" };
+function crearCiudad() {
+    for (let i = 0; i < 50; i++) {
+        let geo = new THREE.BoxGeometry(2, Math.random()*10+2, 2);
+        let mat = new THREE.MeshStandardMaterial({color: 0x555555});
+        let edificio = new THREE.Mesh(geo, mat);
+        edificio.position.set(
+            Math.random()*100 - 50,
+            geo.parameters.height/2,
+            Math.random()*100 - 50
+        );
+        scene.add(edificio);
     }
 }
 
-// 🎮 LOOP CONTROLADO (EVITA BUG)
-function loop() {
-    if (!corriendo) return;
+function crearOceano() {
+    let geo = new THREE.PlaneGeometry(200, 200);
+    let mat = new THREE.MeshStandardMaterial({color: 0x0044ff});
+    let agua = new THREE.Mesh(geo, mat);
+    agua.rotation.x = -Math.PI/2;
+    scene.add(agua);
 
-    ctx.clearRect(0,0,800,500);
-
-    dibujarEscenario();
-    dibujarDrone();
-    dibujarObjetivo();
-    moverDrone();
-    actualizarHUD();
-
-    requestAnimationFrame(loop);
-}
-
-// 🌍 ESCENARIOS MEJORADOS
-function dibujarEscenario() {
-
-    if (escenario === "Ciudad") {
-        ctx.fillStyle = "#333";
-        ctx.fillRect(0, 300, 800, 200);
-
-        // edificios
-        ctx.fillStyle = "#555";
-        ctx.fillRect(100, 200, 50, 100);
-        ctx.fillRect(300, 180, 60, 120);
-    }
-
-    if (escenario === "Montaña") {
-        ctx.fillStyle = "green";
-        ctx.fillRect(0, 300, 800, 200);
-
-        ctx.fillStyle = "#2e8b57";
-        ctx.beginPath();
-        ctx.moveTo(200,300);
-        ctx.lineTo(300,150);
-        ctx.lineTo(400,300);
-        ctx.fill();
-    }
-
-    if (escenario === "Océano") {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(0, 300, 800, 200);
+    // peces simples
+    for (let i = 0; i < 20; i++) {
+        let fish = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3),
+            new THREE.MeshStandardMaterial({color: 0xff9900})
+        );
+        fish.position.set(Math.random()*50-25, Math.random()*5, Math.random()*50-25);
+        scene.add(fish);
     }
 }
 
-// 🚁 DRONE
-function dibujarDrone() {
-    ctx.fillStyle = "white";
-    ctx.beginPath();
-    ctx.arc(drone.x, drone.y, 10, 0, Math.PI * 2);
-    ctx.fill();
+// 🚁 DRONE (modelo básico 3D)
+let drone = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 0.3, 1),
+    new THREE.MeshStandardMaterial({color: 0xffffff})
+);
+scene.add(drone);
+
+drone.position.y = 5;
+
+// 🎮 CONTROLES
+let keys = {};
+
+window.addEventListener("keydown", (e)=> keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", (e)=> keys[e.key.toLowerCase()] = false);
+
+// 🔁 CAMBIAR ESCENARIO
+window.addEventListener("keydown", (e)=>{
+    if (e.key === "1") {
+        limpiarEscena();
+        crearCiudad();
+        escenario = "ciudad";
+    }
+    if (e.key === "2") {
+        limpiarEscena();
+        crearOceano();
+        escenario = "oceano";
+    }
+});
+
+function limpiarEscena() {
+    while(scene.children.length > 0){ 
+        scene.remove(scene.children[0]); 
+    }
+    scene.add(light);
+    scene.add(drone);
 }
 
-// 🔥 OBJETIVO
-function dibujarObjetivo() {
-    if (!objetivo) return;
-
-    if (objetivo.tipo === "fuego") ctx.fillStyle = "red";
-    if (objetivo.tipo === "delito") ctx.fillStyle = "yellow";
-    if (objetivo.tipo === "contaminacion") ctx.fillStyle = "purple";
-
-    ctx.fillRect(objetivo.x, objetivo.y, 20, 20);
-}
-
-// 🧠 IA DEL DRONE + VIENTO
+// 🎮 MOVIMIENTO
 function moverDrone() {
-    if (!objetivo) return;
+    let speed = 0.2;
 
-    let dx = objetivo.x - drone.x;
-    let dy = objetivo.y - drone.y;
-
-    // efecto viento (desviación realista)
-    drone.x += dx * 0.01 + (Math.random() * viento * 0.1);
-    drone.y += dy * 0.01;
-
-    drone.energia -= 0.05;
-
-    if (drone.energia <= 0) {
-        terminar("🔋 Drone sin energía");
-    }
-
-    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
-        resolverEvento();
-    }
+    if (keys["w"]) drone.position.z -= speed;
+    if (keys["s"]) drone.position.z += speed;
+    if (keys["a"]) drone.position.x -= speed;
+    if (keys["d"]) drone.position.x += speed;
+    if (keys["q"]) drone.position.y += speed;
+    if (keys["e"]) drone.position.y -= speed;
 }
 
-// ⚡ RESOLVER EVENTO
-function resolverEvento() {
-    let tipo = objetivo.tipo;
+// 🎥 CÁMARA FOLLOW
+function actualizarCamara() {
+    camera.position.x = drone.position.x + 5;
+    camera.position.y = drone.position.y + 5;
+    camera.position.z = drone.position.z + 10;
 
-    if (tipo === "fuego") terminar("🔥 Incendio apagado");
-    if (tipo === "delito") terminar("🚨 Delito detectado");
-    if (tipo === "contaminacion") terminar("🌊 Contaminación tratada");
+    camera.lookAt(drone.position);
 }
 
-// 🛑 TERMINAR SIMULACIÓN
-function terminar(msg) {
-    corriendo = false;
-    alert(msg);
+// 🔁 LOOP PRINCIPAL
+function animate() {
+    requestAnimationFrame(animate);
+
+    moverDrone();
+    actualizarCamara();
+
+    renderer.render(scene, camera);
 }
 
-// 📊 HUD (INFO EN TIEMPO REAL)
-function actualizarHUD() {
-    document.getElementById("hud").innerHTML =
-        "🔋 Energía: " + drone.energia.toFixed(1) +
-        " | 🌬️ Viento: " + viento +
-        " | 🌍 Escenario: " + escenario;
-}
+// 🚀 INICIALIZAR
+crearCiudad();
+camera.position.z = 10;
+animate();
 </script>
 
 </body>

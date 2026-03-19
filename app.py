@@ -168,6 +168,24 @@ def health():
     return jsonify({"status": "ok"})
 
 # =========================
+# 🔥 MAIA VOZ Y CHAT
+# =========================
+@app.route("/maia_voz", methods=["POST"])
+def maia_voz():
+    data = request.get_json()
+    pregunta = data.get("pregunta","")
+    # Aquí se implementa la respuesta profesional de MAIA según tus temas
+    # Por ahora dummy
+    respuesta = f"MAIA recibió tu pregunta: {pregunta}. ¿Deseas que te entregue la bibliografía?"
+    return jsonify({"respuesta": respuesta})
+
+@app.route("/maia_subir_archivo", methods=["POST"])
+def maia_subir_archivo():
+    archivos = request.files.getlist('archivos')
+    nombres = [a.filename for a in archivos]
+    return jsonify({"status":"ok","archivos":nombres})
+
+# =========================
 # RUN
 # =========================
 if __name__ == "__main__":

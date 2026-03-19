@@ -7,7 +7,7 @@ let reconocimiento = null;
 // ==============================
 // ESPERAR CARGA COMPLETA
 // ==============================
-window.onload = () => {
+window.addEventListener("load", () => {
 
     const vozBtn = document.getElementById("voz-btn");
     const chatToggle = document.getElementById("chat-toggle");
@@ -19,8 +19,17 @@ window.onload = () => {
     const uploadBtn = document.getElementById("upload-toggle");
     const uploadInput = document.getElementById("upload-input");
 
+    // 🔥 FORZAR CARGA DE VOCES
+    let vocesDisponibles = [];
+
+    function cargarVoces() {
+        vocesDisponibles = speechSynthesis.getVoices();
+    }
+
+    speechSynthesis.onvoiceschanged = cargarVoces;
+
     // ==============================
-    // VOZ FEMENINA
+    // VOZ FEMENINA REAL
     // ==============================
     function hablar(texto) {
         if (!vozActiva) return;
@@ -28,18 +37,26 @@ window.onload = () => {
         const utter = new SpeechSynthesisUtterance(texto);
         utter.lang = "es-ES";
 
-        let voces = speechSynthesis.getVoices();
-        let voz = voces.find(v => v.lang.includes("es")) || voces[0];
+        let voz = vocesDisponibles.find(v =>
+            v.lang.includes("es") &&
+            (v.name.toLowerCase().includes("female") ||
+             v.name.toLowerCase().includes("maria") ||
+             v.name.toLowerCase().includes("paulina"))
+        );
 
-        utter.voice = voz;
+        if (!voz) voz = vocesDisponibles.find(v => v.lang.includes("es"));
+
+        if (voz) utter.voice = voz;
+
         utter.rate = 1;
         utter.pitch = 1;
 
+        speechSynthesis.cancel(); // 🔥 limpia voz anterior
         speechSynthesis.speak(utter);
     }
 
     // ==============================
-    // AGREGAR MENSAJE
+    // MENSAJES
     // ==============================
     function agregarMensaje(texto, tipo) {
         let div = document.createElement("div");
@@ -50,19 +67,18 @@ window.onload = () => {
     }
 
     // ==============================
-    // ENVIAR A MAIA
+    // CONECTAR CON BACKEND
     // ==============================
     function enviar(pregunta) {
-
         fetch("/maia_voz", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pregunta })
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({pregunta})
         })
         .then(r => r.json())
         .then(data => {
             agregarMensaje(data.respuesta, "maia");
-            hablar(data.respuesta);
+            hablar(data.respuesta); // 🔥 aquí habla
         })
         .catch(() => {
             agregarMensaje("Error conectando con MAIA", "maia");
@@ -73,16 +89,13 @@ window.onload = () => {
     // BOTÓN VOZ
     // ==============================
     vozBtn.onclick = () => {
-
         vozActiva = !vozActiva;
 
         vozBtn.style.background = vozActiva ? "green" : "red";
         vozBtn.innerText = vozActiva ? "Voz ON" : "Voz OFF";
 
         if (vozActiva) {
-
             if ('webkitSpeechRecognition' in window) {
-
                 reconocimiento = new webkitSpeechRecognition();
                 reconocimiento.lang = "es-ES";
                 reconocimiento.continuous = true;
@@ -95,25 +108,19 @@ window.onload = () => {
 
                 reconocimiento.start();
             }
-
         } else {
             if (reconocimiento) reconocimiento.stop();
         }
     };
 
     // ==============================
-    // ABRIR / CERRAR CHAT
+    // CHAT
     // ==============================
-    chatToggle.onclick = () => {
-        chatContainer.style.display = "flex";
-    };
-
-    chatClose.onclick = () => {
-        chatContainer.style.display = "none";
-    };
+    chatToggle.onclick = () => chatContainer.style.display = "flex";
+    chatClose.onclick = () => chatContainer.style.display = "none";
 
     // ==============================
-    // BOTÓN ENVIAR
+    // ENVIAR TEXTO
     // ==============================
     sendBtn.onclick = () => {
         let texto = input.value.trim();
@@ -124,7 +131,6 @@ window.onload = () => {
         input.value = "";
     };
 
-    // ENTER
     input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") sendBtn.click();
     });
@@ -135,7 +141,6 @@ window.onload = () => {
     uploadBtn.onclick = () => uploadInput.click();
 
     uploadInput.onchange = () => {
-
         let form = new FormData();
 
         for (let f of uploadInput.files) {
@@ -155,4 +160,4 @@ window.onload = () => {
         });
     };
 
-};
+});

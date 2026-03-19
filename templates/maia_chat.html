@@ -51,6 +51,7 @@ button {
     display: none;
     flex-direction: column;
     overflow: hidden;
+    z-index: 1000;
 }
 #chat-header {
     background: #334155;
@@ -92,6 +93,7 @@ button {
 #chat-input button {
     background: #22c55e;
     color: black;
+    border-radius: 6px;
 }
 #upload-input {
     display: none;
@@ -99,7 +101,9 @@ button {
 </style>
 </head>
 <body>
+
 <h1>🚀 MAIA Inventor</h1>
+
 <div id="controls">
     <button id="voz-btn">Voz OFF</button>
     <span id="chat-toggle">➕</span>
@@ -124,6 +128,8 @@ button {
 // Variables y estado
 // ======================
 let vozActiva = false;
+let reconocimiento = null;
+
 const vozBtn = document.getElementById('voz-btn');
 const chatToggle = document.getElementById('chat-toggle');
 const chatContainer = document.getElementById('chat-container');
@@ -141,7 +147,10 @@ function hablar(texto){
     if(!vozActiva) return;
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = 'es-ES';
-    utter.voice = speechSynthesis.getVoices().find(v => v.lang==='es-ES' && v.name.includes('F')) || null;
+    // Voz femenina neutral
+    const voces = speechSynthesis.getVoices();
+    const vozFemenina = voces.find(v => v.lang.startsWith('es') && v.name.toLowerCase().includes('female'));
+    if(vozFemenina) utter.voice = vozFemenina;
     utter.pitch = 1;
     utter.rate = 1;
     speechSynthesis.speak(utter);
@@ -154,10 +163,10 @@ vozBtn.addEventListener('click', ()=>{
     vozActiva = !vozActiva;
     vozBtn.classList.toggle('active', vozActiva);
     vozBtn.textContent = vozActiva ? 'Voz ON' : 'Voz OFF';
+
     if(vozActiva){
-        // iniciar reconocimiento de voz
         if('webkitSpeechRecognition' in window){
-            const reconocimiento = new webkitSpeechRecognition();
+            reconocimiento = new webkitSpeechRecognition();
             reconocimiento.lang = 'es-ES';
             reconocimiento.continuous = true;
             reconocimiento.interimResults = false;
@@ -167,12 +176,11 @@ vozBtn.addEventListener('click', ()=>{
                 enviarPreguntaMAIA(ultimo);
             };
             reconocimiento.start();
-            vozBtn.dataset.recognition = reconocimiento;
+        } else {
+            alert('Reconocimiento de voz no soportado en este navegador.');
         }
-    }else{
-        // detener reconocimiento
-        const rec = vozBtn.dataset.recognition;
-        if(rec) rec.stop();
+    } else {
+        if(reconocimiento) reconocimiento.stop();
     }
 });
 
@@ -222,8 +230,6 @@ sendBtn.addEventListener('click', ()=>{
     enviarPreguntaMAIA(texto);
     mensajeInput.value = '';
 });
-
-// Enter también envía
 mensajeInput.addEventListener('keydown', e=>{
     if(e.key==='Enter') sendBtn.click();
 });
@@ -232,7 +238,6 @@ mensajeInput.addEventListener('keydown', e=>{
 // Subir archivos
 // ======================
 uploadToggle.addEventListener('click', ()=> uploadInput.click());
-
 uploadInput.addEventListener('change', ()=>{
     const archivos = uploadInput.files;
     if(archivos.length === 0) return;
@@ -251,5 +256,6 @@ uploadInput.addEventListener('change', ()=>{
     });
 });
 </script>
+
 </body>
 </html>

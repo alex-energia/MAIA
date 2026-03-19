@@ -1,5 +1,5 @@
 <!-- ========================= -->
-<!-- MAIA GLOBAL UI -->
+<!-- MAIA GLOBAL UI FINAL -->
 <!-- ========================= -->
 
 <div id="maia-container"
@@ -21,23 +21,19 @@
     <div id="maia-chat"
         style="display:none;margin-top:10px;background:#1e293b;border-radius:10px;padding:10px;box-shadow:0 0 10px rgba(0,0,0,0.5);">
 
-        <!-- MENSAJES -->
         <div id="chat-mensajes"
-            style="height:220px;overflow-y:auto;margin-bottom:8px;font-size:14px;"></div>
+            style="height:220px;overflow-y:auto;margin-bottom:8px;font-size:14px;">
+        </div>
 
-        <!-- INPUT -->
         <input type="text" id="chat-input"
             placeholder="Escribe tu pregunta..."
             style="width:100%;padding:6px;border-radius:6px;border:none;outline:none;margin-bottom:6px;">
 
-        <!-- SUBIR ARCHIVOS -->
         <label style="cursor:pointer;font-size:18px;">
             📎
             <input type="file" id="subir-archivo" style="display:none;" multiple>
         </label>
-
     </div>
 </div>
 
-<!-- SCRIPT GLOBAL -->
 <script src="{{ url_for('static', filename='js/maia.js') }}"></script>

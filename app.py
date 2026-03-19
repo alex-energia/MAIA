@@ -29,8 +29,9 @@ DRONES_BASE = [
     {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "estado": "aprobado", "categoria": "industrial"},
     {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "estado": "aprobado", "categoria": "industrial"},
     {"nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Drone Todo Terreno MAIA", "ruta": "/drone_todo_terreno", "estado": "aprobado", "categoria": "industrial"},
     {"nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre", "ruta": "/drone_vigilancia_urbana", "estado": "aprobado", "categoria": "militar"},
-
+    {"nombre": "Drone de Detección de Minas", "ruta": "/drone_deteccion_minas", "estado": "aprobado", "categoria": "militar"},
     # 🔥 DRONE SMARTPHONE (COMERCIAL)
     {
         "nombre": "Mini Drone Asistente Integrado para Smartphone MAIA",
@@ -74,11 +75,9 @@ def obtener_nombres_drones():
 
 def generar_drone_unico():
     nombres_existentes = obtener_nombres_drones()
-
     for _ in range(15):
         problema = random.choice(PROBLEMAS_REALES)
         nombre = f"Drone Autónomo para {problema.title()}"
-
         if nombre.lower() not in nombres_existentes:
             return {
                 "nombre": nombre,
@@ -96,7 +95,6 @@ def generar_drone_unico():
                     "batería"
                 ]
             }
-
     return {"error": "No se pudo generar drone único"}
 
 # =========================
@@ -148,10 +146,8 @@ def guardar_drone_maia():
     data = request.get_json()
     nombre = data.get("nombre", "")
     tipo = data.get("tipo")
-
     if "smartphone" in nombre.lower():
         tipo = "comercial"
-
     conn = get_db()
     conn.execute(
         """
@@ -162,7 +158,6 @@ def guardar_drone_maia():
     )
     conn.commit()
     conn.close()
-
     return jsonify({"status": "ok"})
 
 # =========================

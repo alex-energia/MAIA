@@ -22,58 +22,83 @@ app.register_blueprint(proyectos_bp)
 # DRONES BASE (OFICIAL)
 # =========================
 DRONES_BASE = [
-    {"nombre": "Drone submarino detección de petróleo", "ruta": "/dron_submarino_petroleo", "estado": "aprobado"},
-    {"nombre": "MAIA Punto Eléctrico", "ruta": "/maia_punto_electrico", "estado": "aprobado"},
-    {"nombre": "Drone Purificador Atmosférico", "ruta": "/drone_purificador_atmosferico", "estado": "aprobado"},
-    {"nombre": "Drone Generador de Agua Atmosférica", "ruta": "/drone_generador_agua", "estado": "aprobado"},
-    {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "estado": "aprobado"},
-    {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "estado": "aprobado"},
-    {"nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "estado": "aprobado"},
-    {"nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre", "ruta": "/drone_vigilancia_urbana", "estado": "aprobado"},
+    {"nombre": "Drone submarino detección de petróleo", "ruta": "/dron_submarino_petroleo", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "MAIA Punto Eléctrico", "ruta": "/maia_punto_electrico", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Drone Purificador Atmosférico", "ruta": "/drone_purificador_atmosferico", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Drone Generador de Agua Atmosférica", "ruta": "/drone_generador_agua", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Sistema Autónomo Híbrido de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "estado": "aprobado", "categoria": "industrial"},
+    {"nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre", "ruta": "/drone_vigilancia_urbana", "estado": "aprobado", "categoria": "militar"},
 
-    # 🔥 NUEVO DRONE MAIA (ASISTENTE CELULAR)
+    # 🔥 DRONE SMARTPHONE (COMERCIAL)
     {
         "nombre": "Mini Drone Asistente Integrado para Smartphone MAIA",
         "ruta": "/drone_smartphone_maia",
         "estado": "aprobado",
         "categoria": "comercial",
-
-        # 🔥 INTRODUCCIÓN + VIABILIDAD (NIVEL PROFESIONAL)
         "introduccion": """
-        El Mini Drone Asistente Integrado para Smartphone MAIA es una evolución del concepto de dispositivo móvil,
-        transformando el celular en una plataforma aérea inteligente. Este sistema permite desplegar un micro-drone
-        directamente desde el teléfono o su estuche, brindando capacidades de grabación aérea, iluminación,
-        vigilancia y asistencia en tiempo real.
-
-        Su viabilidad es alta debido a los avances actuales en miniaturización de motores, baterías compactas,
-        microestabilización y conectividad inalámbrica. Tecnologías como drones nano, módulos magnéticos,
-        carga inversa y chips de bajo consumo ya existen en el mercado, lo que permite integrar este sistema
-        en smartphones o accesorios tipo case sin necesidad de infraestructura adicional.
-
-        Este drone representa una nueva categoría: asistentes personales físicos inteligentes.
+        El Mini Drone Asistente Integrado para Smartphone MAIA es una evolución del dispositivo móvil,
+        convirtiendo el celular en una plataforma aérea inteligente.
         """,
-
         "software": [
             "IA de estabilización automática",
-            "Control desde app móvil",
-            "Seguimiento inteligente (tracking)",
-            "Reconocimiento facial y entorno",
-            "Streaming en tiempo real",
-            "Modo seguridad con alertas",
-            "Integración con GPS del smartphone"
+            "Control desde app móvil"
         ],
-
         "hardware": [
-            "Hélices retráctiles ultra compactas",
-            "Cámara HD / 4K miniaturizada",
-            "Linterna LED integrada",
-            "Batería compartida con smartphone",
-            "Módulo tipo estuche magnético",
-            "Conectividad Bluetooth / WiFi",
-            "Sensores de proximidad y estabilidad"
+            "Hélices compactas",
+            "Cámara HD",
+            "Batería integrada"
         ]
     }
 ]
+
+# =========================
+# 🔥 MAIA INVENT MEJORADO
+# =========================
+
+PROBLEMAS_REALES = [
+    "contaminación del aire",
+    "contaminación de ríos",
+    "incendios forestales",
+    "rescate en desastres",
+    "seguridad urbana",
+    "tráfico en ciudades",
+    "agricultura ineficiente",
+    "minería ilegal",
+    "cambio climático",
+    "vigilancia ambiental"
+]
+
+def obtener_nombres_drones():
+    return [d["nombre"].lower() for d in DRONES_BASE]
+
+def generar_drone_unico():
+    nombres_existentes = obtener_nombres_drones()
+
+    for _ in range(15):
+        problema = random.choice(PROBLEMAS_REALES)
+        nombre = f"Drone Autónomo para {problema.title()}"
+
+        if nombre.lower() not in nombres_existentes:
+            return {
+                "nombre": nombre,
+                "introduccion": f"Este drone aborda {problema} usando inteligencia artificial avanzada.",
+                "viabilidad": "Alta viabilidad tecnológica.",
+                "software": [
+                    "IA de navegación",
+                    "análisis en tiempo real",
+                    "detección de patrones"
+                ],
+                "hardware": [
+                    "sensores especializados",
+                    "cámara HD",
+                    "GPS",
+                    "batería"
+                ]
+            }
+
+    return {"error": "No se pudo generar drone único"}
 
 # =========================
 # HOME
@@ -81,63 +106,6 @@ DRONES_BASE = [
 @app.route("/")
 def home():
     return render_template("index.html")
-
-# =========================
-# PROYECTOS
-# =========================
-@app.route("/proyectos")
-def proyectos():
-    conn = get_db()
-    proyectos = conn.execute(
-        "SELECT id, titulo as nombre FROM proyectos_guardados ORDER BY id DESC"
-    ).fetchall()
-    conn.close()
-    return render_template("proyectos.html", proyectos=proyectos)
-
-@app.route("/proyectos/<int:id>")
-def ver_proyecto(id):
-    conn = get_db()
-    proyecto = conn.execute(
-        "SELECT * FROM proyectos_guardados WHERE id=?",
-        (id,)
-    ).fetchone()
-    conn.close()
-
-    if proyecto is None:
-        return "Proyecto no encontrado"
-
-    return render_template("proyecto_detalle.html", proyecto=proyecto)
-
-@app.route("/proyectos/nuevo")
-def nuevo_proyecto():
-    return render_template("nuevo_proyecto.html")
-
-@app.route("/guardar_proyecto", methods=["POST"])
-def guardar_proyecto():
-    data = request.form or request.get_json()
-
-    conn = get_db()
-    conn.execute(
-        """
-        INSERT INTO proyectos_guardados
-        (titulo, tecnologia, pais, ciudad, moneda, horizonte, potencia, unidad)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            data.get("nombre"),
-            data.get("tecnologia"),
-            data.get("pais"),
-            data.get("ciudad"),
-            data.get("moneda"),
-            data.get("horizonte"),
-            data.get("potencia"),
-            data.get("unidad"),
-        ),
-    )
-    conn.commit()
-    conn.close()
-
-    return redirect("/proyectos")
 
 # =========================
 # MAIA DRONES
@@ -150,76 +118,26 @@ def maia_drone():
 def maia_drones_aprobados():
     return jsonify(DRONES_BASE)
 
-# 🔥 LISTA PARA SIMULADOR
 @app.route("/maia_drones_lista")
 def maia_drones_lista():
-    return jsonify([d["nombre"] for d in DRONES_BASE])
+    return jsonify(DRONES_BASE)
 
 # =========================
-# MAIA MODULOS
+# DRONE SMARTPHONE
 # =========================
-@app.route("/maia_invent")
-def maia_invent():
-    return render_template("maia_invent.html")
-
-@app.route("/maia_lab")
-def maia_lab():
-    return render_template("maia_lab.html")
-
-@app.route("/maia_architect")
-def maia_architect():
-    return render_template("maia_architect.html")
-
-@app.route("/maia_simulador")
-def maia_simulador():
-    return render_template("maia_simulador.html")
+@app.route("/drone_smartphone_maia")
+def drone_smartphone_maia():
+    return render_template("drones/drone_smartphone_maia.html")
 
 # =========================
-# GENERADOR ORIGINAL
+# GENERADOR MEJORADO
 # =========================
 @app.route("/generar_drone_maia", methods=["GET"])
 def generar_drone_maia():
-    problemas = [
-        "escasez de agua",
-        "contaminación urbana",
-        "inseguridad ciudadana",
-        "incendios forestales",
-        "falta de energía en zonas rurales",
-        "contaminación de ríos"
-    ]
-
-    tecnologias = [
-        "enjambre autónomo",
-        "inteligencia artificial distribuida",
-        "sensores avanzados",
-        "comunicación en red",
-        "sistemas híbridos aire-agua"
-    ]
-
-    problema = random.choice(problemas)
-    tecnologia = random.choice(tecnologias)
-
-    nombre = f"Drone Autónomo para {problema.title()}"
-
-    return jsonify({
-        "nombre": nombre,
-        "introduccion": f"Este drone aborda {problema} usando {tecnologia}.",
-        "viabilidad": "Alta viabilidad tecnológica.",
-        "software": [
-            "IA de navegación",
-            "sistema autónomo",
-            "análisis en tiempo real"
-        ],
-        "hardware": [
-            "sensores",
-            "cámara",
-            "GPS",
-            "batería"
-        ]
-    })
+    return jsonify(generar_drone_unico())
 
 # =========================
-# GUARDAR DRONE MAIA
+# GUARDAR DRONE
 # =========================
 @app.route("/guardar_drone_maia", methods=["POST"])
 def guardar_drone_maia():
@@ -227,7 +145,6 @@ def guardar_drone_maia():
     nombre = data.get("nombre", "")
     tipo = data.get("tipo")
 
-    # 🔥 FORZAR A COMERCIAL SI ES SMARTPHONE
     if "smartphone" in nombre.lower():
         tipo = "comercial"
 
@@ -237,12 +154,7 @@ def guardar_drone_maia():
         INSERT INTO proyectos_guardados (titulo, tecnologia, pais, ciudad)
         VALUES (?, ?, ?, ?)
         """,
-        (
-            nombre,
-            tipo,
-            "Global",
-            "MAIA"
-        )
+        (nombre, tipo, "Global", "MAIA")
     )
     conn.commit()
     conn.close()
@@ -255,13 +167,6 @@ def guardar_drone_maia():
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
-
-# =========================
-# DRONE SMARTPHONE
-# =========================
-@app.route("/drone_smartphone_maia")
-def drone_smartphone_maia():
-    return render_template("drones/drone_smartphone_maia.html")
 
 # =========================
 # RUN

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MAIA Inventor</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+h1 {
+    text-align: center;
+    margin-top: 30px;
+}
+#controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+}
+#voz-btn {
+    background: red;
+    color: white;
+}
+#voz-btn.active {
+    background: green;
+}
+#chat-toggle {
+    font-size: 24px;
+    cursor: pointer;
+    color: #22c55e;
+}
+#chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    max-height: 500px;
+    background: #1e293b;
+    border-radius: 10px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+}
+#chat-header {
+    background: #334155;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#chat-messages {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+.message {
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    border-radius: 6px;
+}
+.message.user {
+    background: #22c55e;
+    color: black;
+    align-self: flex-end;
+}
+.message.maia {
+    background: #334155;
+}
+#chat-input {
+    display: flex;
+    gap: 5px;
+    padding: 10px;
+    background: #1e293b;
+}
+#chat-input input {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+}
+#chat-input button {
+    background: #22c55e;
+    color: black;
+}
+#upload-input {
+    display: none;
+}
+</style>
+</head>
+<body>
+<h1>🚀 MAIA Inventor</h1>
+<div id="controls">
+    <button id="voz-btn">Voz OFF</button>
+    <span id="chat-toggle">➕</span>
+</div>
+
+<div id="chat-container">
+    <div id="chat-header">
+        <span>Chat MAIA</span>
+        <span id="chat-close" style="cursor:pointer;">✖</span>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input">
+        <input type="text" id="mensaje-input" placeholder="Escribe tu mensaje...">
+        <button id="send-btn">Enviar</button>
+        <span id="upload-toggle" style="cursor:pointer;">➕</span>
+        <input type="file" id="upload-input" multiple>
+    </div>
+</div>
+
+<script>
+// ======================
+// Variables y estado
+// ======================
+let vozActiva = false;
+const vozBtn = document.getElementById('voz-btn');
+const chatToggle = document.getElementById('chat-toggle');
+const chatContainer = document.getElementById('chat-container');
+const chatClose = document.getElementById('chat-close');
+const chatMessages = document.getElementById('chat-messages');
+const sendBtn = document.getElementById('send-btn');
+const mensajeInput = document.getElementById('mensaje-input');
+const uploadToggle = document.getElementById('upload-toggle');
+const uploadInput = document.getElementById('upload-input');
+
+// ======================
+// Función para hablar
+// ======================
+function hablar(texto){
+    if(!vozActiva) return;
+    const utter = new SpeechSynthesisUtterance(texto);
+    utter.lang = 'es-ES';
+    utter.voice = speechSynthesis.getVoices().find(v => v.lang==='es-ES' && v.name.includes('F')) || null;
+    utter.pitch = 1;
+    utter.rate = 1;
+    speechSynthesis.speak(utter);
+}
+
+// ======================
+// Botón Voz ON/OFF
+// ======================
+vozBtn.addEventListener('click', ()=>{
+    vozActiva = !vozActiva;
+    vozBtn.classList.toggle('active', vozActiva);
+    vozBtn.textContent = vozActiva ? 'Voz ON' : 'Voz OFF';
+    if(vozActiva){
+        // iniciar reconocimiento de voz
+        if('webkitSpeechRecognition' in window){
+            const reconocimiento = new webkitSpeechRecognition();
+            reconocimiento.lang = 'es-ES';
+            reconocimiento.continuous = true;
+            reconocimiento.interimResults = false;
+            reconocimiento.onresult = function(event){
+                const ultimo = event.results[event.results.length-1][0].transcript;
+                agregarMensaje(ultimo,'user');
+                enviarPreguntaMAIA(ultimo);
+            };
+            reconocimiento.start();
+            vozBtn.dataset.recognition = reconocimiento;
+        }
+    }else{
+        // detener reconocimiento
+        const rec = vozBtn.dataset.recognition;
+        if(rec) rec.stop();
+    }
+});
+
+// ======================
+// Chat Toggle
+// ======================
+chatToggle.addEventListener('click', ()=> chatContainer.style.display='flex');
+chatClose.addEventListener('click', ()=> chatContainer.style.display='none');
+
+// ======================
+// Agregar mensaje al chat
+// ======================
+function agregarMensaje(texto, clase){
+    const div = document.createElement('div');
+    div.className = `message ${clase}`;
+    div.textContent = texto;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ======================
+// Enviar pregunta a MAIA
+// ======================
+function enviarPreguntaMAIA(pregunta){
+    fetch('/maia_voz',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({pregunta})
+    })
+    .then(r=>r.json())
+    .then(data=>{
+        agregarMensaje(data.respuesta,'maia');
+        hablar(data.respuesta);
+    })
+    .catch(e=>{
+        agregarMensaje("Error al contactar a MAIA",'maia');
+    });
+}
+
+// ======================
+// Botón Enviar
+// ======================
+sendBtn.addEventListener('click', ()=>{
+    const texto = mensajeInput.value.trim();
+    if(!texto) return;
+    agregarMensaje(texto,'user');
+    enviarPreguntaMAIA(texto);
+    mensajeInput.value = '';
+});
+
+// Enter también envía
+mensajeInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter') sendBtn.click();
+});
+
+// ======================
+// Subir archivos
+// ======================
+uploadToggle.addEventListener('click', ()=> uploadInput.click());
+
+uploadInput.addEventListener('change', ()=>{
+    const archivos = uploadInput.files;
+    if(archivos.length === 0) return;
+    const formData = new FormData();
+    for(let i=0;i<archivos.length;i++) formData.append('archivos', archivos[i]);
+    fetch('/maia_subir_archivo',{
+        method:'POST',
+        body: formData
+    })
+    .then(r=>r.json())
+    .then(data=>{
+        agregarMensaje(`Archivos subidos: ${data.archivos.join(', ')}`,'maia');
+    })
+    .catch(e=>{
+        agregarMensaje('Error al subir archivos','maia');
+    });
+});
+</script>
+</body>
+</html>

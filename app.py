@@ -56,7 +56,6 @@ DRONES_BASE = [
 # =========================
 # 🔥 MAIA INVENT MEJORADO
 # =========================
-
 PROBLEMAS_REALES = [
     "contaminación del aire",
     "contaminación de ríos",
@@ -113,6 +112,11 @@ def home():
 @app.route("/maia_drone")
 def maia_drone():
     return render_template("maia_drone.html")
+
+# 🔥 NUEVA RUTA (CORRIGE ERROR 404)
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
 
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():

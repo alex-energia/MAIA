@@ -32,7 +32,47 @@ DRONES_BASE = [
     {"nombre": "Sistema Autónomo de Vigilancia y Respuesta Urbana en Enjambre", "ruta": "/drone_vigilancia_urbana", "estado": "aprobado"},
 
     # 🔥 NUEVO DRONE MAIA (ASISTENTE CELULAR)
-    {"nombre": "Mini Drone Asistente Integrado para Smartphone MAIA", "ruta": "/drone_smartphone_maia", "estado": "aprobado"}
+    {
+        "nombre": "Mini Drone Asistente Integrado para Smartphone MAIA",
+        "ruta": "/drone_smartphone_maia",
+        "estado": "aprobado",
+        "categoria": "comercial",
+
+        # 🔥 INTRODUCCIÓN + VIABILIDAD (NIVEL PROFESIONAL)
+        "introduccion": """
+        El Mini Drone Asistente Integrado para Smartphone MAIA es una evolución del concepto de dispositivo móvil,
+        transformando el celular en una plataforma aérea inteligente. Este sistema permite desplegar un micro-drone
+        directamente desde el teléfono o su estuche, brindando capacidades de grabación aérea, iluminación,
+        vigilancia y asistencia en tiempo real.
+
+        Su viabilidad es alta debido a los avances actuales en miniaturización de motores, baterías compactas,
+        microestabilización y conectividad inalámbrica. Tecnologías como drones nano, módulos magnéticos,
+        carga inversa y chips de bajo consumo ya existen en el mercado, lo que permite integrar este sistema
+        en smartphones o accesorios tipo case sin necesidad de infraestructura adicional.
+
+        Este drone representa una nueva categoría: asistentes personales físicos inteligentes.
+        """,
+
+        "software": [
+            "IA de estabilización automática",
+            "Control desde app móvil",
+            "Seguimiento inteligente (tracking)",
+            "Reconocimiento facial y entorno",
+            "Streaming en tiempo real",
+            "Modo seguridad con alertas",
+            "Integración con GPS del smartphone"
+        ],
+
+        "hardware": [
+            "Hélices retráctiles ultra compactas",
+            "Cámara HD / 4K miniaturizada",
+            "Linterna LED integrada",
+            "Batería compartida con smartphone",
+            "Módulo tipo estuche magnético",
+            "Conectividad Bluetooth / WiFi",
+            "Sensores de proximidad y estabilidad"
+        ]
+    }
 ]
 
 # =========================
@@ -62,8 +102,10 @@ def ver_proyecto(id):
         (id,)
     ).fetchone()
     conn.close()
+
     if proyecto is None:
         return "Proyecto no encontrado"
+
     return render_template("proyecto_detalle.html", proyecto=proyecto)
 
 @app.route("/proyectos/nuevo")
@@ -114,7 +156,7 @@ def maia_drones_lista():
     return jsonify([d["nombre"] for d in DRONES_BASE])
 
 # =========================
-# 🔥 MAIA MODULOS
+# MAIA MODULOS
 # =========================
 @app.route("/maia_invent")
 def maia_invent():
@@ -133,7 +175,7 @@ def maia_simulador():
     return render_template("maia_simulador.html")
 
 # =========================
-# 🚀 GENERADOR ORIGINAL
+# GENERADOR ORIGINAL
 # =========================
 @app.route("/generar_drone_maia", methods=["GET"])
 def generar_drone_maia():
@@ -177,62 +219,17 @@ def generar_drone_maia():
     })
 
 # =========================
-# 🚀 GENERADOR AVANZADO (SIN REPETIR)
-# =========================
-@app.route("/generar_drone_maia_avanzado", methods=["GET"])
-def generar_drone_maia_avanzado():
-
-    existentes = [d["nombre"].lower() for d in DRONES_BASE]
-
-    problemas = [
-        "crisis hídrica global",
-        "minería ilegal",
-        "tráfico de personas",
-        "microplásticos en océanos",
-        "colapso energético urbano",
-        "deforestación masiva",
-        "rescate en desastres naturales"
-    ]
-
-    enfoques = [
-        "enjambre autónomo",
-        "IA predictiva",
-        "arquitectura híbrida",
-        "red descentralizada",
-        "computación en el borde"
-    ]
-
-    while True:
-        problema = random.choice(problemas)
-        enfoque = random.choice(enfoques)
-        nombre = f"Drone Estratégico para {problema.title()}"
-
-        if nombre.lower() not in existentes:
-            break
-
-    return jsonify({
-        "nombre": nombre,
-        "introduccion": f"Soluciona {problema} mediante {enfoque}.",
-        "viabilidad": "Alta viabilidad escalable.",
-        "software": [
-            "IA predictiva",
-            "coordinación en enjambre",
-            "análisis en tiempo real"
-        ],
-        "hardware": [
-            "sensores avanzados",
-            "GPS",
-            "módulo mesh",
-            "estructura resistente"
-        ]
-    })
-
-# =========================
-# 💾 GUARDAR DRONE MAIA
+# GUARDAR DRONE MAIA
 # =========================
 @app.route("/guardar_drone_maia", methods=["POST"])
 def guardar_drone_maia():
     data = request.get_json()
+    nombre = data.get("nombre", "")
+    tipo = data.get("tipo")
+
+    # 🔥 FORZAR A COMERCIAL SI ES SMARTPHONE
+    if "smartphone" in nombre.lower():
+        tipo = "comercial"
 
     conn = get_db()
     conn.execute(
@@ -241,8 +238,8 @@ def guardar_drone_maia():
         VALUES (?, ?, ?, ?)
         """,
         (
-            data.get("nombre"),
-            data.get("tipo"),
+            nombre,
+            tipo,
             "Global",
             "MAIA"
         )
@@ -253,36 +250,6 @@ def guardar_drone_maia():
     return jsonify({"status": "ok"})
 
 # =========================
-# EVALUADOR
-# =========================
-@app.route("/evaluar_drone", methods=["POST"])
-def evaluar_drone():
-    data = request.get_json()
-    idea = data.get("idea", "").lower()
-
-    resultado = {"impacto": 0, "innovacion": 0, "viabilidad": 0, "mensaje": ""}
-
-    if any(p in idea for p in ["agua","energia","salud","medio ambiente"]):
-        resultado["impacto"] += 3
-
-    if any(p in idea for p in ["ia","autónomo","enjambre"]):
-        resultado["innovacion"] += 3
-
-    if any(p in idea for p in ["escalable","industrial","global"]):
-        resultado["viabilidad"] += 3
-
-    total = resultado["impacto"] + resultado["innovacion"] + resultado["viabilidad"]
-
-    if total >= 7:
-        resultado["mensaje"] = "🚀 Alta calidad"
-    elif total >= 4:
-        resultado["mensaje"] = "⚠️ Mejorable"
-    else:
-        resultado["mensaje"] = "❌ Débil"
-
-    return jsonify(resultado)
-
-# =========================
 # HEALTH CHECK
 # =========================
 @app.route("/health")
@@ -290,7 +257,7 @@ def health():
     return jsonify({"status": "ok"})
 
 # =========================
-# 🔥 DRONE SMARTPHONE (RUTA REAL)
+# DRONE SMARTPHONE
 # =========================
 @app.route("/drone_smartphone_maia")
 def drone_smartphone_maia():

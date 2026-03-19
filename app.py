@@ -184,6 +184,10 @@ def maia_subir_archivo():
     nombres = [a.filename for a in archivos]
     return jsonify({"status":"ok","archivos":nombres})
 
+@app.route("/maia_chat")
+def maia_chat():
+    return render_template("maia_chat.html")
+
 # =========================
 # RUN
 # =========================

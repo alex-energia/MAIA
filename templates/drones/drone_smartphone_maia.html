@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Drone Smartphone MAIA</title>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            font-family: Arial;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00ffd5;
+        }
+
+        .card {
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0,255,213,0.3);
+        }
+
+        ul {
+            line-height: 1.8;
+        }
+
+        .badge {
+            background: #00ffd5;
+            color: black;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .boton {
+            background: #00ffd5;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .boton:hover {
+            background: #00bfa6;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📱 Mini Drone Asistente Integrado MAIA</h1>
+
+    <div class="card">
+        <span class="badge">Drone Comercial</span>
+
+        <h2>🚀 Introducción</h2>
+        <p>
+            El Mini Drone MAIA integrado al smartphone es un sistema portátil que convierte cualquier celular
+            en una plataforma aérea inteligente. Diseñado para estar siempre disponible, este drone puede
+            desplegarse automáticamente desde un estuche o módulo integrado, permitiendo grabación, iluminación,
+            vigilancia y asistencia personal en tiempo real.
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>🧠 Software</h2>
+        <ul>
+            <li>IA de estabilización automática</li>
+            <li>Control total desde app móvil</li>
+            <li>Modo seguimiento inteligente</li>
+            <li>Reconocimiento facial y de entorno</li>
+            <li>Transmisión en tiempo real (streaming)</li>
+            <li>Modo seguridad (alertas automáticas)</li>
+            <li>Integración con GPS del celular</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>⚙️ Hardware</h2>
+        <ul>
+            <li>Mini hélices retráctiles</li>
+            <li>Cámara HD / 4K</li>
+            <li>Linterna LED integrada</li>
+            <li>Batería compartida con el smartphone</li>
+            <li>Módulo magnético tipo estuche</li>
+            <li>Conexión Bluetooth / WiFi directa</li>
+            <li>Sensores de proximidad y estabilidad</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>💡 Modos de Uso</h2>
+        <ul>
+            <li>📸 Selfie aéreo automático</li>
+            <li>🎥 Grabación de video inteligente</li>
+            <li>🔦 Iluminación portátil</li>
+            <li>🛡️ Seguridad personal</li>
+            <li>🚁 Exploración en espacios reducidos</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>⚡ Activar Demo</h2>
+        <button class="boton" onclick="activarDemo()">🚀 Desplegar Drone</button>
+
+        <p id="demo"></p>
+    </div>
+
+</div>
+
+<script>
+function activarDemo(){
+    document.getElementById("demo").innerText =
+    "🚁 Drone desplegado desde el smartphone... estabilizando... conectando cámara... listo para operar.";
+}
+</script>
+
+</body>
+</html>

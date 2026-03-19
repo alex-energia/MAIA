@@ -1,21 +1,78 @@
-<!-- templates/maia_global.html -->
+<!-- ========================= -->
+<!-- MAIA GLOBAL UI -->
+<!-- ========================= -->
 <div id="maia-controls" style="position:fixed;bottom:20px;right:20px;z-index:9999;">
-    <button id="voz-btn" style="background:red;color:white;border:none;border-radius:6px;padding:10px 20px;">Voz OFF</button>
-    <span id="chat-toggle" style="font-size:24px;cursor:pointer;color:#22c55e;margin-left:10px;">➕</span>
 
-    <div id="chat-container" style="display:none;position:fixed;bottom:60px;right:20px;width:350px;max-height:500px;background:#1e293b;border-radius:10px;flex-direction:column;overflow:hidden;z-index:10000;">
-        <div id="chat-header" style="background:#334155;padding:10px;display:flex;justify-content:space-between;align-items:center;">
-            <span>Chat MAIA</span>
+    <!-- BOTÓN VOZ -->
+    <button id="voz-btn"
+        style="background:red;color:white;border:none;border-radius:6px;padding:10px 20px;cursor:pointer;">
+        Voz OFF
+    </button>
+
+    <!-- BOTÓN CHAT -->
+    <span id="chat-toggle"
+        style="font-size:26px;cursor:pointer;color:#22c55e;margin-left:10px;">
+        ➕
+    </span>
+
+    <!-- CONTENEDOR CHAT -->
+    <div id="chat-container"
+        style="display:none;flex-direction:column;position:fixed;bottom:70px;right:20px;width:350px;height:500px;
+        background:#1e293b;border-radius:10px;overflow:hidden;z-index:10000;">
+
+        <!-- HEADER -->
+        <div style="background:#334155;padding:10px;display:flex;justify-content:space-between;align-items:center;">
+            <span>MAIA</span>
             <span id="chat-close" style="cursor:pointer;">✖</span>
         </div>
-        <div id="chat-messages" style="padding:10px;flex:1;overflow-y:auto;"></div>
-        <div id="chat-input" style="display:flex;gap:5px;padding:10px;background:#1e293b;">
-            <input type="text" id="mensaje-input" placeholder="Escribe tu mensaje..." style="flex:1;padding:8px;border-radius:6px;border:none;">
-            <button id="send-btn" style="background:#22c55e;color:black;">Enviar</button>
-            <span id="upload-toggle" style="cursor:pointer;">➕</span>
+
+        <!-- MENSAJES -->
+        <div id="chat-messages"
+            style="flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+        </div>
+
+        <!-- INPUT -->
+        <div style="display:flex;gap:5px;padding:10px;background:#1e293b;">
+            <input id="mensaje-input"
+                placeholder="Escribe tu mensaje..."
+                style="flex:1;padding:8px;border-radius:6px;border:none;outline:none;">
+
+            <button id="send-btn"
+                style="background:#22c55e;color:black;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;">
+                Enviar
+            </button>
+
+            <span id="upload-toggle" style="cursor:pointer;font-size:18px;">➕</span>
             <input type="file" id="upload-input" multiple style="display:none;">
         </div>
     </div>
 </div>
 
+<!-- ========================= -->
+<!-- ESTILOS MENSAJES -->
+<!-- ========================= -->
+<style>
+.message {
+    padding:8px 10px;
+    border-radius:6px;
+    max-width:80%;
+    word-wrap:break-word;
+}
+
+.user {
+    background:#22c55e;
+    color:black;
+    align-self:flex-end;
+}
+
+.maia {
+    background:#334155;
+    color:white;
+    align-self:flex-start;
+}
+</style>
+
+<!-- ========================= -->
+<!-- SCRIPT GLOBAL -->
+<!-- ========================= -->
 <script src="{{ url_for('static', filename='js/maia.js') }}"></script>

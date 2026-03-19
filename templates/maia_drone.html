@@ -1,161 +1,182 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>MAIA Drone Lab</title>
 
 <style>
-
-body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-text-align:center;
-margin:0;
-padding:0;
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    margin: 0;
 }
 
-h1{
-margin-top:40px;
+/* HEADER */
+h1 {
+    margin-top: 30px;
+    text-align: center;
 }
 
-#top-buttons{
-display:flex;
-gap:20px;
-justify-content:center;
-flex-wrap:wrap;
-margin-top:20px;
+/* BOTONES */
+#top-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
 }
 
-button{
-padding:10px 20px;
-background:#22c55e;
-border:none;
-border-radius:6px;
-cursor:pointer;
-font-size:16px;
+button {
+    padding: 10px 20px;
+    background: #22c55e;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
 }
 
-button:hover{
-background:#16a34a;
+button:hover {
+    background: #16a34a;
 }
 
-#mensaje{
-margin-top:30px;
-color:#94a3b8;
+/* SECCIONES */
+.seccion {
+    padding: 25px;
 }
 
-#drones{
-margin-top:40px;
-display:flex;
-flex-direction:column;
-gap:20px;
-align-items:center;
+.titulo {
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
-.drone-card{
-background:#1e293b;
-padding:20px;
-width:350px;
-border-radius:10px;
-cursor:pointer;
-transition:0.3s;
+/* GRID (MEJORA UI) */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
 }
 
-.drone-card:hover{
-background:#334155;
+/* TARJETAS */
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+    transition: 0.3s;
+    cursor: pointer;
 }
 
+.card:hover {
+    transform: scale(1.05);
+    background: #334155;
+}
+
+/* COLORES POR CATEGORÍA */
+.comercial { border-left: 5px solid #22c55e; }
+.industrial { border-left: 5px solid #f59e0b; }
+.militar { border-left: 5px solid #ef4444; }
+
+.nombre {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
 </style>
 
 </head>
 
 <body>
 
-<h1>🚁 MAIA Industrial Drone Lab</h1>
+<h1>🚁 MAIA Drone Lab</h1>
 
 <div id="top-buttons">
-
-<button onclick="cargarDrones()">Actualizar drones</button>
-
-<button onclick="abrirInventor()">🤖 MAIA Drone Inventor</button>
-
+    <button onclick="cargarDrones()">Actualizar drones</button>
+    <button onclick="abrirInventor()">🤖 MAIA Drone Inventor</button>
 </div>
 
-<div id="mensaje">Cargando drones...</div>
+<div id="mensaje" style="text-align:center; margin-top:20px; color:#94a3b8;">
+    Cargando drones...
+</div>
 
-<div id="drones"></div>
+<!-- 🔥 SECCIONES -->
+<div class="seccion">
+    <div class="titulo">Comerciales</div>
+    <div id="comercial" class="grid"></div>
+</div>
+
+<div class="seccion">
+    <div class="titulo">Industriales</div>
+    <div id="industrial" class="grid"></div>
+</div>
+
+<div class="seccion">
+    <div class="titulo">Militares</div>
+    <div id="militar" class="grid"></div>
+</div>
 
 <script>
-
 function abrirInventor(){
-window.location.href="/maia_drone_inventor"
+    window.location.href="/maia_invent"
 }
 
 async function cargarDrones(){
 
-const container = document.getElementById("drones")
-const mensaje = document.getElementById("mensaje")
+    const mensaje = document.getElementById("mensaje")
 
-container.innerHTML=""
-mensaje.innerHTML="Cargando drones..."
+    document.getElementById("comercial").innerHTML = ""
+    document.getElementById("industrial").innerHTML = ""
+    document.getElementById("militar").innerHTML = ""
 
-try{
+    mensaje.innerHTML = "Cargando drones..."
 
-let r = await fetch("/maia_drones_aprobados?nocache=" + Date.now())
+    try{
 
-let drones = await r.json()
+        let r = await fetch("/maia_drones_aprobados?nocache=" + Date.now())
+        let drones = await r.json()
 
-console.log("Drones recibidos:", drones)
+        if(!drones || drones.length === 0){
+            mensaje.innerHTML = "No hay drones disponibles."
+            return
+        }
 
-if(!drones || drones.length === 0){
+        mensaje.innerHTML = ""
 
-mensaje.innerHTML="No hay drones industriales aprobados aún."
-return
+        drones.forEach(d => {
 
-}
+            let card = document.createElement("div")
+            card.className = "card " + d.categoria
 
-mensaje.innerHTML=""
+            card.innerHTML = `
+                <div class="nombre">${d.nombre}</div>
+                <small>${d.categoria}</small>
+            `
 
-drones.forEach(d => {
+            card.onclick = () => {
+                window.location.href = d.ruta
+            }
 
-let card = document.createElement("div")
+            // 🔥 FILTRO CORRECTO (SOLUCIÓN REAL)
+            if(d.categoria === "comercial"){
+                document.getElementById("comercial").appendChild(card)
+            }
 
-card.className="drone-card"
+            if(d.categoria === "industrial"){
+                document.getElementById("industrial").appendChild(card)
+            }
 
-card.innerHTML = `
-<h3>${d.nombre}</h3>
-<p>Click para abrir módulo</p>
-`
+            if(d.categoria === "militar"){
+                document.getElementById("militar").appendChild(card)
+            }
 
-card.onclick = () => {
+        })
 
-console.log("Abriendo drone:", d.ruta)
-
-window.location.href = d.ruta
-
-}
-
-container.appendChild(card)
-
-})
-
-}
-
-catch(error){
-
-mensaje.innerHTML="Error conectando con MAIA."
-console.error("Error:", error)
-
-}
-
+    }catch(error){
+        mensaje.innerHTML = "Error conectando con MAIA."
+        console.error(error)
+    }
 }
 
 cargarDrones()
-
 </script>
 
 </body>
-
 </html>

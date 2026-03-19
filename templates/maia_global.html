@@ -19,9 +19,6 @@
 </div>
 
 <script>
-// ======================
-// Variables y estado
-// ======================
 let vozActiva = false;
 const vozBtn = document.getElementById('voz-btn');
 const chatToggle = document.getElementById('chat-toggle');
@@ -33,14 +30,18 @@ const mensajeInput = document.getElementById('mensaje-input');
 const uploadToggle = document.getElementById('upload-toggle');
 const uploadInput = document.getElementById('upload-input');
 
+let reconocimiento = null;
+
 // ======================
-// Función para hablar
+// Función para hablar (voz femenina neutral)
 // ======================
 function hablar(texto){
     if(!vozActiva) return;
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = 'es-ES';
-    utter.voice = speechSynthesis.getVoices().find(v => v.lang==='es-ES' && v.name.includes('F')) || null;
+    let voces = speechSynthesis.getVoices();
+    const vozFemenina = voces.find(v => v.lang.includes('es') && /female/i.test(v.name)) || voces[0];
+    utter.voice = vozFemenina;
     utter.pitch = 1;
     utter.rate = 1;
     speechSynthesis.speak(utter);
@@ -55,22 +56,21 @@ vozBtn.addEventListener('click', ()=>{
     vozBtn.textContent = vozActiva ? 'Voz ON' : 'Voz OFF';
 
     if(vozActiva){
-        if('webkitSpeechRecognition' in window){
-            const reconocimiento = new webkitSpeechRecognition();
+        if(!reconocimiento && 'webkitSpeechRecognition' in window){
+            reconocimiento = new webkitSpeechRecognition();
             reconocimiento.lang = 'es-ES';
             reconocimiento.continuous = true;
             reconocimiento.interimResults = false;
+
             reconocimiento.onresult = function(event){
                 const ultimo = event.results[event.results.length-1][0].transcript;
                 agregarMensaje(ultimo,'user');
                 enviarPreguntaMAIA(ultimo);
             };
             reconocimiento.start();
-            vozBtn.dataset.recognition = reconocimiento;
         }
     } else {
-        const rec = vozBtn.dataset.recognition;
-        if(rec) rec.stop();
+        if(reconocimiento) reconocimiento.stop();
     }
 });
 
@@ -121,6 +121,7 @@ sendBtn.addEventListener('click', ()=>{
     mensajeInput.value = '';
 });
 
+// Enter también envía
 mensajeInput.addEventListener('keydown', e=>{
     if(e.key==='Enter') sendBtn.click();
 });

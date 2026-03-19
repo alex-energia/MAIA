@@ -2,107 +2,273 @@
 <html>
 <head>
   <title>MAIA Interactive</title>
+
   <style>
-    body { font-family: Arial; background: #0f172a; color: white; margin:0; padding:0;}
-    #maia-container { position: fixed; bottom: 20px; right: 20px; z-index:9999; width: 320px; }
-    #maia-voz-btn { background:red; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer; width:100%; }
-    #abrir-chat { cursor:pointer; font-size:24px; color:white; text-align:center; display:block; margin-top:5px; }
-    #maia-chat { display:none; margin-top:10px; background:#1e293b; border-radius:10px; padding:10px; }
-    #chat-mensajes { height:200px; overflow-y:auto; margin-bottom:5px; }
-    #chat-input { width:100%; padding:5px; border-radius:5px; border:none; }
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      margin:0;
+      padding:0;
+    }
+
+    #maia-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index:9999;
+      width: 320px;
+    }
+
+    #maia-voz-btn {
+      background:red;
+      color:white;
+      padding:10px 20px;
+      border:none;
+      border-radius:5px;
+      cursor:pointer;
+      width:100%;
+    }
+
+    #abrir-chat {
+      cursor:pointer;
+      font-size:24px;
+      color:white;
+      text-align:center;
+      display:block;
+      margin-top:5px;
+    }
+
+    #maia-chat {
+      display:none;
+      margin-top:10px;
+      background:#1e293b;
+      border-radius:10px;
+      padding:10px;
+    }
+
+    #chat-mensajes {
+      height:200px;
+      overflow-y:auto;
+      margin-bottom:5px;
+    }
+
+    #chat-input {
+      width:100%;
+      padding:5px;
+      border-radius:5px;
+      border:none;
+      outline:none;
+    }
   </style>
 </head>
+
 <body>
 
 <div id="maia-container">
+
   <button id="maia-voz-btn">Activar MAIA</button>
-  <span id="abrir-chat">&#43;</span>
+
+  <span id="abrir-chat">➕</span>
 
   <div id="maia-chat">
     <div id="chat-mensajes"></div>
+
     <input type="text" id="chat-input" placeholder="Escribe tu pregunta...">
-    <label style="cursor:pointer;font-size:20px;">&#43;
+
+    <label style="cursor:pointer;font-size:20px;">
+      ➕
       <input type="file" id="subir-archivo" style="display:none;" multiple>
     </label>
   </div>
+
 </div>
 
 <script>
-let maiaActiva = false;
-let reconocimiento;
 
-// Botón de voz
+// ==============================
+// ESTADO GLOBAL
+// ==============================
+let maiaActiva = false;
+let reconocimiento = null;
+let vocesDisponibles = [];
+
+// 🔥 cargar voces correctamente
+function cargarVoces(){
+  vocesDisponibles = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = cargarVoces;
+
+// ==============================
+// BOTÓN VOZ
+// ==============================
 document.getElementById('maia-voz-btn').addEventListener('click', () => {
+
   maiaActiva = !maiaActiva;
+
   const btn = document.getElementById('maia-voz-btn');
+
   btn.style.background = maiaActiva ? 'green' : 'red';
   btn.innerText = maiaActiva ? 'MAIA Escuchando...' : 'Activar MAIA';
 
-  if(maiaActiva) startListening();
-  else stopListening();
+  if(maiaActiva) iniciarVoz();
+  else detenerVoz();
+
 });
 
-// Abrir chat
+// ==============================
+// ABRIR CHAT
+// ==============================
 document.getElementById('abrir-chat').addEventListener('click', () => {
   const chat = document.getElementById('maia-chat');
   chat.style.display = chat.style.display === 'none' ? 'block' : 'none';
 });
 
-// Funciones de voz
-function startListening(){
-  reconocimiento = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  reconocimiento.lang = 'es-CO';
-  reconocimiento.interimResults = false;
+// ==============================
+// RECONOCIMIENTO DE VOZ
+// ==============================
+function iniciarVoz(){
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if(!SpeechRecognition){
+    alert("Tu navegador no soporta reconocimiento de voz");
+    return;
+  }
+
+  reconocimiento = new SpeechRecognition();
+
+  reconocimiento.lang = 'es-ES';
   reconocimiento.continuous = true;
 
   reconocimiento.onresult = async (event) => {
-    const transcript = event.results[event.results.length -1][0].transcript;
-    addChatMessage("Tú: " + transcript);
-    const data = await fetchRespuestaMAIA(transcript);
-    speakResponse(data.respuesta);
-    addChatMessage("MAIA: " + data.respuesta);
+
+    const texto = event.results[event.results.length -1][0].transcript;
+
+    agregarMensaje("Tú: " + texto);
+
+    const data = await obtenerRespuesta(texto);
+
+    agregarMensaje("MAIA: " + data.respuesta);
+
+    hablar(data.respuesta);
+
   };
 
   reconocimiento.start();
 }
 
-function stopListening(){ if(reconocimiento) reconocimiento.stop(); }
+function detenerVoz(){
+  if(reconocimiento) reconocimiento.stop();
+}
 
-// Chat y TTS
-async function fetchRespuestaMAIA(pregunta){
+// ==============================
+// CONECTAR BACKEND
+// ==============================
+async function obtenerRespuesta(pregunta){
+
   const resp = await fetch('/maia_voz', {
-    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({pregunta})
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({pregunta})
   });
+
   return await resp.json();
 }
 
-function speakResponse(text){
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'es-CO';
-  const voices = speechSynthesis.getVoices();
-  utterance.voice = voices.find(v=>v.lang.includes('es') && v.name.includes('Female')) || null;
+// ==============================
+// VOZ (TTS REAL)
+// ==============================
+function hablar(texto){
+
+  if(!maiaActiva) return;
+
+  const utterance = new SpeechSynthesisUtterance(texto);
+
+  utterance.lang = 'es-ES';
+
+  let voz = vocesDisponibles.find(v =>
+    v.lang.includes('es') &&
+    (v.name.toLowerCase().includes('female') ||
+     v.name.toLowerCase().includes('maria') ||
+     v.name.toLowerCase().includes('paulina'))
+  );
+
+  if(!voz) voz = vocesDisponibles.find(v => v.lang.includes('es'));
+
+  if(voz) utterance.voice = voz;
+
+  utterance.rate = 1;
+  utterance.pitch = 1;
+
+  speechSynthesis.cancel(); // 🔥 limpia voz previa
   speechSynthesis.speak(utterance);
 }
 
-function addChatMessage(msg){
-  const chatMensajes = document.getElementById('chat-mensajes');
+// ==============================
+// CHAT
+// ==============================
+function agregarMensaje(msg){
+
+  const cont = document.getElementById('chat-mensajes');
+
   const div = document.createElement('div');
+
   div.textContent = msg;
   div.style.marginBottom = '5px';
-  chatMensajes.appendChild(div);
-  chatMensajes.scrollTop = chatMensajes.scrollHeight;
+
+  cont.appendChild(div);
+
+  cont.scrollTop = cont.scrollHeight;
 }
 
-// Subida de archivos
-document.getElementById('subir-archivo').addEventListener('change', async (e)=>{
-  const archivos = e.target.files;
-  const formData = new FormData();
-  for(let i=0;i<archivos.length;i++) formData.append('archivos', archivos[i]);
+// ==============================
+// ENVIAR POR INPUT
+// ==============================
+document.getElementById('chat-input').addEventListener('keydown', async (e)=>{
 
-  const resp = await fetch('/maia_subir_archivo', {method:'POST', body:formData});
-  const data = await resp.json();
-  addChatMessage("MAIA: Archivos recibidos y procesados.");
+  if(e.key === 'Enter'){
+
+    const texto = e.target.value.trim();
+    if(!texto) return;
+
+    agregarMensaje("Tú: " + texto);
+
+    const data = await obtenerRespuesta(texto);
+
+    agregarMensaje("MAIA: " + data.respuesta);
+
+    hablar(data.respuesta);
+
+    e.target.value = "";
+  }
+
 });
+
+// ==============================
+// SUBIR ARCHIVOS
+// ==============================
+document.getElementById('subir-archivo').addEventListener('change', async (e)=>{
+
+  const archivos = e.target.files;
+
+  const formData = new FormData();
+
+  for(let i=0;i<archivos.length;i++){
+    formData.append('archivos', archivos[i]);
+  }
+
+  const resp = await fetch('/maia_subir_archivo', {
+    method:'POST',
+    body:formData
+  });
+
+  await resp.json();
+
+  agregarMensaje("MAIA: Archivos recibidos correctamente.");
+
+});
+
 </script>
 
 </body>

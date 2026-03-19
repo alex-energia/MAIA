@@ -1,12 +1,13 @@
-// ==============================
-// ESTADO GLOBAL
-// ==============================
 let vozActiva = false;
 let reconocimiento = null;
+let vocesDisponibles = [];
 
-// ==============================
-// ESPERAR CARGA COMPLETA
-// ==============================
+// 🔥 CARGAR VOCES
+function cargarVoces() {
+    vocesDisponibles = speechSynthesis.getVoices();
+}
+speechSynthesis.onvoiceschanged = cargarVoces;
+
 window.addEventListener("load", () => {
 
     const vozBtn = document.getElementById("voz-btn");
@@ -19,17 +20,8 @@ window.addEventListener("load", () => {
     const uploadBtn = document.getElementById("upload-toggle");
     const uploadInput = document.getElementById("upload-input");
 
-    // 🔥 FORZAR CARGA DE VOCES
-    let vocesDisponibles = [];
-
-    function cargarVoces() {
-        vocesDisponibles = speechSynthesis.getVoices();
-    }
-
-    speechSynthesis.onvoiceschanged = cargarVoces;
-
     // ==============================
-    // VOZ FEMENINA REAL
+    // 🔊 HABLAR (VOZ FEMENINA REAL)
     // ==============================
     function hablar(texto) {
         if (!vozActiva) return;
@@ -39,9 +31,12 @@ window.addEventListener("load", () => {
 
         let voz = vocesDisponibles.find(v =>
             v.lang.includes("es") &&
-            (v.name.toLowerCase().includes("female") ||
-             v.name.toLowerCase().includes("maria") ||
-             v.name.toLowerCase().includes("paulina"))
+            (
+                v.name.toLowerCase().includes("female") ||
+                v.name.toLowerCase().includes("maria") ||
+                v.name.toLowerCase().includes("paulina") ||
+                v.name.toLowerCase().includes("google español")
+            )
         );
 
         if (!voz) voz = vocesDisponibles.find(v => v.lang.includes("es"));
@@ -51,12 +46,11 @@ window.addEventListener("load", () => {
         utter.rate = 1;
         utter.pitch = 1;
 
-        speechSynthesis.cancel(); // 🔥 limpia voz anterior
+        speechSynthesis.cancel();
+        speechSynthesis.resume(); // 🔥 SOLUCIÓN CLAVE
         speechSynthesis.speak(utter);
     }
 
-    // ==============================
-    // MENSAJES
     // ==============================
     function agregarMensaje(texto, tipo) {
         let div = document.createElement("div");
@@ -66,8 +60,6 @@ window.addEventListener("load", () => {
         mensajes.scrollTop = mensajes.scrollHeight;
     }
 
-    // ==============================
-    // CONECTAR CON BACKEND
     // ==============================
     function enviar(pregunta) {
         fetch("/maia_voz", {
@@ -86,7 +78,7 @@ window.addEventListener("load", () => {
     }
 
     // ==============================
-    // BOTÓN VOZ
+    // 🎤 BOTÓN VOZ
     // ==============================
     vozBtn.onclick = () => {
         vozActiva = !vozActiva;
@@ -95,6 +87,10 @@ window.addEventListener("load", () => {
         vozBtn.innerText = vozActiva ? "Voz ON" : "Voz OFF";
 
         if (vozActiva) {
+
+            // 🔥 activar audio (necesario en Chrome)
+            speechSynthesis.resume();
+
             if ('webkitSpeechRecognition' in window) {
                 reconocimiento = new webkitSpeechRecognition();
                 reconocimiento.lang = "es-ES";
@@ -114,18 +110,13 @@ window.addEventListener("load", () => {
     };
 
     // ==============================
-    // CHAT
-    // ==============================
     chatToggle.onclick = () => chatContainer.style.display = "flex";
     chatClose.onclick = () => chatContainer.style.display = "none";
 
     // ==============================
-    // ENVIAR TEXTO
-    // ==============================
     sendBtn.onclick = () => {
         let texto = input.value.trim();
         if (!texto) return;
-
         agregarMensaje(texto, "user");
         enviar(texto);
         input.value = "";
@@ -135,8 +126,6 @@ window.addEventListener("load", () => {
         if (e.key === "Enter") sendBtn.click();
     });
 
-    // ==============================
-    // SUBIR ARCHIVOS
     // ==============================
     uploadBtn.onclick = () => uploadInput.click();
 

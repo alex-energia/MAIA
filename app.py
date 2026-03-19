@@ -174,9 +174,8 @@ def health():
 def maia_voz():
     data = request.get_json()
     pregunta = data.get("pregunta","")
-    # Aquí se implementa la respuesta profesional de MAIA según tus temas
-    # Por ahora dummy
-    respuesta = f"MAIA recibió tu pregunta: {pregunta}. ¿Deseas que te entregue la bibliografía?"
+    # Reglas de interacción MAIA
+    respuesta = f"MAIA (experta integral en finanzas, economía, energía, hidroeléctricas, solar, eólica, nuclear, geotérmica, diagnóstico de plantas, peso de ganado, diseño, construcción, software y hardware en drones) recibió tu pregunta: {pregunta}. ¿Deseas que te entregue la bibliografía?"
     return jsonify({"respuesta": respuesta})
 
 @app.route("/maia_subir_archivo", methods=["POST"])

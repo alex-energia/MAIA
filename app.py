@@ -28,11 +28,9 @@ DRONES_BASE = [
     {"nombre": "Sistema Autónomo de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "categoria": "industrial"},
     {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "categoria": "industrial"},
     {"nombre": "Drone de Monitoreo de Plantaciones", "ruta": "/drone_monitoreo_plantaciones", "categoria": "industrial"},
-
     # Comerciales (2)
     {"nombre": "Drone Todo Terreno MAIA", "ruta": "/drone_todo_terreno", "categoria": "comercial"},
     {"nombre": "MAIA Drone Fotográfico Profesional", "ruta": "/drone_fotografico", "categoria": "comercial"},
-
     # Militar (1)
     {"nombre": "Drone de Detección de Minas", "ruta": "/drone_deteccion_minas", "categoria": "militar"}
 ]
@@ -88,16 +86,14 @@ def maia_voz():
     contexto = ""
     for h in historial:
         contexto += f"Usuario: {h['pregunta']}\nMAIA: {h['respuesta']}\n"
-    respuesta = f"""
-MAIA IA avanzada:
+    respuesta = f"""MAIA IA avanzada:
 Contexto previo:
 {contexto}
 Nueva pregunta:
 {pregunta}
 Respuesta:
 Análisis experto en ingeniería, energía, drones y sistemas inteligentes.
-Conclusión optimizada basada en memoria conversacional.
-"""
+Conclusión optimizada basada en memoria conversacional."""
     guardar_memoria(pregunta, respuesta)
     return jsonify({"respuesta": respuesta})
 
@@ -119,8 +115,9 @@ def reset_maia():
     return jsonify({"status": "memoria borrada"})
 
 # =========================
-# 🚀 RUN
+# 🚀 NOTE
 # =========================
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+# Elimina el bloque de app.run() porque Gunicorn lo manejará en Render
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 10000))
+#     app.run(host="0.0.0.0", port=port)

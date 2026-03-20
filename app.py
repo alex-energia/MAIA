@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, jsonify, redirect, session
-from proyectos import proyectos_bp, init_db, get_db
+from flask import Flask, render_template, request, jsonify, session
+from proyectos import proyectos_bp, init_db
 import os
-import random
+from bs4 import BeautifulSoup  # Para extraer nombres de drones desde HTML
 
 # =========================
 # APP
@@ -16,24 +16,40 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔥 DRONES BASE COMPLETA (11 DRONES)
+# 🔥 CARGA DINÁMICA DE DRONES
 # =========================
-DRONES_BASE = [
-    # Industriales (8)
-    {"nombre": "Drone submarino detección de petróleo", "ruta": "/drone_submarino_petroleo", "categoria": "industrial"},
-    {"nombre": "MAIA Punto Eléctrico", "ruta": "/maia_punto_electrico", "categoria": "industrial"},
-    {"nombre": "Drone Purificador Atmosférico", "ruta": "/drone_purificador_atmosferico", "categoria": "industrial"},
-    {"nombre": "Drone Generador de Agua Atmosférica", "ruta": "/drone_generador_agua", "categoria": "industrial"},
-    {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "categoria": "industrial"},
-    {"nombre": "Sistema Autónomo de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "categoria": "industrial"},
-    {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "categoria": "industrial"},
-    {"nombre": "Drone de Monitoreo de Plantaciones", "ruta": "/drone_monitoreo_plantaciones", "categoria": "industrial"},
-    # Comerciales (2)
-    {"nombre": "Drone Todo Terreno MAIA", "ruta": "/drone_todo_terreno", "categoria": "comercial"},
-    {"nombre": "MAIA Drone Fotográfico Profesional", "ruta": "/drone_fotografico", "categoria": "comercial"},
-    # Militar (1)
-    {"nombre": "Drone de Detección de Minas", "ruta": "/drone_deteccion_minas", "categoria": "militar"}
-]
+def cargar_drones_base():
+    drones = []
+    carpeta_drones = os.path.join(os.path.dirname(__file__), "templates", "drones")
+    for archivo in os.listdir(carpeta_drones):
+        if archivo.endswith(".html"):
+            ruta = "/" + archivo.replace(".html", "")
+            path_completo = os.path.join(carpeta_drones, archivo)
+            try:
+                with open(path_completo, "r", encoding="utf-8") as f:
+                    soup = BeautifulSoup(f, "html.parser")
+                    titulo = soup.title.string.strip() if soup.title else archivo.replace(".html", "")
+            except Exception:
+                titulo = archivo.replace(".html", "")
+
+            # Clasificación por convención de nombre
+            lower = archivo.lower()
+            if "minas" in lower or "militar" in lower:
+                categoria = "militar"
+            elif "todo_terreno" in lower or "smartphone" in lower:
+                categoria = "comercial"
+            else:
+                categoria = "industrial"
+
+            drones.append({
+                "nombre": titulo,
+                "ruta": ruta,
+                "categoria": categoria
+            })
+    return drones
+
+# Variable global
+DRONES_BASE = cargar_drones_base()
 
 # =========================
 # 🔥 RUTA PRINCIPAL
@@ -43,7 +59,7 @@ def home():
     return render_template("index.html")
 
 # =========================
-# 🔥 RUTA API DRONES (FILTRADO DINÁMICO)
+# 🔥 API DRONES FILTRADO
 # =========================
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
@@ -69,7 +85,7 @@ def guardar_memoria(pregunta, respuesta):
     session["historial"] = historial
 
 # =========================
-# 🔥 INYECCIÓN GLOBAL (MAIA EN TODAS LAS VISTAS)
+# 🔥 INYECCIÓN GLOBAL
 # =========================
 @app.context_processor
 def inyectar_maia():
@@ -86,14 +102,14 @@ def maia_voz():
     contexto = ""
     for h in historial:
         contexto += f"Usuario: {h['pregunta']}\nMAIA: {h['respuesta']}\n"
-    respuesta = f"""MAIA IA avanzada:
-Contexto previo:
-{contexto}
-Nueva pregunta:
-{pregunta}
-Respuesta:
-Análisis experto en ingeniería, energía, drones y sistemas inteligentes.
-Conclusión optimizada basada en memoria conversacional."""
+
+    respuesta = (
+        f"MAIA IA avanzada:"
+        f"Contexto previo:{contexto}"
+        f"Nueva pregunta:{pregunta}"
+        f"Respuesta: Análisis experto en ingeniería, energía, drones y sistemas inteligentes."
+        f"Conclusión optimizada basada en memoria conversacional."
+    )
     guardar_memoria(pregunta, respuesta)
     return jsonify({"respuesta": respuesta})
 
@@ -115,9 +131,24 @@ def reset_maia():
     return jsonify({"status": "memoria borrada"})
 
 # =========================
-# 🚀 NOTE
+# 🔥 RUTAS MÓDULOS EXTRA
 # =========================
-# Elimina el bloque de app.run() porque Gunicorn lo manejará en Render
-# if __name__ == "__main__":
-#     port = int(os.environ.get("PORT", 10000))
-#     app.run(host="0.0.0.0", port=port)
+@app.route("/maia_simulador")
+def maia_simulador():
+    return render_template("maia_simulador.html")
+
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
+
+@app.route("/maia_lab")
+def maia_lab():
+    return render_template("maia_lab.html")
+
+@app.route("/maia_architect")
+def maia_architect():
+    return render_template("maia_architect.html")
+
+# =========================
+# 🚀 NOTE: No app.run() — Gunicorn lo maneja
+# =========================

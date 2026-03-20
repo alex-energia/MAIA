@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MAIA</title>
+{% extends "base_maia.html" %}
+
+{% block content %}
 
 <style>
 body{
@@ -74,10 +71,6 @@ button.send{
 }
 </style>
 
-</head>
-
-<body>
-
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
   <div class="topbar-buttons">
@@ -116,13 +109,7 @@ button.send{
 
 </div>
 
-<!-- ========================= -->
-<!-- 🔥 MAIA GLOBAL (CORREGIDO) -->
-<!-- ========================= -->
-{% include 'maia_global.html' %}
-
 <script>
-
 // =========================
 // NAVEGACIÓN
 // =========================
@@ -137,7 +124,7 @@ function volverChat(){
 }
 
 // =========================
-// ACTIVAR DRONE (MEJORADO)
+// DRONE
 // =========================
 function activarDrone(){
   ocultarTodo()
@@ -159,21 +146,20 @@ function activarDrone(){
         🛡️ Drones militares
       </button>
 
-      <!-- 🔥 CORREGIDO: rutas en misma ventana -->
       <button onclick="window.location.href='/maia_simulador'" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
-        🧪 Simulador de drones
+        🧪 Simulador
       </button>
 
       <button onclick="window.location.href='/maia_architect'" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
-        🧠 MAIA AI Drone Architect
+        🧠 Architect
       </button>
 
       <button onclick="window.location.href='/maia_lab'" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
-        🚀 MAIA Autonomous Drone Lab
+        🚀 Lab
       </button>
 
       <button onclick="window.location.href='/maia_invent'" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
-        ⚙️ MAIA Invent
+        ⚙️ Invent
       </button>
 
     </div>
@@ -181,12 +167,12 @@ function activarDrone(){
 }
 
 // =========================
-// OTROS MÓDULOS
+// OTROS
 // =========================
 function activarGanado(){alert("En construcción")}
 function activarPlantas(){alert("En construcción")}
 function activarTraductor(){alert("En construcción")}
-function activarProyectos(){alert("Usa módulo proyectos existente")}
+function activarProyectos(){alert("Usa módulo proyectos")}
 
 // =========================
 // DRONES
@@ -194,62 +180,42 @@ function activarProyectos(){alert("Usa módulo proyectos existente")}
 function dronesComerciales(){
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>🛩️ Comerciales</h3>
-    <ul>
-      <li>
-        Drone Todo Terreno<br><br>
-        <button onclick="window.location.href='/drone_todo_terreno'">Abrir</button>
-      </li>
-    </ul>
+    <button onclick="window.location.href='/drone_todo_terreno'">Abrir</button>
   `
 }
 
 function dronesMilitares(){
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>🛡️ Militares</h3>
-    <ul>
-      <li>
-        Drone Detector de Minas<br><br>
-        <button onclick="window.location.href='/drone_detector_minas'">Abrir</button>
-      </li>
-    </ul>
+    <button onclick="window.location.href='/drone_detector_minas'">Abrir</button>
   `
 }
 
-// =========================
-// 🔥 INDUSTRIALES (OK)
-// =========================
 async function dronesIndustriales(){
   const cont = document.getElementById("contenidoDrone")
-  cont.innerHTML = "<h3>Cargando drones...</h3>"
+  cont.innerHTML = "Cargando..."
 
   try{
     let r = await fetch("/maia_drones_aprobados")
     let drones = await r.json()
 
-    let html = "<h3>🏭 Drones Industriales</h3><ul>"
+    let html = "<h3>🏭 Industriales</h3>"
 
-    drones.forEach(d => {
+    drones.forEach(d=>{
       html += `
-        <li>
-          🚁 <b>${d.nombre}</b><br><br>
-          <button onclick="window.location.href='${d.ruta}'">
-            Abrir proyecto
-          </button>
-          <br><br>
-        </li>
+        <div>
+          ${d.nombre}<br>
+          <button onclick="window.location.href='${d.ruta}'">Abrir</button>
+        </div><br>
       `
     })
 
-    html += "</ul>"
     cont.innerHTML = html
 
   }catch(e){
-    cont.innerHTML = "Error cargando drones"
-    console.error(e)
+    cont.innerHTML = "Error"
   }
 }
-
 </script>
 
-</body>
-</html>
+{% endblock %}

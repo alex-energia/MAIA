@@ -17,6 +17,11 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .modulo-extra button:hover{ background:#059669; }
 .boton-voz{ background:red; color:white; padding:10px 15px; border-radius:50%; font-weight:bold; border:none; cursor:pointer; margin-left:10px;}
 .boton-plus{ background:#2563eb; color:white; padding:10px 15px; border-radius:50%; border:none; cursor:pointer; font-weight:bold; margin-left:10px;}
+.card{ background: rgba(0,0,0,0.6); padding:20px; border-radius:10px; margin-top:20px; box-shadow: 0 0 15px rgba(0,255,213,0.3);}
+ul{ line-height:1.8;}
+.badge{ background:#00ffd5; color:black; padding:5px 10px; border-radius:5px; font-weight:bold;}
+.boton-modulo{ background:#00ffd5; border:none; padding:12px; width:100%; font-weight:bold; cursor:pointer; margin-top:15px;}
+.boton-modulo:hover{ background:#00bfa6;}
 </style>
 
 <div class="topbar">
@@ -83,20 +88,7 @@ function volverChat(){
 function activarDrone(){
   ocultarTodo();
   document.getElementById("moduloDrone").classList.remove("hidden");
-  document.getElementById("contenidoDrone").innerHTML = `
-    <h3>Selecciona el tipo de drones</h3>
-    <div style="display:flex;flex-direction:column;gap:15px;margin-top:20px">
-      <button onclick="dronesComerciales()" style="background:#2563eb;padding:15px;border:none;border-radius:10px;color:white;">
-        🛩️ Drones comerciales
-      </button>
-      <button onclick="dronesIndustriales()" style="background:#16a34a;padding:15px;border:none;border-radius:10px;color:white;">
-        🏭 Drones industriales
-      </button>
-      <button onclick="dronesMilitares()" style="background:#dc2626;padding:15px;border:none;border-radius:10px;color:white;">
-        🛡️ Drones militares
-      </button>
-    </div>
-  `;
+  mostrarDronAsistenteMAIA();
 }
 
 // =========================
@@ -123,10 +115,15 @@ async function cargarDronesPorCategoria(categoria, titulo){
     }
     let html = `<h3>${titulo}</h3>`;
     drones.forEach(d=>{
-      html += `<div style="margin-bottom:15px;">
-                🚁 <b>${d.nombre}</b><br>
-                <button onclick="window.location.href='${d.ruta}'">Abrir</button>
-              </div>`;
+      // Integrar Dron Asistente MAIA
+      if(d.nombre.toLowerCase().includes("smartphone")){
+        html += dronAsistenteHTML();
+      } else {
+        html += `<div style="margin-bottom:15px;">
+                  🚁 <b>${d.nombre}</b><br>
+                  <button onclick="window.location.href='${d.ruta}'">Abrir</button>
+                 </div>`;
+      }
     });
     cont.innerHTML = html;
   } catch(e){
@@ -159,6 +156,61 @@ function abrirModuloGenerico(modulo, titulo){
   activarDrone();
   const cont = document.getElementById("contenidoDrone");
   cont.innerHTML = `<h3>${titulo}</h3><p>Contenido de ${titulo} en construcción.</p>`;
+}
+
+// =========================
+// DRON ASISTENTE MAIA
+function mostrarDronAsistenteMAIA(){
+  const cont = document.getElementById("contenidoDrone");
+  cont.innerHTML = dronAsistenteHTML();
+}
+function dronAsistenteHTML(){
+  return `
+    <div class="card">
+      <span class="badge">Drone Comercial</span>
+      <h2>🚀 Introducción</h2>
+      <p>El Mini Drone Asistente MAIA es un drone inteligente diseñado para interacción avanzada, captura de imágenes y control remoto mediante IA integrada.</p>
+      <h3>📊 Viabilidad</h3>
+      <p>Ideal para proyectos educativos, comerciales y demostraciones tecnológicas; fácil de operar y con gran estabilidad.</p>
+    </div>
+    <div class="card">
+      <h2>🧠 Software</h2>
+      <ul>
+        <li>Control por app smartphone</li>
+        <li>Reconocimiento de voz integrado</li>
+        <li>Modos de vuelo autónomo</li>
+        <li>Grabación y transmisión de video en tiempo real</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>⚙️ Hardware</h2>
+      <ul>
+        <li>Mini cámara HD con estabilización</li>
+        <li>Motor brushless silencioso</li>
+        <li>Batería de larga duración</li>
+        <li>LED de señalización</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>💡 Modos de Uso</h2>
+      <ul>
+        <li>📸 Selfie aéreo automático</li>
+        <li>🎥 Grabación de video inteligente</li>
+        <li>🔦 Iluminación portátil</li>
+        <li>🛡️ Seguridad personal</li>
+        <li>🚁 Exploración en espacios reducidos</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>⚡ Activar Demo</h2>
+      <button class="boton-modulo" onclick="activarDemo()">🚀 Desplegar Drone</button>
+      <p id="demo"></p>
+    </div>
+  `;
+}
+function activarDemo(){
+  document.getElementById("demo").innerText =
+    "🚁 Drone desplegado desde el smartphone... estabilizando... conectando cámara... listo para operar.";
 }
 </script>
 {% endblock %}

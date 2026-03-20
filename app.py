@@ -16,15 +16,24 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔥 DRONES BASE
+# 🔥 DRONES BASE COMPLETA (11 DRONES)
 # =========================
 DRONES_BASE = [
-    {"nombre": "Drone submarino detección de petróleo", "ruta": "/dron_submarino_petroleo", "categoria": "industrial"},
+    # Industriales (8)
+    {"nombre": "Drone submarino detección de petróleo", "ruta": "/drone_submarino_petroleo", "categoria": "industrial"},
     {"nombre": "MAIA Punto Eléctrico", "ruta": "/maia_punto_electrico", "categoria": "industrial"},
     {"nombre": "Drone Purificador Atmosférico", "ruta": "/drone_purificador_atmosferico", "categoria": "industrial"},
     {"nombre": "Drone Generador de Agua Atmosférica", "ruta": "/drone_generador_agua", "categoria": "industrial"},
     {"nombre": "Drone Autónomo de Control de Incendios", "ruta": "/drone_control_incendios", "categoria": "industrial"},
+    {"nombre": "Sistema Autónomo de Descontaminación de Ríos", "ruta": "/drone_descontaminacion_rios", "categoria": "industrial"},
+    {"nombre": "Drone de Lluvia por Ionización Atmosférica", "ruta": "/drone_lluvia_ionizacion", "categoria": "industrial"},
+    {"nombre": "Drone de Monitoreo de Plantaciones", "ruta": "/drone_monitoreo_plantaciones", "categoria": "industrial"},
+
+    # Comerciales (2)
     {"nombre": "Drone Todo Terreno MAIA", "ruta": "/drone_todo_terreno", "categoria": "comercial"},
+    {"nombre": "MAIA Drone Fotográfico Profesional", "ruta": "/drone_fotografico", "categoria": "comercial"},
+
+    # Militar (1)
     {"nombre": "Drone de Detección de Minas", "ruta": "/drone_deteccion_minas", "categoria": "militar"}
 ]
 

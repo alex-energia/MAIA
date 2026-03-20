@@ -3,7 +3,7 @@ from proyectos import proyectos_bp, init_db, get_db
 import os
 import random
 
-app = Flask(__name__)
+app = Flask(__name__, templates_folder="templates")
 app.secret_key = "maia_secret_ultra"
 
 init_db()

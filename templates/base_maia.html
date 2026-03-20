@@ -1,88 +1,20 @@
-<!-- ========================= -->
-<!-- 🔥 MAIA GLOBAL UI FINAL -->
-<!-- ========================= -->
+<!DOCTYPE html>
+<html lang="es">
 
-<div id="maia-container"
-     style="position:fixed;bottom:20px;right:20px;z-index:9999;width:320px;font-family:Arial;">
+<head>
+    <meta charset="UTF-8">
+    <title>MAIA</title>
+</head>
 
-    <!-- 🔴 BOTÓN VOZ -->
-    <button id="maia-voz-btn"
-        style="background:red;color:white;padding:10px;border:none;border-radius:6px;width:100%;cursor:pointer;">
-        Activar MAIA
-    </button>
+<body style="margin:0;padding:0;background:#0f172a;color:white;">
 
-    <!-- ➕ BOTÓN CHAT -->
-    <span id="abrir-chat"
-        style="cursor:pointer;font-size:26px;color:#22c55e;text-align:center;display:block;margin-top:8px;">
-        ➕
-    </span>
+    <!-- 🔥 CONTENIDO DE CADA PÁGINA -->
+    {% block content %}
+    {% endblock %}
 
-    <!-- 💬 CHAT -->
-    <div id="maia-chat"
-        style="display:none;margin-top:10px;background:#1e293b;border-radius:10px;padding:10px;
-               box-shadow:0 0 10px rgba(0,0,0,0.5);">
+    <!-- 🔥 MAIA GLOBAL (SE CARGA EN TODAS LAS PÁGINAS) -->
+    {% include "maia_global.html" %}
 
-        <!-- HEADER -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <span style="font-weight:bold;">MAIA</span>
-            <span id="cerrar-chat" style="cursor:pointer;">✖</span>
-        </div>
+</body>
 
-        <!-- MENSAJES -->
-        <div id="chat-mensajes"
-            style="height:220px;overflow-y:auto;margin-bottom:8px;font-size:14px;"></div>
-
-        <!-- INPUT -->
-        <input type="text" id="chat-input"
-            placeholder="Escribe tu pregunta..."
-            style="width:100%;padding:6px;border-radius:6px;border:none;outline:none;margin-bottom:6px;">
-
-        <!-- SUBIR ARCHIVOS -->
-        <label style="cursor:pointer;font-size:18px;">
-            📎
-            <input type="file" id="subir-archivo" style="display:none;" multiple>
-        </label>
-
-    </div>
-
-</div>
-
-<!-- ========================= -->
-<!-- 🔥 ESTILOS MENSAJES -->
-<!-- ========================= -->
-<style>
-#chat-mensajes div {
-    padding:6px;
-    border-radius:6px;
-    margin-bottom:4px;
-    background:#334155;
-    color:white;
-}
-
-#chat-mensajes div:nth-child(odd) {
-    background:#1e293b;
-}
-</style>
-
-<!-- ========================= -->
-<!-- 🔥 SCRIPT GLOBAL -->
-<!-- ========================= -->
-<script src="{{ url_for('static', filename='js/maia.js') }}"></script>
-
-<!-- ========================= -->
-<!-- 🔥 CONTROL EXTRA CHAT -->
-<!-- ========================= -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-
-    const cerrar = document.getElementById("cerrar-chat");
-    const chat = document.getElementById("maia-chat");
-
-    if (cerrar) {
-        cerrar.onclick = () => {
-            chat.style.display = "none";
-        };
-    }
-
-});
-</script>
+</html>

@@ -1,74 +1,17 @@
 {% extends "base_maia.html" %}
-
 {% block content %}
-
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#1e1e1e;
-  color:white;
-}
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px 25px;
-  background:#111;
-}
-.topbar-buttons button{
-  margin-left:10px;
-  padding:8px 15px;
-  border-radius:8px;
-  border:none;
-  cursor:pointer;
-  background:#2563eb;
-  color:white;
-}
-.container{
-  padding:20px;
-}
-.chat-box{
-  height:60vh;
-  overflow-y:auto;
-  background:#2a2a2a;
-  padding:15px;
-  border-radius:12px;
-}
-.input-area{
-  margin-top:15px;
-  display:flex;
-  gap:10px;
-}
-input[type="text"]{
-  flex:1;
-  padding:12px;
-  border-radius:10px;
-  border:none;
-}
-button.send{
-  padding:12px 20px;
-  border-radius:10px;
-  border:none;
-  background:#2563eb;
-  color:white;
-  cursor:pointer;
-}
+body{ margin:0; font-family:Arial; background:#1e1e1e; color:white;}
+.topbar{ display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:#111;}
+.topbar-buttons button{ margin-left:10px; padding:8px 15px; border-radius:8px; border:none; cursor:pointer; background:#2563eb; color:white;}
+.container{ padding:20px;}
+.chat-box{ height:60vh; overflow-y:auto; background:#2a2a2a; padding:15px; border-radius:12px;}
+.input-area{ margin-top:15px; display:flex; gap:10px;}
+input[type="text"]{ flex:1; padding:12px; border-radius:10px; border:none;}
+button.send{ padding:12px 20px; border-radius:10px; border:none; background:#2563eb; color:white; cursor:pointer;}
 .hidden{display:none;}
-.drone-botones{
-  display:flex;
-  gap:20px;
-  flex-wrap:wrap;
-  margin-top:20px;
-}
-.drone-botones button{
-  padding:15px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  color:white;
-  font-size:15px;
-}
+.drone-botones{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;}
+.drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
 </style>
 
 <div class="topbar">
@@ -84,7 +27,6 @@ button.send{
 </div>
 
 <div class="container">
-
   <!-- CHAT -->
   <div id="chatNormal">
     <div id="chatBox" class="chat-box"></div>
@@ -106,7 +48,6 @@ button.send{
       <div id="contenidoDrone" style="margin-top:20px"></div>
     </div>
   </div>
-
 </div>
 
 <script>
@@ -114,56 +55,46 @@ button.send{
 // NAVEGACIÓN
 // =========================
 function ocultarTodo(){
-  document.getElementById("chatNormal").classList.add("hidden")
-  document.getElementById("moduloDrone").classList.add("hidden")
+  document.getElementById("chatNormal").classList.add("hidden");
+  document.getElementById("moduloDrone").classList.add("hidden");
 }
-
 function volverChat(){
-  ocultarTodo()
-  document.getElementById("chatNormal").classList.remove("hidden")
+  ocultarTodo();
+  document.getElementById("chatNormal").classList.remove("hidden");
 }
 
 // =========================
 // DRONE
 // =========================
 function activarDrone(){
-  ocultarTodo()
-  document.getElementById("moduloDrone").classList.remove("hidden")
-
+  ocultarTodo();
+  document.getElementById("moduloDrone").classList.remove("hidden");
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>Selecciona el tipo de drones</h3>
     <div style="display:flex;flex-direction:column;gap:15px;margin-top:20px">
-
       <button onclick="dronesComerciales()" style="background:#2563eb;padding:15px;border:none;border-radius:10px;color:white;">
         🛩️ Drones comerciales
       </button>
-
       <button onclick="dronesIndustriales()" style="background:#16a34a;padding:15px;border:none;border-radius:10px;color:white;">
         🏭 Drones industriales
       </button>
-
       <button onclick="dronesMilitares()" style="background:#dc2626;padding:15px;border:none;border-radius:10px;color:white;">
         🛡️ Drones militares
       </button>
-
       <button onclick="window.location.href='/maia_simulador'" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
         🧪 Simulador
       </button>
-
       <button onclick="window.location.href='/maia_architect'" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
         🧠 Architect
       </button>
-
       <button onclick="window.location.href='/maia_lab'" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
         🚀 Lab
       </button>
-
       <button onclick="window.location.href='/maia_invent'" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
         ⚙️ Invent
       </button>
-
     </div>
-  `
+  `;
 }
 
 // =========================
@@ -175,47 +106,33 @@ function activarTraductor(){alert("En construcción")}
 function activarProyectos(){alert("Usa módulo proyectos")}
 
 // =========================
-// DRONES
+// DRONES DINÁMICOS
 // =========================
-function dronesComerciales(){
-  document.getElementById("contenidoDrone").innerHTML = `
-    <h3>🛩️ Comerciales</h3>
-    <button onclick="window.location.href='/drone_todo_terreno'">Abrir</button>
-  `
-}
-
-function dronesMilitares(){
-  document.getElementById("contenidoDrone").innerHTML = `
-    <h3>🛡️ Militares</h3>
-    <button onclick="window.location.href='/drone_detector_minas'">Abrir</button>
-  `
-}
-
-async function dronesIndustriales(){
-  const cont = document.getElementById("contenidoDrone")
-  cont.innerHTML = "Cargando..."
-
-  try{
-    let r = await fetch("/maia_drones_aprobados")
-    let drones = await r.json()
-
-    let html = "<h3>🏭 Industriales</h3>"
-
+async function cargarDronesPorCategoria(categoria, titulo){
+  const cont = document.getElementById("contenidoDrone");
+  cont.innerHTML = `Cargando ${titulo}...`;
+  try {
+    let r = await fetch(`/maia_drones_aprobados?categoria=${categoria}`);
+    let drones = await r.json();
+    if(drones.length === 0){
+      cont.innerHTML = `<h3>${titulo}</h3><p>No hay drones aprobados en esta categoría.</p>`;
+      return;
+    }
+    let html = `<h3>${titulo}</h3>`;
     drones.forEach(d=>{
-      html += `
-        <div>
-          ${d.nombre}<br>
-          <button onclick="window.location.href='${d.ruta}'">Abrir</button>
-        </div><br>
-      `
-    })
-
-    cont.innerHTML = html
-
-  }catch(e){
-    cont.innerHTML = "Error"
+      html += `<div>🚁 <b>${d.nombre}</b><br>
+               <button onclick="window.location.href='${d.ruta}'">Abrir</button></div><br>`;
+    });
+    cont.innerHTML = html;
+  } catch(e){
+    cont.innerHTML = `Error cargando ${titulo}`;
+    console.error(e);
   }
 }
-</script>
 
+function dronesComerciales(){ cargarDronesPorCategoria("comercial","🛩️ Comerciales") }
+function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militares") }
+function dronesIndustriales(){ cargarDronesPorCategoria("industrial","🏭 Industriales") }
+
+</script>
 {% endblock %}

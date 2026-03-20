@@ -20,10 +20,10 @@ app.register_blueprint(proyectos_bp)
 # =========================
 def cargar_drones_base():
     drones = []
-    carpeta_drones = os.path.join(os.path.dirname(__file__), "templates", "drones")
+    carpeta_drones = os.path.join(app.template_folder, "drones")
     for archivo in os.listdir(carpeta_drones):
         if archivo.endswith(".html"):
-            ruta = "/" + archivo.replace(".html", "")
+            ruta = "/drones/" + archivo.replace(".html", "")
             path_completo = os.path.join(carpeta_drones, archivo)
             try:
                 with open(path_completo, "r", encoding="utf-8") as f:
@@ -102,7 +102,6 @@ def maia_voz():
     contexto = ""
     for h in historial:
         contexto += f"Usuario: {h['pregunta']}\nMAIA: {h['respuesta']}\n"
-
     respuesta = (
         f"MAIA IA avanzada:"
         f"Contexto previo:{contexto}"
@@ -148,6 +147,21 @@ def maia_lab():
 @app.route("/maia_architect")
 def maia_architect():
     return render_template("maia_architect.html")
+
+# =========================
+# 🔥 RUTA DINÁMICA PARA ABRIR DRONES
+# =========================
+@app.route("/drones/<drone_file>")
+def abrir_drone(drone_file):
+    """
+    Abre cualquier drone en templates/drones/
+    drone_file = nombre del archivo sin .html
+    """
+    ruta_html = f"drones/{drone_file}.html"
+    if os.path.exists(os.path.join(app.template_folder, ruta_html)):
+        return render_template(ruta_html)
+    else:
+        return "Drone no encontrado", 404
 
 # =========================
 # 🚀 NOTE: No app.run() — Gunicorn lo maneja

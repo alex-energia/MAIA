@@ -12,6 +12,9 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .hidden{display:none;}
 .drone-botones{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;}
 .drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
+.modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px; }
+.modulo-extra button{ flex:1; min-width:150px; padding:15px; border-radius:10px; border:none; cursor:pointer; background:#10b981; color:white; font-weight:bold; }
+.modulo-extra button:hover{ background:#059669; }
 </style>
 
 <div class="topbar">
@@ -47,6 +50,14 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
       </div>
       <div id="contenidoDrone" style="margin-top:20px"></div>
     </div>
+  </div>
+
+  <!-- MÓDULOS EXTRA -->
+  <div id="modulosExtra" class="modulo-extra">
+    <button onclick="window.location.href='/maia_simulador'">🕹️ Simulador</button>
+    <button onclick="window.location.href='/maia_invent'">💡 Invent</button>
+    <button onclick="window.location.href='/maia_lab'">🧪 Lab</button>
+    <button onclick="window.location.href='/maia_architect'">🏗️ Architect</button>
   </div>
 </div>
 
@@ -109,9 +120,9 @@ async function cargarDronesPorCategoria(categoria, titulo){
     let html = `<h3>${titulo}</h3>`;
     drones.forEach(d=>{
       html += `<div style="margin-bottom:15px;">
-                 🚁 <b>${d.nombre}</b><br>
-                 <button onclick="window.location.href='${d.ruta}'">Abrir</button>
-               </div>`;
+                🚁 <b>${d.nombre}</b><br>
+                <button onclick="window.location.href='${d.ruta}'">Abrir</button>
+              </div>`;
     });
     cont.innerHTML = html;
   } catch(e){
@@ -119,10 +130,8 @@ async function cargarDronesPorCategoria(categoria, titulo){
     console.error(e);
   }
 }
-
 function dronesComerciales(){ cargarDronesPorCategoria("comercial","🛩️ Comerciales") }
 function dronesIndustriales(){ cargarDronesPorCategoria("industrial","🏭 Industriales") }
 function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militares") }
 </script>
-
 {% endblock %}

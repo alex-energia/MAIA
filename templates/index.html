@@ -15,17 +15,21 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px; }
 .modulo-extra button{ flex:1; min-width:150px; padding:15px; border-radius:10px; border:none; cursor:pointer; background:#10b981; color:white; font-weight:bold; }
 .modulo-extra button:hover{ background:#059669; }
+.boton-voz{ background:red; color:white; padding:10px 15px; border-radius:50%; font-weight:bold; border:none; cursor:pointer; margin-left:10px;}
+.boton-plus{ background:#2563eb; color:white; padding:10px 15px; border-radius:50%; border:none; cursor:pointer; font-weight:bold; margin-left:10px;}
 </style>
 
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
   <div class="topbar-buttons">
-    <button onclick="activarGanado()">🐄</button>
-    <button onclick="activarPlantas()">🌿</button>
-    <button onclick="activarTraductor()">🌍</button>
-    <button onclick="activarProyectos()">📁</button>
+    <button onclick="abrirModuloGenerico('ganado','🐄 Ganado')">🐄</button>
+    <button onclick="abrirModuloGenerico('plantas','🌿 Plantas')">🌿</button>
+    <button onclick="abrirModuloGenerico('traductor','🌍 Traductor')">🌍</button>
+    <button onclick="abrirModuloGenerico('proyectos','📁 Proyectos')">📁</button>
     <button onclick="activarDrone()">🚁</button>
     <button onclick="volverChat()">🏠</button>
+    <button class="boton-voz" onclick="activarVoz()">🎤</button>
+    <button class="boton-plus" onclick="abrirPlus()">+</button>
   </div>
 </div>
 
@@ -39,7 +43,7 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
     </div>
   </div>
 
-  <!-- DRONE -->
+  <!-- DRONE Y MODULOS -->
   <div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
     <div class="chat-box">
@@ -50,7 +54,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
       </div>
       <div id="contenidoDrone" style="margin-top:20px"></div>
 
-      <!-- Módulos Extra SPA -->
       <div class="modulo-extra">
         <button onclick="cargarModulo('simulador','🕹️ Simulador')">🕹️ Simulador</button>
         <button onclick="cargarModulo('invent','💡 Invent')">💡 Invent</button>
@@ -97,16 +100,17 @@ function activarDrone(){
 }
 
 // =========================
-// OTROS
-// =========================
-function activarGanado(){ alert("En construcción") }
-function activarPlantas(){ alert("En construcción") }
-function activarTraductor(){ alert("En construcción") }
-function activarProyectos(){ alert("Usa módulo proyectos") }
+// BOTONES VOZ Y +
+function activarVoz(){
+  let pregunta = prompt("🗣️ Habla con MAIA (simulación de voz):");
+  if(pregunta) alert("MAIA responde: Esto es un ejemplo de respuesta de voz.");
+}
+function abrirPlus(){
+  alert("Menú +: funciones extra en construcción");
+}
 
 // =========================
 // DRONES DINÁMICOS
-// =========================
 async function cargarDronesPorCategoria(categoria, titulo){
   const cont = document.getElementById("contenidoDrone");
   cont.innerHTML = `Cargando ${titulo}...`;
@@ -136,7 +140,6 @@ function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militare
 
 // =========================
 // MÓDULOS EXTRA SPA
-// =========================
 async function cargarModulo(modulo, titulo){
   const cont = document.getElementById("contenidoDrone");
   cont.innerHTML = `Cargando ${titulo}...`;
@@ -148,6 +151,14 @@ async function cargarModulo(modulo, titulo){
     cont.innerHTML = `Error cargando ${titulo}`;
     console.error(e);
   }
+}
+
+// =========================
+// BOTONES SUPERIORES (GANADO, PLANTAS, TRADUCTOR, PROYECTOS)
+function abrirModuloGenerico(modulo, titulo){
+  activarDrone();
+  const cont = document.getElementById("contenidoDrone");
+  cont.innerHTML = `<h3>${titulo}</h3><p>Contenido de ${titulo} en construcción.</p>`;
 }
 </script>
 {% endblock %}

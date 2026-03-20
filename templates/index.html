@@ -41,9 +41,9 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
     <h3>🚁 MAIA DRONE</h3>
     <div class="chat-box">
       <div class="drone-botones">
-        <button onclick="dronesComerciales()">🛩️</button>
-        <button onclick="dronesIndustriales()">🏭</button>
-        <button onclick="dronesMilitares()">🛡️</button>
+        <button onclick="dronesComerciales()">🛩️ Comerciales</button>
+        <button onclick="dronesIndustriales()">🏭 Industriales</button>
+        <button onclick="dronesMilitares()">🛡️ Militares</button>
       </div>
       <div id="contenidoDrone" style="margin-top:20px"></div>
     </div>
@@ -81,18 +81,6 @@ function activarDrone(){
       <button onclick="dronesMilitares()" style="background:#dc2626;padding:15px;border:none;border-radius:10px;color:white;">
         🛡️ Drones militares
       </button>
-      <button onclick="window.location.href='/maia_simulador'" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
-        🧪 Simulador
-      </button>
-      <button onclick="window.location.href='/maia_architect'" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
-        🧠 Architect
-      </button>
-      <button onclick="window.location.href='/maia_lab'" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
-        🚀 Lab
-      </button>
-      <button onclick="window.location.href='/maia_invent'" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
-        ⚙️ Invent
-      </button>
     </div>
   `;
 }
@@ -100,10 +88,10 @@ function activarDrone(){
 // =========================
 // OTROS
 // =========================
-function activarGanado(){alert("En construcción")}
-function activarPlantas(){alert("En construcción")}
-function activarTraductor(){alert("En construcción")}
-function activarProyectos(){alert("Usa módulo proyectos")}
+function activarGanado(){ alert("En construcción") }
+function activarPlantas(){ alert("En construcción") }
+function activarTraductor(){ alert("En construcción") }
+function activarProyectos(){ alert("Usa módulo proyectos") }
 
 // =========================
 // DRONES DINÁMICOS
@@ -120,8 +108,10 @@ async function cargarDronesPorCategoria(categoria, titulo){
     }
     let html = `<h3>${titulo}</h3>`;
     drones.forEach(d=>{
-      html += `<div>🚁 <b>${d.nombre}</b><br>
-               <button onclick="window.location.href='${d.ruta}'">Abrir</button></div><br>`;
+      html += `<div style="margin-bottom:15px;">
+                 🚁 <b>${d.nombre}</b><br>
+                 <button onclick="window.location.href='${d.ruta}'">Abrir</button>
+               </div>`;
     });
     cont.innerHTML = html;
   } catch(e){
@@ -131,8 +121,8 @@ async function cargarDronesPorCategoria(categoria, titulo){
 }
 
 function dronesComerciales(){ cargarDronesPorCategoria("comercial","🛩️ Comerciales") }
-function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militares") }
 function dronesIndustriales(){ cargarDronesPorCategoria("industrial","🏭 Industriales") }
-
+function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militares") }
 </script>
+
 {% endblock %}

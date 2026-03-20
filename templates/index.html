@@ -58,7 +58,6 @@ button.send{
   cursor:pointer;
 }
 .hidden{display:none;}
-
 .drone-botones{
   display:flex;
   gap:20px;
@@ -74,6 +73,7 @@ button.send{
   font-size:15px;
 }
 </style>
+
 </head>
 
 <body>
@@ -104,21 +104,22 @@ button.send{
   <!-- DRONE -->
   <div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
-
     <div class="chat-box">
-
       <div class="drone-botones">
         <button onclick="dronesComerciales()">🛩️</button>
         <button onclick="dronesIndustriales()">🏭</button>
         <button onclick="dronesMilitares()">🛡️</button>
       </div>
-
       <div id="contenidoDrone" style="margin-top:20px"></div>
-
     </div>
   </div>
 
 </div>
+
+<!-- ========================= -->
+<!-- 🔥 MAIA GLOBAL (CORREGIDO) -->
+<!-- ========================= -->
+{% include 'maia_global.html' %}
 
 <script>
 
@@ -135,15 +136,15 @@ function volverChat(){
   document.getElementById("chatNormal").classList.remove("hidden")
 }
 
-// 🔥 CORRECCIÓN + ANEXO AQUÍ
+// =========================
+// ACTIVAR DRONE (MEJORADO)
+// =========================
 function activarDrone(){
   ocultarTodo()
   document.getElementById("moduloDrone").classList.remove("hidden")
 
-  // 🔥 CONTENIDO INICIAL (ANEXADO)
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>Selecciona el tipo de drones</h3>
-
     <div style="display:flex;flex-direction:column;gap:15px;margin-top:20px">
 
       <button onclick="dronesComerciales()" style="background:#2563eb;padding:15px;border:none;border-radius:10px;color:white;">
@@ -158,19 +159,20 @@ function activarDrone(){
         🛡️ Drones militares
       </button>
 
-      <button onclick="window.open('/maia_simulador','_blank')" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
+      <!-- 🔥 CORREGIDO: rutas en misma ventana -->
+      <button onclick="window.location.href='/maia_simulador'" style="background:#9333ea;padding:15px;border:none;border-radius:10px;color:white;">
         🧪 Simulador de drones
       </button>
 
-      <button onclick="window.open('/maia_architect','_blank')" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
+      <button onclick="window.location.href='/maia_architect'" style="background:#06b6d4;padding:15px;border:none;border-radius:10px;color:white;">
         🧠 MAIA AI Drone Architect
       </button>
 
-      <button onclick="window.open('/maia_lab','_blank')" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
+      <button onclick="window.location.href='/maia_lab'" style="background:#f59e0b;padding:15px;border:none;border-radius:10px;color:white;">
         🚀 MAIA Autonomous Drone Lab
       </button>
 
-      <button onclick="window.open('/maia_invent','_blank')" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
+      <button onclick="window.location.href='/maia_invent'" style="background:#10b981;padding:15px;border:none;border-radius:10px;color:white;">
         ⚙️ MAIA Invent
       </button>
 
@@ -178,6 +180,9 @@ function activarDrone(){
   `
 }
 
+// =========================
+// OTROS MÓDULOS
+// =========================
 function activarGanado(){alert("En construcción")}
 function activarPlantas(){alert("En construcción")}
 function activarTraductor(){alert("En construcción")}
@@ -186,13 +191,13 @@ function activarProyectos(){alert("Usa módulo proyectos existente")}
 // =========================
 // DRONES
 // =========================
-
 function dronesComerciales(){
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>🛩️ Comerciales</h3>
     <ul>
-      <li>Drone Todo Terreno<br><br>
-      <button onclick="window.open('/drone_todo_terreno','_blank')">Abrir</button>
+      <li>
+        Drone Todo Terreno<br><br>
+        <button onclick="window.location.href='/drone_todo_terreno'">Abrir</button>
       </li>
     </ul>
   `
@@ -202,16 +207,18 @@ function dronesMilitares(){
   document.getElementById("contenidoDrone").innerHTML = `
     <h3>🛡️ Militares</h3>
     <ul>
-      <li>Drone Detector de Minas<br><br>
-      <button onclick="window.open('/drone_detector_minas','_blank')">Abrir</button>
+      <li>
+        Drone Detector de Minas<br><br>
+        <button onclick="window.location.href='/drone_detector_minas'">Abrir</button>
       </li>
     </ul>
   `
 }
 
-// 🔥 INDUSTRIALES CORREGIDO
+// =========================
+// 🔥 INDUSTRIALES (OK)
+// =========================
 async function dronesIndustriales(){
-
   const cont = document.getElementById("contenidoDrone")
   cont.innerHTML = "<h3>Cargando drones...</h3>"
 
@@ -225,7 +232,7 @@ async function dronesIndustriales(){
       html += `
         <li>
           🚁 <b>${d.nombre}</b><br><br>
-          <button onclick="window.open('${d.ruta}','_blank')">
+          <button onclick="window.location.href='${d.ruta}'">
             Abrir proyecto
           </button>
           <br><br>
@@ -246,4 +253,3 @@ async function dronesIndustriales(){
 
 </body>
 </html>
-{% include 'maia_global.html' %}

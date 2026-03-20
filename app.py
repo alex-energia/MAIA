@@ -21,10 +21,13 @@ app.register_blueprint(proyectos_bp)
 def cargar_drones_base():
     drones = []
     carpeta_drones = os.path.join(app.template_folder, "drones")
+
     for archivo in os.listdir(carpeta_drones):
         if archivo.endswith(".html"):
+
             ruta = "/drones/" + archivo.replace(".html", "")
             path_completo = os.path.join(carpeta_drones, archivo)
+
             try:
                 with open(path_completo, "r", encoding="utf-8") as f:
                     soup = BeautifulSoup(f, "html.parser")
@@ -33,6 +36,7 @@ def cargar_drones_base():
                 titulo = archivo.replace(".html", "")
 
             lower = archivo.lower()
+
             if "minas" in lower or "militar" in lower:
                 categoria = "militar"
             elif "todo_terreno" in lower or "smartphone" in lower:
@@ -40,7 +44,6 @@ def cargar_drones_base():
             else:
                 categoria = "industrial"
 
-            # Datos completos: intro, software, hardware, viabilidad
             drones.append({
                 "nombre": titulo,
                 "ruta": ruta,
@@ -61,7 +64,9 @@ def cargar_drones_base():
                     "LEDs de iluminación"
                 ]
             })
+
     return drones
+
 
 # Variable global
 DRONES_BASE = cargar_drones_base()
@@ -78,10 +83,12 @@ def home():
 # =========================
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
-    categoria = request.args.get("categoria")  # comercial, industrial, militar
+    categoria = request.args.get("categoria")
+
     if categoria:
         filtrados = [d for d in DRONES_BASE if d["categoria"] == categoria]
         return jsonify(filtrados)
+
     return jsonify(DRONES_BASE)
 
 # =========================
@@ -95,8 +102,10 @@ def obtener_memoria():
 def guardar_memoria(pregunta, respuesta):
     historial = obtener_memoria()
     historial.append({"pregunta": pregunta, "respuesta": respuesta})
+
     if len(historial) > 10:
         historial.pop(0)
+
     session["historial"] = historial
 
 # =========================
@@ -113,10 +122,13 @@ def inyectar_maia():
 def maia_voz():
     data = request.get_json()
     pregunta = data.get("pregunta", "")
+
     historial = obtener_memoria()
     contexto = ""
+
     for h in historial:
         contexto += f"Usuario: {h['pregunta']}\nMAIA: {h['respuesta']}\n"
+
     respuesta = (
         f"MAIA IA avanzada:"
         f"Contexto previo:{contexto}"
@@ -124,7 +136,9 @@ def maia_voz():
         f"Respuesta: Análisis experto en ingeniería, energía, drones y sistemas inteligentes."
         f"Conclusión optimizada basada en memoria conversacional."
     )
+
     guardar_memoria(pregunta, respuesta)
+
     return jsonify({"respuesta": respuesta})
 
 # =========================
@@ -164,20 +178,24 @@ def maia_architect():
     return render_template("maia_architect.html")
 
 # =========================
-# 🔥 RUTA DINÁMICA PARA ABRIR DRONES
+# ✅ 🔥 NUEVA RUTA (SOLUCIÓN ERROR 404)
+# =========================
+@app.route("/maia_chat")
+def maia_chat():
+    return render_template("maia_chat.html")
+
+# =========================
+# 🔥 RUTA DINÁMICA PARA DRONES
 # =========================
 @app.route("/drones/<drone_file>")
 def abrir_drone(drone_file):
-    """
-    Abre cualquier drone en templates/drones/
-    drone_file = nombre del archivo sin .html
-    """
     ruta_html = f"drones/{drone_file}.html"
+
     if os.path.exists(os.path.join(app.template_folder, ruta_html)):
         return render_template(ruta_html)
     else:
         return "Drone no encontrado", 404
 
 # =========================
-# 🚀 NOTE: No app.run() — Gunicorn lo maneja
+# 🚀 Gunicorn maneja ejecución
 # =========================

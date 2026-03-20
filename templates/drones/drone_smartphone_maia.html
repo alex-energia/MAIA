@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Mini Drone Smartphone MAIA</title>
-
     <style>
         body {
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
@@ -11,18 +10,15 @@
             margin: 0;
             padding: 0;
         }
-
         .container {
             max-width: 900px;
             margin: auto;
             padding: 30px;
         }
-
         h1 {
             text-align: center;
             color: #00ffd5;
         }
-
         .card {
             background: rgba(0,0,0,0.6);
             padding: 20px;
@@ -30,11 +26,9 @@
             margin-top: 20px;
             box-shadow: 0 0 15px rgba(0,255,213,0.3);
         }
-
         ul {
             line-height: 1.8;
         }
-
         .badge {
             background: #00ffd5;
             color: black;
@@ -42,7 +36,6 @@
             border-radius: 5px;
             font-weight: bold;
         }
-
         .boton {
             background: #00ffd5;
             border: none;
@@ -52,7 +45,6 @@
             cursor: pointer;
             margin-top: 15px;
         }
-
         .boton:hover {
             background: #00bfa6;
         }
@@ -62,34 +54,52 @@
 <body>
 
 <div class="container">
-
-    <h1>📱 Mini Drone Asistente Integrado MAIA</h1>
+    <h1>📱 Mini Drone Integrado MAIA</h1>
 
     <div class="card">
         <span class="badge">Drone Comercial</span>
 
         <h2>🚀 Introducción</h2>
-        <p id="intro"></p>
+        <p>
+            El Mini Drone Integrado MAIA es un sistema portátil incorporado en smartphones,
+            diseñado para asistencia personal, captura aérea inteligente y seguridad.
+            Su tamaño compacto permite despliegue automático desde el dispositivo móvil.
+        </p>
 
         <h3>📊 Viabilidad</h3>
-        <p id="viabilidad"></p>
+        <p>
+            Alta viabilidad comercial gracias a la miniaturización de componentes,
+            integración con IA y demanda creciente de dispositivos inteligentes multifunción.
+        </p>
     </div>
 
     <div class="card">
         <h2>🧠 Software</h2>
-        <ul id="software"></ul>
+        <ul>
+            <li>IA de estabilización de vuelo</li>
+            <li>Reconocimiento facial y seguimiento automático</li>
+            <li>Control desde app MAIA</li>
+            <li>Modo autónomo inteligente</li>
+            <li>Transmisión en tiempo real</li>
+        </ul>
     </div>
 
     <div class="card">
         <h2>⚙️ Hardware</h2>
-        <ul id="hardware"></ul>
+        <ul>
+            <li>Micro hélices retráctiles</li>
+            <li>Cámara HD integrada</li>
+            <li>Batería compacta de alta densidad</li>
+            <li>Sensores de proximidad</li>
+            <li>Módulo de comunicación inalámbrica</li>
+        </ul>
     </div>
 
     <div class="card">
         <h2>💡 Modos de Uso</h2>
         <ul>
             <li>📸 Selfie aéreo automático</li>
-            <li>🎥 Grabación de video inteligente</li>
+            <li>🎥 Grabación inteligente</li>
             <li>🔦 Iluminación portátil</li>
             <li>🛡️ Seguridad personal</li>
             <li>🚁 Exploración en espacios reducidos</li>
@@ -101,57 +111,13 @@
         <button class="boton" onclick="activarDemo()">🚀 Desplegar Drone</button>
         <p id="demo"></p>
     </div>
-
 </div>
 
 <script>
-
-// 🔥 CARGAR DATOS DESDE EL BACKEND
-async function cargarDrone() {
-    const res = await fetch("/maia_drones_aprobados");
-    const data = await res.json();
-
-    // 🔍 BUSCAR TU DRONE
-    const drone = data.find(d =>
-        d.nombre.toLowerCase().includes("smartphone")
-    );
-
-    if (!drone) return;
-
-    // ✅ INTRO
-    document.getElementById("intro").innerText = drone.introduccion || "";
-
-    // ✅ VIABILIDAD
-    document.getElementById("viabilidad").innerText = drone.viabilidad || "";
-
-    // ✅ SOFTWARE
-    let sw = document.getElementById("software");
-    sw.innerHTML = "";
-    (drone.software || []).forEach(s => {
-        let li = document.createElement("li");
-        li.innerText = s;
-        sw.appendChild(li);
-    });
-
-    // ✅ HARDWARE
-    let hw = document.getElementById("hardware");
-    hw.innerHTML = "";
-    (drone.hardware || []).forEach(h => {
-        let li = document.createElement("li");
-        li.innerText = h;
-        hw.appendChild(li);
-    });
-}
-
-// 🚀 DEMO
 function activarDemo(){
     document.getElementById("demo").innerText =
-    "🚁 Drone desplegado desde el smartphone... estabilizando... conectando cámara... listo para operar.";
+    "🚁 Drone desplegado... estabilizando... cámara activa... listo para operar.";
 }
-
-// 🔥 AUTO LOAD
-cargarDrone();
-
 </script>
 
 </body>

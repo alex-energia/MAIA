@@ -16,7 +16,7 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔥 CARGA DRONES
+# 🔥 CARGA DRONES (PROTEGIDA)
 # =========================
 def cargar_drones_base():
     drones = []
@@ -35,7 +35,8 @@ def cargar_drones_base():
                 with open(path_completo, "r", encoding="utf-8") as f:
                     soup = BeautifulSoup(f, "html.parser")
                     titulo = soup.title.string.strip() if soup.title else archivo.replace(".html", "")
-            except Exception:
+            except Exception as e:
+                print("Error leyendo drone:", e)
                 titulo = archivo.replace(".html", "")
 
             lower = archivo.lower()
@@ -70,10 +71,22 @@ def cargar_drones_base():
 
     return drones
 
+
 # =========================
-# DATA GLOBAL
+# DATA GLOBAL (PROTEGIDA)
 # =========================
-DRONES_BASE = cargar_drones_base()
+try:
+    DRONES_BASE = cargar_drones_base()
+except Exception as e:
+    print("🔥 ERROR cargando drones:", e)
+    DRONES_BASE = []
+
+# =========================
+# TEST RENDER
+# =========================
+@app.route("/ping")
+def ping():
+    return "OK", 200
 
 # =========================
 # HOME
@@ -88,11 +101,9 @@ def home():
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
     categoria = request.args.get("categoria")
-
     if categoria:
         filtrados = [d for d in DRONES_BASE if d["categoria"] == categoria]
         return jsonify(filtrados)
-
     return jsonify(DRONES_BASE)
 
 # =========================
@@ -106,10 +117,8 @@ def obtener_memoria():
 def guardar_memoria(pregunta, respuesta):
     historial = obtener_memoria()
     historial.append({"pregunta": pregunta, "respuesta": respuesta})
-
     if len(historial) > 10:
         historial.pop(0)
-
     session["historial"] = historial
 
 # =========================
@@ -142,7 +151,6 @@ def maia_voz():
     )
 
     guardar_memoria(pregunta, respuesta)
-
     return jsonify({"respuesta": respuesta})
 
 # =========================
@@ -211,14 +219,12 @@ def maia_chat():
 @app.route("/drones/<drone_file>")
 def abrir_drone(drone_file):
     ruta_html = f"drones/{drone_file}.html"
-
     if os.path.exists(os.path.join(app.template_folder, ruta_html)):
         return render_template(ruta_html)
-
     return "Drone no encontrado", 404
 
 # =========================
-# 🔥 FIX RENDER
+# 🔥 RUN LOCAL (NO AFECTA RENDER)
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

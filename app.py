@@ -36,11 +36,11 @@ def home():
     return render_template("index.html")
 
 # =========================
-# 🔥 RUTA API DRONES
+# 🔥 RUTA API DRONES (FILTRADO DINÁMICO)
 # =========================
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
-    categoria = request.args.get("categoria")
+    categoria = request.args.get("categoria")  # comercial, industrial, militar
     if categoria:
         filtrados = [d for d in DRONES_BASE if d["categoria"] == categoria]
         return jsonify(filtrados)

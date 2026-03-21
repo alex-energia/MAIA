@@ -1,5 +1,6 @@
 {% extends "base_maia.html" %}
 {% block content %}
+
 <style>
 body{ margin:0; font-family:Arial; background:#1e1e1e; color:white;}
 .topbar{ display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:#111;}
@@ -12,8 +13,19 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .hidden{display:none;}
 .drone-botones{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;}
 .drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
+
 .modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px;}
-.modulo-extra button{ flex:1; min-width:150px; padding:15px; border-radius:10px; border:none; cursor:pointer; background:#10b981; color:white; font-weight:bold;}
+.modulo-extra button{
+  flex:1;
+  min-width:150px;
+  padding:15px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  background:#10b981;
+  color:white;
+  font-weight:bold;
+}
 .modulo-extra button:hover{ background:#059669;}
 
 /* 🔴 VOZ */
@@ -53,17 +65,14 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
   <div class="topbar-buttons">
-    <button onclick="abrirModuloGenerico('ganado','🐄')">🐄</button>
-    <button onclick="abrirModuloGenerico('plantas','🌿')">🌿</button>
-    <button onclick="abrirModuloGenerico('traductor','🌍')">🌍</button>
-    <button onclick="abrirModuloGenerico('proyectos','📁')">📁</button>
+    <button onclick="abrirModuloGenerico('ganado')">🐄</button>
+    <button onclick="abrirModuloGenerico('plantas')">🌿</button>
+    <button onclick="abrirModuloGenerico('traductor')">🌍</button>
+    <button onclick="abrirModuloGenerico('proyectos')">📁</button>
     <button onclick="activarDrone()">🚁</button>
     <button onclick="volverChat()">🏠</button>
 
-    <!-- 🔴 VOZ -->
     <button class="boton-voz" onclick="activarVozReal()">🎤</button>
-
-    <!-- 💬 CHAT -->
     <button class="boton-plus" onclick="abrirChatMAIA()">💬</button>
   </div>
 </div>
@@ -82,6 +91,7 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
   <!-- DRONE -->
   <div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
+
     <div class="chat-box">
 
       <div class="drone-botones">
@@ -92,15 +102,35 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 
       <div id="contenidoDrone" style="margin-top:20px"></div>
 
+      <!-- 🔥 MÓDULOS EXTRA (AQUÍ ESTABA EL FALTANTE) -->
+      <div class="modulo-extra">
+
+        <button onclick="cargarModuloExtra('simulador','🕹️ Simulador')">
+          🕹️ Simulador
+        </button>
+
+        <button onclick="cargarModuloExtra('invent','💡 Invent')">
+          💡 Invent
+        </button>
+
+        <button onclick="cargarModuloExtra('lab','🧪 Lab')">
+          🧪 Lab
+        </button>
+
+        <button onclick="cargarModuloExtra('architect','🏗️ Architect')">
+          🏗️ Architect
+        </button>
+
+      </div>
+
     </div>
   </div>
 
 </div>
 
 <script>
-// =========================
+
 // navegación
-// =========================
 function ocultarTodo(){
   document.getElementById("chatNormal").classList.add("hidden");
   document.getElementById("moduloDrone").classList.add("hidden");
@@ -111,20 +141,14 @@ function volverChat(){
   document.getElementById("chatNormal").classList.remove("hidden");
 }
 
-// =========================
-// 🚁 DRONE (ARREGLADO)
-// =========================
+// 🚁 DRONE
 function activarDrone(){
   ocultarTodo();
   document.getElementById("moduloDrone").classList.remove("hidden");
-
-  // 🔥 carga automática
   dronesIndustriales();
 }
 
-// =========================
-// 🔥 CARGA DRONES REAL
-// =========================
+// 🔥 DRONES
 async function cargarDronesPorCategoria(categoria, titulo){
   const cont = document.getElementById("contenidoDrone");
   cont.innerHTML = `Cargando ${titulo}...`;
@@ -132,11 +156,6 @@ async function cargarDronesPorCategoria(categoria, titulo){
   try{
     let r = await fetch(`/maia_drones_aprobados?categoria=${categoria}`);
     let drones = await r.json();
-
-    if(drones.length === 0){
-      cont.innerHTML = `<h3>${titulo}</h3><p>No hay drones.</p>`;
-      return;
-    }
 
     let html = `<h3>${titulo}</h3>`;
 
@@ -153,25 +172,14 @@ async function cargarDronesPorCategoria(categoria, titulo){
 
   }catch(e){
     cont.innerHTML = "Error cargando drones";
-    console.error(e);
   }
 }
 
-function dronesComerciales(){
-  cargarDronesPorCategoria("comercial","🛩️ Comerciales");
-}
+function dronesComerciales(){ cargarDronesPorCategoria("comercial","🛩️ Comerciales"); }
+function dronesIndustriales(){ cargarDronesPorCategoria("industrial","🏭 Industriales"); }
+function dronesMilitares(){ cargarDronesPorCategoria("militar","🛡️ Militares"); }
 
-function dronesIndustriales(){
-  cargarDronesPorCategoria("industrial","🏭 Industriales");
-}
-
-function dronesMilitares(){
-  cargarDronesPorCategoria("militar","🛡️ Militares");
-}
-
-// =========================
 // 🎤 VOZ
-// =========================
 async function activarVozReal(){
   let pregunta = prompt("🎤 Habla con MAIA:");
   if(!pregunta) return;
@@ -186,19 +194,33 @@ async function activarVozReal(){
   alert(data.respuesta);
 }
 
-// =========================
 // 💬 CHAT
-// =========================
 function abrirChatMAIA(){
   window.location.href = "/maia_chat";
 }
 
-// =========================
-// 🔥 MÓDULOS (OK)
-// =========================
+// 🔥 MÓDULOS SUPERIORES
 function abrirModuloGenerico(modulo){
   window.location.href = `/maia_${modulo}`;
 }
+
+// 🔥 MÓDULOS INTERNOS (CLAVE)
+async function cargarModuloExtra(modulo, titulo){
+  const cont = document.getElementById("contenidoDrone");
+
+  cont.innerHTML = `Cargando ${titulo}...`;
+
+  try{
+    let r = await fetch(`/maia_${modulo}`);
+    let html = await r.text();
+
+    cont.innerHTML = `<h3>${titulo}</h3>` + html;
+
+  }catch(e){
+    cont.innerHTML = `Error cargando ${titulo}`;
+  }
+}
+
 </script>
 
 {% endblock %}

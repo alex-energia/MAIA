@@ -69,6 +69,8 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 </div>
 
 <div class="container">
+
+  <!-- CHAT -->
   <div id="chatNormal">
     <div id="chatBox" class="chat-box"></div>
     <div class="input-area">
@@ -77,37 +79,99 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
     </div>
   </div>
 
+  <!-- DRONE -->
   <div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
     <div class="chat-box">
+
       <div class="drone-botones">
         <button onclick="dronesComerciales()">🛩️ Comerciales</button>
         <button onclick="dronesIndustriales()">🏭 Industriales</button>
         <button onclick="dronesMilitares()">🛡️ Militares</button>
       </div>
+
       <div id="contenidoDrone" style="margin-top:20px"></div>
+
     </div>
   </div>
+
 </div>
 
 <script>
+// =========================
 // navegación
+// =========================
 function ocultarTodo(){
   document.getElementById("chatNormal").classList.add("hidden");
   document.getElementById("moduloDrone").classList.add("hidden");
 }
+
 function volverChat(){
   ocultarTodo();
   document.getElementById("chatNormal").classList.remove("hidden");
 }
 
-// drone
+// =========================
+// 🚁 DRONE (ARREGLADO)
+// =========================
 function activarDrone(){
   ocultarTodo();
   document.getElementById("moduloDrone").classList.remove("hidden");
+
+  // 🔥 carga automática
+  dronesIndustriales();
 }
 
-// voz real
+// =========================
+// 🔥 CARGA DRONES REAL
+// =========================
+async function cargarDronesPorCategoria(categoria, titulo){
+  const cont = document.getElementById("contenidoDrone");
+  cont.innerHTML = `Cargando ${titulo}...`;
+
+  try{
+    let r = await fetch(`/maia_drones_aprobados?categoria=${categoria}`);
+    let drones = await r.json();
+
+    if(drones.length === 0){
+      cont.innerHTML = `<h3>${titulo}</h3><p>No hay drones.</p>`;
+      return;
+    }
+
+    let html = `<h3>${titulo}</h3>`;
+
+    drones.forEach(d=>{
+      html += `
+        <div style="margin-bottom:15px;">
+          🚁 <b>${d.nombre}</b><br>
+          <button onclick="window.location.href='${d.ruta}'">Abrir</button>
+        </div>
+      `;
+    });
+
+    cont.innerHTML = html;
+
+  }catch(e){
+    cont.innerHTML = "Error cargando drones";
+    console.error(e);
+  }
+}
+
+function dronesComerciales(){
+  cargarDronesPorCategoria("comercial","🛩️ Comerciales");
+}
+
+function dronesIndustriales(){
+  cargarDronesPorCategoria("industrial","🏭 Industriales");
+}
+
+function dronesMilitares(){
+  cargarDronesPorCategoria("militar","🛡️ Militares");
+}
+
+// =========================
+// 🎤 VOZ
+// =========================
 async function activarVozReal(){
   let pregunta = prompt("🎤 Habla con MAIA:");
   if(!pregunta) return;
@@ -122,14 +186,19 @@ async function activarVozReal(){
   alert(data.respuesta);
 }
 
-// chat
+// =========================
+// 💬 CHAT
+// =========================
 function abrirChatMAIA(){
   window.location.href = "/maia_chat";
 }
 
-// módulos reales 🔥
+// =========================
+// 🔥 MÓDULOS (OK)
+// =========================
 function abrirModuloGenerico(modulo){
   window.location.href = `/maia_${modulo}`;
 }
 </script>
+
 {% endblock %}

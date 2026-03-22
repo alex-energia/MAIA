@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, send_file
 from proyectos import proyectos_bp, init_db
 import os
 import json
@@ -8,6 +8,8 @@ import math
 import numpy as np
 import time
 import threading
+import subprocess
+import zipfile
 import re
 
 # 🔥 PROTECCIÓN TRIMESH
@@ -29,7 +31,7 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔥 LOCK GLOBAL (EMPRESA)
+# 🔒 LOCK GLOBAL
 # =========================
 lock_maia = threading.Lock()
 
@@ -48,21 +50,16 @@ resultado_global = {}
 # 🔥 LOGGER
 # =========================
 def log_event(tipo, mensaje):
-    log = {
-        "tipo": tipo,
-        "mensaje": mensaje,
-        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
-    print("🧠 LOG:", log)
+    print(f"🧠 [{tipo}] {mensaje}")
 
 # =========================
-# 🔥 SANITIZAR NOMBRE (SEGURIDAD)
+# 🔐 SANITIZAR
 # =========================
 def nombre_seguro(nombre):
     return re.sub(r'[^a-zA-Z0-9_-]', '_', nombre)
 
 # =========================
-# 🔥 GENERADOR SOFTWARE REAL
+# 🔥 GENERADOR SOFTWARE
 # =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
@@ -72,7 +69,6 @@ def generar_archivo(ruta, contenido):
 def crear_proyecto(nombre, peso):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
-
     os.makedirs(base, exist_ok=True)
 
     generar_archivo(f"{base}/flight_controller.py", f"""
@@ -119,6 +115,53 @@ for i in range(50):
     return base
 
 # =========================
+# 🔥 VALIDACIÓN CORREGIDA
+# =========================
+def validar_proyecto(ruta):
+    errores = []
+    for archivo in os.listdir(ruta):
+        if archivo.endswith(".py"):
+            ruta_archivo = os.path.join(ruta, archivo)
+            try:
+                subprocess.run(
+                    ["python", "-m", "py_compile", ruta_archivo],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+            except subprocess.CalledProcessError as e:
+                errores.append(e.stderr)
+    return errores
+
+# =========================
+# 🔥 EJECUCIÓN
+# =========================
+def ejecutar_main(ruta):
+    try:
+        result = subprocess.run(
+            ["python", "main.py"],
+            cwd=ruta,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        return result.stdout if result.stdout else result.stderr
+    except Exception as e:
+        return str(e)
+
+# =========================
+# 🔥 ZIP
+# =========================
+def exportar_zip(ruta):
+    zip_path = ruta + ".zip"
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for root, dirs, files in os.walk(ruta):
+            for file in files:
+                full = os.path.join(root, file)
+                zipf.write(full, os.path.relpath(full, ruta))
+    return zip_path
+
+# =========================
 # 🧠 CORE
 # =========================
 class MaiaCore:
@@ -154,14 +197,18 @@ class MaiaCore:
 
             analisis = self.analizar(idea)
 
-            self.progreso(40, "Generando software real")
-
+            self.progreso(30, "Generando software")
             nombre = f"drone_{int(time.time())}"
             ruta = crear_proyecto(nombre, analisis["peso"])
 
-            self.progreso(70, "Simulando")
+            self.progreso(50, "Validando código")
+            errores = validar_proyecto(ruta)
 
-            altura = analisis["peso"] * 0.5
+            self.progreso(70, "Ejecutando simulación")
+            salida = ejecutar_main(ruta)
+
+            self.progreso(85, "Empaquetando")
+            zip_path = exportar_zip(ruta)
 
             self.progreso(100, "Completado")
 
@@ -169,12 +216,12 @@ class MaiaCore:
                 estado_maia["estado"] = "COMPLETADO"
 
             return {
-                "viabilidad": "VIABLE ✅",
+                "viabilidad": "VIABLE ✅" if not errores else "REVISAR ⚠️",
                 "analisis": analisis,
+                "errores": errores,
+                "salida": salida,
                 "software_generado": ruta,
-                "simulacion": {
-                    "altura_estimada": altura
-                }
+                "zip": zip_path
             }
 
         except Exception as e:
@@ -190,11 +237,10 @@ class MaiaCore:
             }
 
 # =========================
-# 🚀 PROCESO ASÍNCRONO
+# 🚀 PROCESO
 # =========================
 def proceso_maia(idea):
     global resultado_global
-
     core = MaiaCore()
     resultado = core.ejecutar(idea)
 
@@ -227,6 +273,32 @@ def maia_resultado():
     with lock_maia:
         return jsonify(resultado_global)
 
+@app.route("/descargar_proyecto")
+def descargar_proyecto():
+    zip_path = resultado_global.get("zip")
+    if zip_path and os.path.exists(zip_path):
+        return send_file(zip_path, as_attachment=True)
+    return "No disponible", 404
+
+# =========================
+# 🔥 NUEVO: CAPACIDADES MAIA (FASE 11)
+# =========================
+@app.route("/maia_capacidades")
+def maia_capacidades():
+    return jsonify({
+        "fase": 11,
+        "capacidades": [
+            "Generación automática de software funcional",
+            "Simulación física real",
+            "Validación de código",
+            "Ejecución automática",
+            "Exportación profesional (.zip)",
+            "Arquitectura modular",
+            "Failsafe integrado",
+            "Sistema de progreso en tiempo real"
+        ]
+    })
+
 # =========================
 # 🔥 3D
 # =========================
@@ -236,8 +308,8 @@ def generar_3d():
         return jsonify({"modelo_url": "/static/no_3d.txt"})
 
     cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
-
     os.makedirs("static", exist_ok=True)
+
     ruta = "static/modelo_drone.glb"
     cuerpo.export(ruta)
 

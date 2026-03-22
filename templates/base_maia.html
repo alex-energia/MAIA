@@ -37,6 +37,12 @@
             margin-bottom:4px;
             background:#334155;
         }
+
+        /* 🔥🔥🔥 OCULTAR BOTONES MOLESTOS (SIN BORRAR) */
+        #maia-voz-btn,
+        #abrir-chat{
+            display:none !important;
+        }
     </style>
 </head>
 
@@ -49,6 +55,7 @@
     <!-- ========================= -->
     <!-- 🔥 MAIA GLOBAL UI -->
     <!-- ========================= -->
+
     <div id="maia-container">
 
         <!-- 🔴 BOTÓN VOZ -->
@@ -91,13 +98,19 @@
     <!-- ========================= -->
     <!-- 🔥 SCRIPT MAIA (CARGA SEGURA) -->
     <!-- ========================= -->
+
     <script>
-        // 🔥 Espera total del DOM antes de cargar MAIA
         window.addEventListener("load", function(){
-            const script = document.createElement("script");
-            script.src = "{{ url_for('static', filename='js/maia.js') }}";
-            script.defer = true;
-            document.body.appendChild(script);
+
+            // 🔥 evita duplicación de script
+            if(!document.getElementById("maia-script")){
+                const script = document.createElement("script");
+                script.src = "{{ url_for('static', filename='js/maia.js') }}";
+                script.defer = true;
+                script.id = "maia-script";
+                document.body.appendChild(script);
+            }
+
         });
     </script>
 

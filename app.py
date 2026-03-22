@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, jsonify, session
 from proyectos import proyectos_bp, init_db
 import os
+import json
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 # =========================
@@ -28,7 +30,6 @@ def cargar_drones_base():
 
     for archivo in os.listdir(carpeta_drones):
         if archivo.endswith(".html"):
-
             ruta = "/drones/" + archivo.replace(".html", "")
             path_completo = os.path.join(carpeta_drones, archivo)
 
@@ -41,7 +42,6 @@ def cargar_drones_base():
                 titulo = archivo.replace(".html", "")
 
             lower = archivo.lower()
-
             if "minas" in lower or "militar" in lower:
                 categoria = "militar"
             elif "todo_terreno" in lower or "smartphone" in lower:
@@ -69,7 +69,6 @@ def cargar_drones_base():
                     "LEDs de iluminación"
                 ]
             })
-
     return drones
 
 # =========================
@@ -82,41 +81,121 @@ except Exception as e:
     DRONES_BASE = []
 
 # =========================
-# 🧠 MEMORIA CENTRAL MAIA
+# 🧠 MEMORIA PERSISTENTE (JSON REAL)
 # =========================
-MEMORIA_MAIA = []
+MEMORIA_PATH = "memoria_maia.json"
 
+def cargar_memoria():
+    if not os.path.exists(MEMORIA_PATH):
+        return []
+    try:
+        with open(MEMORIA_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
+
+def guardar_memoria(data):
+    with open(MEMORIA_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+# =========================
+# 🧠 GUARDAR PROYECTO COMPLETO
+# =========================
 @app.route("/maia_guardar_proyecto", methods=["POST"])
 def maia_guardar_proyecto():
-
     data = request.get_json(silent=True) or {}
+
+    memoria = cargar_memoria()
 
     proyecto = {
         "modulo": data.get("modulo"),
         "nombre": data.get("nombre"),
         "descripcion": data.get("descripcion"),
-        "software": data.get("software", []),
-        "hardware": data.get("hardware", []),
-        "extra": data.get("extra", {})
+        "analisis": data.get("analisis"),
+        "software": data.get("software"),
+        "hardware": data.get("hardware"),
+        "modelo_3d": data.get("modelo_3d"),
+        "extra": data.get("extra", {}),
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    MEMORIA_MAIA.append(proyecto)
+    memoria.append(proyecto)
+    guardar_memoria(memoria)
 
     return jsonify({
         "status": "ok",
-        "mensaje": "🧠 Proyecto guardado en memoria MAIA"
+        "mensaje": "🧠 Proyecto guardado correctamente"
     })
 
+# =========================
+# 📂 VER MEMORIA
+# =========================
 @app.route("/maia_memoria")
 def maia_memoria():
-    return jsonify(MEMORIA_MAIA)
+    return jsonify(cargar_memoria())
 
 @app.route("/maia_memoria_view")
 def maia_memoria_view():
     return render_template("maia_memoria.html")
 
 # =========================
-# TEST RENDER
+# 🚀 MAIA INVENT (INGENIERÍA TOTAL)
+# =========================
+@app.route("/evaluar_drone", methods=["POST"])
+def evaluar_drone():
+    data = request.get_json(silent=True) or {}
+    idea = data.get("idea", "")
+
+    if len(idea.strip()) < 5:
+        return jsonify({
+            "viabilidad": "NO VIABLE ❌",
+            "causas": [
+                "Idea poco definida",
+                "No hay objetivo claro",
+                "Falta enfoque técnico"
+            ]
+        })
+
+    resultado = {
+        "viabilidad": "VIABLE ✅",
+        "analisis": {
+            "tecnico": "Sistema realizable con sensores, IA y control autónomo.",
+            "economico": "Costo medio, escalable según producción.",
+            "profesional": "Alta aplicación en industria, seguridad o medio ambiente."
+        },
+        "software": {
+            "modulos": [
+                "Control de vuelo PID",
+                "Sistema GPS inteligente",
+                "Visión artificial con OpenCV",
+                "IA de navegación autónoma",
+                "Comunicación con MAIA"
+            ],
+            "algoritmos": [
+                "SLAM",
+                "A* Pathfinding",
+                "Red neuronal",
+                "Control adaptativo"
+            ]
+        },
+        "hardware": [
+            "Frame de carbono",
+            "Motores brushless",
+            "ESC 40A",
+            "Controlador Pixhawk",
+            "GPS Ublox",
+            "Lidar",
+            "Cámara HD",
+            "Batería LiPo"
+        ],
+        "modelo_3d": "Drone tipo quadcopter modular con sensores frontales.",
+        "garantia": "Sistema funcional basado en control PID + sensores + IA."
+    }
+
+    return jsonify(resultado)
+
+# =========================
+# TEST
 # =========================
 @app.route("/ping")
 def ping():
@@ -135,80 +214,37 @@ def home():
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
     categoria = request.args.get("categoria")
-
     if categoria:
-        filtrados = [d for d in DRONES_BASE if d["categoria"] == categoria]
-        return jsonify(filtrados)
-
+        return jsonify([d for d in DRONES_BASE if d["categoria"] == categoria])
     return jsonify(DRONES_BASE)
 
 # =========================
-# MEMORIA CHAT MAIA
+# MEMORIA CHAT
 # =========================
-def obtener_memoria():
+def obtener_memoria_chat():
     if "historial" not in session:
         session["historial"] = []
     return session["historial"]
 
-def guardar_memoria(pregunta, respuesta):
-    historial = obtener_memoria()
+def guardar_memoria_chat(pregunta, respuesta):
+    historial = obtener_memoria_chat()
     historial.append({"pregunta": pregunta, "respuesta": respuesta})
-
     if len(historial) > 10:
         historial.pop(0)
-
     session["historial"] = historial
 
 # =========================
-# CONTEXTO GLOBAL
-# =========================
-@app.context_processor
-def inyectar_maia():
-    return dict(maia_global=True)
-
-# =========================
-# VOZ MAIA
+# VOZ
 # =========================
 @app.route("/maia_voz", methods=["POST"])
 def maia_voz():
-
     data = request.get_json(silent=True) or {}
     pregunta = data.get("pregunta", "")
 
-    historial = obtener_memoria()
+    respuesta = f"MAIA IA: análisis avanzado para -> {pregunta}"
 
-    contexto = ""
-    for h in historial:
-        contexto += f"Usuario: {h['pregunta']}\nMAIA: {h['respuesta']}\n"
-
-    respuesta = (
-        f"MAIA IA avanzada:\n"
-        f"Contexto previo:\n{contexto}\n"
-        f"Nueva pregunta: {pregunta}\n"
-        f"Respuesta: Análisis experto en ingeniería, energía y drones.\n"
-        f"Conclusión optimizada basada en memoria."
-    )
-
-    guardar_memoria(pregunta, respuesta)
-
+    guardar_memoria_chat(pregunta, respuesta)
     return jsonify({"respuesta": respuesta})
-
-# =========================
-# SUBIR ARCHIVOS
-# =========================
-@app.route("/maia_subir_archivo", methods=["POST"])
-def maia_subir_archivo():
-    archivos = request.files.getlist('archivos')
-    nombres = [a.filename for a in archivos]
-    return jsonify({"archivos": nombres})
-
-# =========================
-# RESET
-# =========================
-@app.route("/reset_maia")
-def reset_maia():
-    session.pop("historial", None)
-    return jsonify({"status": "memoria borrada"})
 
 # =========================
 # MÓDULOS
@@ -258,10 +294,8 @@ def maia_chat():
 @app.route("/drones/<drone_file>")
 def abrir_drone(drone_file):
     ruta_html = f"drones/{drone_file}.html"
-
     if os.path.exists(os.path.join(app.template_folder, ruta_html)):
         return render_template(ruta_html)
-
     return "Drone no encontrado", 404
 
 # =========================

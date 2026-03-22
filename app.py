@@ -116,7 +116,18 @@ def maia_guardar_proyecto():
     })
 
 # =========================
-# 🔬 BASE HARDWARE REAL
+# 📂 VER MEMORIA
+# =========================
+@app.route("/maia_memoria")
+def maia_memoria():
+    return jsonify(cargar_memoria())
+
+@app.route("/maia_memoria_view")
+def maia_memoria_view():
+    return render_template("maia_memoria.html")
+
+# =========================
+# 🔬 BASE HARDWARE
 # =========================
 MOTORES = [
     {"modelo": "T-Motor MN4014", "empuje": 3.5},
@@ -129,32 +140,29 @@ MOTORES = [
 def simular_vuelo(peso, empuje_total):
     gravedad = 9.81
     fuerza_peso = peso * gravedad
+    empuje_n = empuje_total * gravedad
 
-    # empuje convertido a Newton aprox
-    empuje_n = empuje_total * 9.81
+    relacion = empuje_n / fuerza_peso
 
-    estabilidad = empuje_n / fuerza_peso
-
-    if estabilidad < 1:
+    if relacion < 1:
         estado = "NO DESPEGA ❌"
-    elif estabilidad < 1.5:
-        estado = "VUelo INESTABLE ⚠️"
+    elif relacion < 1.5:
+        estado = "INESTABLE ⚠️"
     else:
-        estado = "VUelo ESTABLE ✅"
+        estado = "ESTABLE ✅"
 
     return {
-        "empuje_total": empuje_total,
         "peso": peso,
-        "relacion_empuje": round(estabilidad, 2),
+        "empuje_total": empuje_total,
+        "relacion": round(relacion, 2),
         "estado": estado
     }
 
 # =========================
-# 🧠 MOTOR INGENIERÍA REAL
+# 🧠 MOTOR INGENIERÍA
 # =========================
 def analizar_drone_real(idea):
     idea = idea.lower()
-
     peso = 5
 
     if "incendio" in idea:
@@ -165,7 +173,6 @@ def analizar_drone_real(idea):
         peso = 10
 
     empuje_necesario = peso * 2
-
     motor_ok = None
 
     for m in MOTORES:
@@ -176,71 +183,55 @@ def analizar_drone_real(idea):
     if not motor_ok:
         return {
             "viabilidad": "NO VIABLE ❌",
-            "causas": ["No hay suficiente empuje"]
+            "causas": ["Empuje insuficiente"]
         }
 
     empuje_total = motor_ok["empuje"] * 4
-
     simulacion = simular_vuelo(peso, empuje_total)
 
     return {
         "viabilidad": "VIABLE ✅",
         "analisis": {
-            "tecnico": f"Empuje requerido {empuje_necesario}kg usando {motor_ok['modelo']}",
-            "economico": "Costo estimado medio-alto",
-            "profesional": "Requiere equipo técnico especializado"
+            "tecnico": f"Empuje requerido {empuje_necesario}kg con {motor_ok['modelo']}",
+            "economico": "Costo medio-alto",
+            "profesional": "Requiere equipo especializado"
         },
         "software": {
             "arquitectura": "ROS2 + PX4",
-            "modulos": [
-                "flight_controller.py",
-                "navigation.py",
-                "vision_ai.py",
-                "failsafe.py"
-            ],
-            "algoritmos": [
-                "PID",
-                "SLAM",
-                "A*",
-                "Kalman Filter"
-            ]
+            "modulos": ["flight_controller", "navigation", "vision_ai"],
+            "algoritmos": ["PID", "SLAM", "A*", "Kalman"]
         },
         "hardware": [
             f"Motor: {motor_ok['modelo']}",
             "Pixhawk",
-            "GPS Ublox",
+            "GPS",
             "Lidar",
-            "Cámara HD",
             "Batería LiPo"
         ],
         "simulacion": simulacion,
         "modelo_3d": {
             "tipo": "quadcopter",
-            "peso": peso,
-            "motor": motor_ok["modelo"]
+            "peso": peso
         },
-        "garantia": "Validado con simulación física + control PID"
+        "garantia": "Validado con simulación física"
     }
 
 # =========================
-# 🔥 GENERADOR 3D PRO
+# 🔥 MODELO 3D PRO
 # =========================
-def generar_modelo_3d(proyecto):
-
+def generar_modelo_3d(_):
     cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
 
     brazos = []
-    for angle in [0, 90, 45, -45]:
-        brazo = trimesh.creation.box(extents=(0.7, 0.06, 0.06))
-        brazo.apply_transform(
-            trimesh.transformations.rotation_matrix(
-                math.radians(angle), [0, 0, 1]
-            )
+    for ang in [0, 90, 45, -45]:
+        b = trimesh.creation.box(extents=(0.7, 0.06, 0.06))
+        b.apply_transform(
+            trimesh.transformations.rotation_matrix(math.radians(ang), [0,0,1])
         )
-        brazos.append(brazo)
+        brazos.append(b)
 
     motores = []
-    for x, y in [(0.35,0.35), (-0.35,0.35), (0.35,-0.35), (-0.35,-0.35)]:
+    for x,y in [(0.35,0.35),(-0.35,0.35),(0.35,-0.35),(-0.35,-0.35)]:
         m = trimesh.creation.cylinder(radius=0.06, height=0.08)
         m.apply_translation([x,y,0.05])
         motores.append(m)
@@ -272,11 +263,16 @@ def evaluar_drone():
 @app.route("/generar_3d", methods=["POST"])
 def generar_3d():
     data = request.get_json(silent=True) or {}
-    modelo_url = generar_modelo_3d(data)
-
     return jsonify({
-        "modelo_url": modelo_url
+        "modelo_url": generar_modelo_3d(data)
     })
+
+# =========================
+# 🧠 VISOR 3D
+# =========================
+@app.route("/maia_visor_3d")
+def maia_visor_3d():
+    return render_template("maia_visor_3d.html")
 
 # =========================
 # RESTO

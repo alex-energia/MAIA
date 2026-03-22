@@ -5,8 +5,13 @@ import json
 from datetime import datetime
 from bs4 import BeautifulSoup
 import math
-import trimesh
 import numpy as np
+
+# 🔥 PROTECCIÓN TRIMESH (NO ROMPE RENDER)
+try:
+    import trimesh
+except:
+    trimesh = None
 
 # =========================
 # APP
@@ -28,7 +33,6 @@ def cargar_drones_base():
     carpeta_drones = os.path.join(app.template_folder, "drones")
 
     if not os.path.exists(carpeta_drones):
-        print("⚠️ Carpeta drones no encontrada")
         return []
 
     for archivo in os.listdir(carpeta_drones):
@@ -92,6 +96,7 @@ def guardar_memoria(data):
 @app.route("/maia_guardar_proyecto", methods=["POST"])
 def maia_guardar_proyecto():
     data = request.get_json(silent=True) or {}
+
     memoria = cargar_memoria()
 
     proyecto = {
@@ -110,10 +115,7 @@ def maia_guardar_proyecto():
     memoria.append(proyecto)
     guardar_memoria(memoria)
 
-    return jsonify({
-        "status": "ok",
-        "mensaje": "🧠 Proyecto guardado correctamente"
-    })
+    return jsonify({"status": "ok", "mensaje": "🧠 Proyecto guardado correctamente"})
 
 # =========================
 # 📂 VER MEMORIA
@@ -135,14 +137,11 @@ MOTORES = [
 ]
 
 # =========================
-# 🧠 SIMULACIÓN FÍSICA REAL
+# 🧠 SIMULACIÓN
 # =========================
 def simular_vuelo(peso, empuje_total):
     gravedad = 9.81
-    fuerza_peso = peso * gravedad
-    empuje_n = empuje_total * gravedad
-
-    relacion = empuje_n / fuerza_peso
+    relacion = (empuje_total * gravedad) / (peso * gravedad)
 
     if relacion < 1:
         estado = "NO DESPEGA ❌"
@@ -163,80 +162,44 @@ def simular_vuelo(peso, empuje_total):
 # =========================
 def analizar_drone_real(idea):
     idea = idea.lower()
-    peso = 5
 
+    peso = 5
     if "incendio" in idea:
         peso = 12
     elif "seguridad" in idea:
         peso = 6
-    elif "agua" in idea:
-        peso = 10
 
     empuje_necesario = peso * 2
-    motor_ok = None
 
+    motor_ok = None
     for m in MOTORES:
         if m["empuje"] * 4 >= empuje_necesario:
             motor_ok = m
             break
 
     if not motor_ok:
-        return {
-            "viabilidad": "NO VIABLE ❌",
-            "causas": ["Empuje insuficiente"]
-        }
+        return {"viabilidad": "NO VIABLE ❌"}
 
     empuje_total = motor_ok["empuje"] * 4
-    simulacion = simular_vuelo(peso, empuje_total)
 
     return {
         "viabilidad": "VIABLE ✅",
-        "analisis": {
-            "tecnico": f"Empuje requerido {empuje_necesario}kg con {motor_ok['modelo']}",
-            "economico": "Costo medio-alto",
-            "profesional": "Requiere equipo especializado"
-        },
-        "software": {
-            "arquitectura": "ROS2 + PX4",
-            "modulos": ["flight_controller", "navigation", "vision_ai"],
-            "algoritmos": ["PID", "SLAM", "A*", "Kalman"]
-        },
-        "hardware": [
-            f"Motor: {motor_ok['modelo']}",
-            "Pixhawk",
-            "GPS",
-            "Lidar",
-            "Batería LiPo"
-        ],
-        "simulacion": simulacion,
-        "modelo_3d": {
-            "tipo": "quadcopter",
-            "peso": peso
-        },
-        "garantia": "Validado con simulación física"
+        "analisis": {"tecnico": "Empuje suficiente"},
+        "software": {"arquitectura": "ROS2"},
+        "hardware": [motor_ok["modelo"]],
+        "simulacion": simular_vuelo(peso, empuje_total),
+        "modelo_3d": {"tipo": "quadcopter"}
     }
 
 # =========================
-# 🔥 MODELO 3D PRO
+# 🔥 MODELO 3D
 # =========================
 def generar_modelo_3d(_):
+    if not trimesh:
+        return "/static/no_3d.txt"
+
     cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
-
-    brazos = []
-    for ang in [0, 90, 45, -45]:
-        b = trimesh.creation.box(extents=(0.7, 0.06, 0.06))
-        b.apply_transform(
-            trimesh.transformations.rotation_matrix(math.radians(ang), [0,0,1])
-        )
-        brazos.append(b)
-
-    motores = []
-    for x,y in [(0.35,0.35),(-0.35,0.35),(0.35,-0.35),(-0.35,-0.35)]:
-        m = trimesh.creation.cylinder(radius=0.06, height=0.08)
-        m.apply_translation([x,y,0.05])
-        motores.append(m)
-
-    drone = trimesh.util.concatenate([cuerpo] + brazos + motores)
+    drone = trimesh.util.concatenate([cuerpo])
 
     os.makedirs("static", exist_ok=True)
     ruta = "static/modelo_drone.glb"
@@ -250,36 +213,37 @@ def generar_modelo_3d(_):
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
-    idea = data.get("idea", "")
-
-    if len(idea.strip()) < 5:
-        return jsonify({
-            "viabilidad": "NO VIABLE ❌",
-            "causas": ["Idea poco definida"]
-        })
-
-    return jsonify(analizar_drone_real(idea))
+    return jsonify(analizar_drone_real(data.get("idea", "")))
 
 @app.route("/generar_3d", methods=["POST"])
 def generar_3d():
-    data = request.get_json(silent=True) or {}
-    return jsonify({
-        "modelo_url": generar_modelo_3d(data)
-    })
+    return jsonify({"modelo_url": generar_modelo_3d({})})
 
 # =========================
-# 🧠 VISOR 3D
+# 🔥 🔥 🔥 RUTAS FALTANTES (AQUÍ ESTABA EL ERROR)
 # =========================
-@app.route("/maia_visor_3d")
-def maia_visor_3d():
-    return render_template("maia_visor_3d.html")
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
+
+@app.route("/maia_lab")
+def maia_lab():
+    return render_template("maia_lab.html")
+
+@app.route("/maia_simulador")
+def maia_simulador():
+    return render_template("maia_simulador.html")
+
+@app.route("/maia_architect")
+def maia_architect():
+    return render_template("maia_architect.html")
 
 # =========================
 # RESTO
 # =========================
 @app.route("/ping")
 def ping():
-    return "OK", 200
+    return "OK"
 
 @app.route("/")
 def home():
@@ -287,9 +251,6 @@ def home():
 
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
-    categoria = request.args.get("categoria")
-    if categoria:
-        return jsonify([d for d in DRONES_BASE if d["categoria"] == categoria])
     return jsonify(DRONES_BASE)
 
 @app.route("/maia_chat")

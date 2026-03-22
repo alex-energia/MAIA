@@ -3,6 +3,7 @@
 <head>
     <title>MAIA INVENT</title>
 </head>
+
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
@@ -10,12 +11,23 @@
 
 <textarea id="idea" placeholder="Ej: inseguridad urbana"></textarea>
 <br><br>
+
 <button onclick="evaluar()">Generar Idea</button>
 
 <h2 id="resultado"></h2>
 
+<!-- 🔥 NUEVO BOTÓN -->
+<button onclick="guardarProyectoInvent()">
+    💾 Guardar proyecto en memoria MAIA
+</button>
+
 <script>
+
+// =========================
+// 🔥 GENERAR IDEA (NO SE BORRA)
+// =========================
 function evaluar() {
+
     const idea = document.getElementById("idea").value;
 
     fetch("/evaluar_drone", {
@@ -25,13 +37,74 @@ function evaluar() {
     })
     .then(res => res.json())
     .then(data => {
+
         document.getElementById("resultado").innerHTML =
             "Impacto: " + data.impacto + "<br>" +
             "Innovación: " + data.innovacion + "<br>" +
             "Viabilidad: " + data.viabilidad + "<br><br>" +
             data.mensaje;
+
+        // 🔥 GUARDAR RESULTADO TEMPORAL
+        window.ultimoProyecto = {
+            idea: idea,
+            impacto: data.impacto,
+            innovacion: data.innovacion,
+            viabilidad: data.viabilidad,
+            mensaje: data.mensaje
+        };
     });
 }
+
+// =========================
+// 🔥 GUARDAR EN MEMORIA MAIA
+// =========================
+async function guardarProyectoInvent(){
+
+    if(!window.ultimoProyecto){
+        alert("⚠️ Primero genera una idea");
+        return;
+    }
+
+    let proyecto = window.ultimoProyecto;
+
+    // 🔥 GENERACIÓN AUTOMÁTICA
+    let software = [
+        "IA de análisis predictivo",
+        "Sistema autónomo de navegación",
+        "Visión artificial avanzada",
+        "Control desde MAIA App"
+    ];
+
+    let hardware = [
+        "Motores brushless",
+        "Sensores LIDAR",
+        "Cámara HD",
+        "Batería de larga duración",
+        "GPS inteligente"
+    ];
+
+    let res = await fetch("/maia_guardar_proyecto", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            modulo: "invent",
+            nombre: "Proyecto basado en: " + proyecto.idea,
+            descripcion: proyecto.mensaje,
+            software: software,
+            hardware: hardware,
+            extra: {
+                impacto: proyecto.impacto,
+                innovacion: proyecto.innovacion,
+                viabilidad: proyecto.viabilidad
+            }
+        })
+    });
+
+    let data = await res.json();
+
+    alert(data.mensaje);
+}
+
 </script>
 
 </body>

@@ -5,6 +5,7 @@ import json
 from datetime import datetime
 from bs4 import BeautifulSoup
 import math
+import trimesh
 
 # =========================
 # APP
@@ -117,7 +118,7 @@ def maia_guardar_proyecto():
     })
 
 # =========================
-# 🔬 BASE HARDWARE REAL
+# 🔬 BASE HARDWARE
 # =========================
 MOTORES = [
     {"modelo": "T-Motor MN4014", "empuje": 3.5},
@@ -125,24 +126,19 @@ MOTORES = [
 ]
 
 # =========================
-# 🧠 MOTOR INGENIERÍA REAL
+# 🧠 MOTOR INGENIERÍA
 # =========================
 def analizar_drone_real(idea):
 
     idea = idea.lower()
-
     peso = 5
-    tipo = "general"
 
     if "incendio" in idea:
         peso = 12
-        tipo = "emergencia"
     elif "seguridad" in idea:
         peso = 6
-        tipo = "vigilancia"
     elif "agua" in idea:
         peso = 10
-        tipo = "ambiental"
 
     empuje_necesario = peso * 2
 
@@ -155,35 +151,25 @@ def analizar_drone_real(idea):
     if not motor_ok:
         return {
             "viabilidad": "NO VIABLE ❌",
-            "causas": ["No hay suficiente empuje disponible"]
+            "causas": ["No hay suficiente empuje"]
         }
 
     return {
         "viabilidad": "VIABLE ✅",
         "analisis": {
-            "tecnico": f"Empuje requerido {empuje_necesario}kg, motor {motor_ok['modelo']}",
-            "economico": "Costo estimado entre 4000 y 8000 USD",
-            "profesional": "Requiere equipo en robótica, IA y electrónica"
+            "tecnico": f"Empuje requerido {empuje_necesario}kg usando {motor_ok['modelo']}",
+            "economico": "Costo estimado medio",
+            "profesional": "Requiere equipo técnico especializado"
         },
         "software": {
-            "arquitectura": "ROS2 + Microservicios",
-            "modulos": [
-                "flight_controller.py",
-                "navigation.py",
-                "vision_ai.py",
-                "failsafe.py"
-            ],
-            "algoritmos": [
-                "PID Control",
-                "SLAM",
-                "A*",
-                "Red neuronal"
-            ]
+            "arquitectura": "ROS2",
+            "modulos": ["flight_controller", "navigation", "vision_ai"],
+            "algoritmos": ["PID", "SLAM", "A*"]
         },
         "hardware": [
             f"Motor: {motor_ok['modelo']}",
             "Pixhawk",
-            "GPS Ublox",
+            "GPS",
             "Lidar",
             "Batería LiPo"
         ],
@@ -192,11 +178,49 @@ def analizar_drone_real(idea):
             "peso": peso,
             "motor": motor_ok["modelo"]
         },
-        "garantia": "Validado por cálculo de empuje + control PID"
+        "garantia": "Validado con física básica de vuelo"
     }
 
 # =========================
-# 🚀 ENDPOINT REAL
+# 🔥 GENERADOR 3D REAL
+# =========================
+def generar_modelo_3d(proyecto):
+
+    cuerpo = trimesh.creation.box(extents=(0.3, 0.3, 0.05))
+
+    brazo1 = trimesh.creation.box(extents=(0.6, 0.05, 0.05))
+    brazo2 = brazo1.copy()
+    brazo2.apply_transform(
+        trimesh.transformations.rotation_matrix(
+            math.radians(90), [0,0,1]
+        )
+    )
+
+    motores = []
+    posiciones = [
+        [0.3,0.3,0],
+        [-0.3,0.3,0],
+        [0.3,-0.3,0],
+        [-0.3,-0.3,0]
+    ]
+
+    for p in posiciones:
+        m = trimesh.creation.cylinder(radius=0.05, height=0.05)
+        m.apply_translation(p)
+        motores.append(m)
+
+    drone = trimesh.util.concatenate(
+        [cuerpo, brazo1, brazo2] + motores
+    )
+
+    os.makedirs("static", exist_ok=True)
+    ruta = "static/modelo_drone.glb"
+    drone.export(ruta)
+
+    return "/" + ruta
+
+# =========================
+# 🚀 ENDPOINTS
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
@@ -210,12 +234,20 @@ def evaluar_drone():
             "causas": ["Idea poco definida"]
         })
 
-    resultado = analizar_drone_real(idea)
+    return jsonify(analizar_drone_real(idea))
 
-    return jsonify(resultado)
+@app.route("/generar_3d", methods=["POST"])
+def generar_3d():
+
+    data = request.get_json(silent=True) or {}
+    modelo_url = generar_modelo_3d(data)
+
+    return jsonify({
+        "modelo_url": modelo_url
+    })
 
 # =========================
-# RESTO (SIN CAMBIOS)
+# RESTO
 # =========================
 @app.route("/ping")
 def ping():

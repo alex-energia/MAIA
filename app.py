@@ -6,6 +6,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import math
 import numpy as np
+import time
+import threading
 
 # 🔥 PROTECCIÓN TRIMESH
 try:
@@ -26,6 +28,15 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
+# 🔥 ESTADO GLOBAL (PROGRESO)
+# =========================
+estado_maia = {
+    "progreso": 0,
+    "estado": "IDLE",
+    "mensaje": ""
+}
+
+# =========================
 # 🔥 LOGGER EMPRESARIAL
 # =========================
 def log_event(tipo, mensaje):
@@ -42,6 +53,7 @@ def log_event(tipo, mensaje):
 def cargar_drones_base():
     drones = []
     carpeta_drones = os.path.join(app.template_folder, "drones")
+
     if not os.path.exists(carpeta_drones):
         return []
 
@@ -57,12 +69,12 @@ def cargar_drones_base():
             except:
                 titulo = archivo.replace(".html", "")
 
-            categoria = "industrial"
             drones.append({
                 "nombre": titulo,
                 "ruta": ruta,
-                "categoria": categoria
+                "categoria": "industrial"
             })
+
     return drones
 
 try:
@@ -93,7 +105,16 @@ def guardar_memoria(data):
 # =========================
 class MaiaCore:
 
+    def actualizar_progreso(self, valor, mensaje):
+        estado_maia["progreso"] = valor
+        estado_maia["mensaje"] = mensaje
+        estado_maia["estado"] = "PROCESANDO"
+        log_event("PROGRESO", f"{valor}% - {mensaje}")
+        time.sleep(0.4)  # simula trabajo real
+
     def analizar(self, idea):
+        self.actualizar_progreso(10, "Analizando idea")
+
         idea = idea.lower()
         peso = 5
         tipo = "general"
@@ -105,26 +126,24 @@ class MaiaCore:
             peso = 6
             tipo = "vigilancia"
 
-        empuje = peso * 2
-
-        log_event("ANALISIS", f"Tipo: {tipo}, Peso: {peso}")
-
         return {
             "peso": peso,
             "tipo": tipo,
-            "empuje_requerido": empuje
+            "empuje_requerido": peso * 2
         }
 
-    # 🔥 SOFTWARE NIVEL INDUSTRIA
     def generar_software(self):
+        self.actualizar_progreso(30, "Diseñando arquitectura de software")
+
         return {
-            "arquitectura": "ROS2 + PX4 + MAVLink + Microservicios",
+            "arquitectura": "ROS2 + PX4 + MAVLink + Microservicios + Edge AI",
             "capas": [
                 "Percepción",
+                "Fusión de sensores",
                 "Planificación",
                 "Control",
-                "Comunicación",
-                "Seguridad"
+                "Failsafe",
+                "Telemetría"
             ],
             "modulos": [
                 "flight_controller.py",
@@ -136,99 +155,84 @@ class MaiaCore:
                 "telemetry_stream.py"
             ],
             "algoritmos": [
-                "PID Control",
-                "Kalman Filter",
+                "PID",
+                "Kalman",
                 "SLAM",
-                "A* Pathfinding",
+                "A*",
                 "Sensor Fusion",
-                "Computer Vision CNN"
+                "CNN"
             ],
             "failsafe": [
-                "Return To Home",
+                "Return Home",
                 "Auto Landing",
                 "Motor Cutoff",
-                "Signal Loss Recovery"
+                "GPS Recovery"
             ]
         }
 
     def generar_hardware(self, peso):
+        self.actualizar_progreso(50, "Seleccionando hardware")
+
         return [
             "Frame carbono industrial",
             "4x Motores brushless",
             "ESC 40A",
             "Pixhawk Cube",
-            "GPS Ublox M8N",
+            "GPS Ublox",
             "Lidar",
             "Cámara HD",
             "Batería LiPo 6S"
         ]
 
-    # 🔥 SIMULACIÓN PROFESIONAL (TIEMPO REAL)
     def simular(self, peso):
+        self.actualizar_progreso(70, "Simulando física de vuelo")
+
         dt = 0.05
         altura = 0
         velocidad = 0
         empuje = peso * 2
         g = 9.81
 
-        historial = []
-
-        for t in range(100):
+        for _ in range(80):
             fuerza = empuje - peso * g
             aceleracion = fuerza / peso
-
             velocidad += aceleracion * dt
             altura += velocidad * dt
 
-            historial.append({
-                "t": t,
-                "altura": round(altura, 2),
-                "velocidad": round(velocidad, 2),
-                "aceleracion": round(aceleracion, 2)
-            })
-
-        estabilidad = max(h["altura"] for h in historial) - min(h["altura"] for h in historial)
-
-        estado = "ESTABLE ✅" if estabilidad < 5 else "INESTABLE ⚠️"
-
         return {
-            "estado": estado,
-            "historial": historial,
             "altura_final": round(altura, 2),
-            "estabilidad": round(estabilidad, 2)
+            "estado": "ESTABLE ✅" if altura > 1 else "INESTABLE ⚠️"
         }
 
     def ejecutar(self, idea):
-        analisis = self.analizar(idea)
+        estado_maia["estado"] = "INICIANDO"
 
-        resultado = {
+        analisis = self.analizar(idea)
+        software = self.generar_software()
+        hardware = self.generar_hardware(analisis["peso"])
+        simulacion = self.simular(analisis["peso"])
+
+        self.actualizar_progreso(100, "Drone completado")
+
+        estado_maia["estado"] = "COMPLETADO"
+
+        return {
             "viabilidad": "VIABLE ✅",
             "analisis": analisis,
-            "software": self.generar_software(),
-            "hardware": self.generar_hardware(analisis["peso"]),
-            "simulacion": self.simular(analisis["peso"])
+            "software": software,
+            "hardware": hardware,
+            "simulacion": simulacion
         }
 
-        log_event("RESULTADO", "Drone generado correctamente")
-
-        return resultado
-
 # =========================
-# 🔥 MODELO 3D
+# 🚀 EJECUCIÓN ASÍNCRONA
 # =========================
-def generar_modelo_3d(_):
-    if not trimesh:
-        return "/static/no_3d.txt"
+resultado_global = {}
 
-    cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
-
-    drone = trimesh.util.concatenate([cuerpo])
-
-    os.makedirs("static", exist_ok=True)
-    ruta = "static/modelo_drone.glb"
-    drone.export(ruta)
-
-    return "/" + ruta
+def proceso_maia(idea):
+    global resultado_global
+    core = MaiaCore()
+    resultado_global = core.ejecutar(idea)
 
 # =========================
 # 🚀 ENDPOINTS
@@ -239,30 +243,40 @@ def evaluar_drone():
     idea = data.get("idea", "")
 
     if len(idea.strip()) < 5:
-        return jsonify({
-            "viabilidad": "NO VIABLE ❌",
-            "causas": ["Idea poco definida"]
-        })
+        return jsonify({"error": "Idea insuficiente"})
 
-    core = MaiaCore()
-    return jsonify(core.ejecutar(idea))
+    hilo = threading.Thread(target=proceso_maia, args=(idea,))
+    hilo.start()
+
+    return jsonify({"status": "procesando"})
+
+@app.route("/maia_progreso")
+def maia_progreso():
+    return jsonify(estado_maia)
+
+@app.route("/maia_resultado")
+def maia_resultado():
+    return jsonify(resultado_global)
 
 @app.route("/generar_3d", methods=["POST"])
 def generar_3d():
-    return jsonify({
-        "modelo_url": generar_modelo_3d({})
-    })
+    if not trimesh:
+        return jsonify({"modelo_url": "/static/no_3d.txt"})
+
+    cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
+    os.makedirs("static", exist_ok=True)
+    ruta = "static/modelo_drone.glb"
+    cuerpo.export(ruta)
+
+    return jsonify({"modelo_url": "/" + ruta})
 
 # =========================
-# 🔥 PANEL PROFESIONAL
+# 🔥 PANEL
 # =========================
 @app.route("/maia_panel")
 def maia_panel():
     return render_template("maia_panel.html")
 
-# =========================
-# 🔥 RUTAS
-# =========================
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")

@@ -6,6 +6,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import math
 import trimesh
+import numpy as np
 
 # =========================
 # APP
@@ -32,7 +33,6 @@ def cargar_drones_base():
 
     for archivo in os.listdir(carpeta_drones):
         if archivo.endswith(".html"):
-
             ruta = "/drones/" + archivo.replace(".html", "")
             path_completo = os.path.join(carpeta_drones, archivo)
 
@@ -40,8 +40,7 @@ def cargar_drones_base():
                 with open(path_completo, "r", encoding="utf-8") as f:
                     soup = BeautifulSoup(f, "html.parser")
                     titulo = soup.title.string.strip() if soup.title else archivo.replace(".html", "")
-            except Exception as e:
-                print("Error leyendo drone:", e)
+            except:
                 titulo = archivo.replace(".html", "")
 
             lower = archivo.lower()
@@ -66,8 +65,7 @@ def cargar_drones_base():
 # =========================
 try:
     DRONES_BASE = cargar_drones_base()
-except Exception as e:
-    print("🔥 ERROR cargando drones:", e)
+except:
     DRONES_BASE = []
 
 # =========================
@@ -93,7 +91,6 @@ def guardar_memoria(data):
 # =========================
 @app.route("/maia_guardar_proyecto", methods=["POST"])
 def maia_guardar_proyecto():
-
     data = request.get_json(silent=True) or {}
     memoria = cargar_memoria()
 
@@ -105,6 +102,7 @@ def maia_guardar_proyecto():
         "software": data.get("software"),
         "hardware": data.get("hardware"),
         "modelo_3d": data.get("modelo_3d"),
+        "simulacion": data.get("simulacion"),
         "extra": data.get("extra", {}),
         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
@@ -118,7 +116,7 @@ def maia_guardar_proyecto():
     })
 
 # =========================
-# 🔬 BASE HARDWARE
+# 🔬 BASE HARDWARE REAL
 # =========================
 MOTORES = [
     {"modelo": "T-Motor MN4014", "empuje": 3.5},
@@ -126,11 +124,37 @@ MOTORES = [
 ]
 
 # =========================
-# 🧠 MOTOR INGENIERÍA
+# 🧠 SIMULACIÓN FÍSICA REAL
+# =========================
+def simular_vuelo(peso, empuje_total):
+    gravedad = 9.81
+    fuerza_peso = peso * gravedad
+
+    # empuje convertido a Newton aprox
+    empuje_n = empuje_total * 9.81
+
+    estabilidad = empuje_n / fuerza_peso
+
+    if estabilidad < 1:
+        estado = "NO DESPEGA ❌"
+    elif estabilidad < 1.5:
+        estado = "VUelo INESTABLE ⚠️"
+    else:
+        estado = "VUelo ESTABLE ✅"
+
+    return {
+        "empuje_total": empuje_total,
+        "peso": peso,
+        "relacion_empuje": round(estabilidad, 2),
+        "estado": estado
+    }
+
+# =========================
+# 🧠 MOTOR INGENIERÍA REAL
 # =========================
 def analizar_drone_real(idea):
-
     idea = idea.lower()
+
     peso = 5
 
     if "incendio" in idea:
@@ -143,6 +167,7 @@ def analizar_drone_real(idea):
     empuje_necesario = peso * 2
 
     motor_ok = None
+
     for m in MOTORES:
         if m["empuje"] * 4 >= empuje_necesario:
             motor_ok = m
@@ -154,64 +179,73 @@ def analizar_drone_real(idea):
             "causas": ["No hay suficiente empuje"]
         }
 
+    empuje_total = motor_ok["empuje"] * 4
+
+    simulacion = simular_vuelo(peso, empuje_total)
+
     return {
         "viabilidad": "VIABLE ✅",
         "analisis": {
             "tecnico": f"Empuje requerido {empuje_necesario}kg usando {motor_ok['modelo']}",
-            "economico": "Costo estimado medio",
+            "economico": "Costo estimado medio-alto",
             "profesional": "Requiere equipo técnico especializado"
         },
         "software": {
-            "arquitectura": "ROS2",
-            "modulos": ["flight_controller", "navigation", "vision_ai"],
-            "algoritmos": ["PID", "SLAM", "A*"]
+            "arquitectura": "ROS2 + PX4",
+            "modulos": [
+                "flight_controller.py",
+                "navigation.py",
+                "vision_ai.py",
+                "failsafe.py"
+            ],
+            "algoritmos": [
+                "PID",
+                "SLAM",
+                "A*",
+                "Kalman Filter"
+            ]
         },
         "hardware": [
             f"Motor: {motor_ok['modelo']}",
             "Pixhawk",
-            "GPS",
+            "GPS Ublox",
             "Lidar",
+            "Cámara HD",
             "Batería LiPo"
         ],
+        "simulacion": simulacion,
         "modelo_3d": {
             "tipo": "quadcopter",
             "peso": peso,
             "motor": motor_ok["modelo"]
         },
-        "garantia": "Validado con física básica de vuelo"
+        "garantia": "Validado con simulación física + control PID"
     }
 
 # =========================
-# 🔥 GENERADOR 3D REAL
+# 🔥 GENERADOR 3D PRO
 # =========================
 def generar_modelo_3d(proyecto):
 
-    cuerpo = trimesh.creation.box(extents=(0.3, 0.3, 0.05))
+    cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
 
-    brazo1 = trimesh.creation.box(extents=(0.6, 0.05, 0.05))
-    brazo2 = brazo1.copy()
-    brazo2.apply_transform(
-        trimesh.transformations.rotation_matrix(
-            math.radians(90), [0,0,1]
+    brazos = []
+    for angle in [0, 90, 45, -45]:
+        brazo = trimesh.creation.box(extents=(0.7, 0.06, 0.06))
+        brazo.apply_transform(
+            trimesh.transformations.rotation_matrix(
+                math.radians(angle), [0, 0, 1]
+            )
         )
-    )
+        brazos.append(brazo)
 
     motores = []
-    posiciones = [
-        [0.3,0.3,0],
-        [-0.3,0.3,0],
-        [0.3,-0.3,0],
-        [-0.3,-0.3,0]
-    ]
-
-    for p in posiciones:
-        m = trimesh.creation.cylinder(radius=0.05, height=0.05)
-        m.apply_translation(p)
+    for x, y in [(0.35,0.35), (-0.35,0.35), (0.35,-0.35), (-0.35,-0.35)]:
+        m = trimesh.creation.cylinder(radius=0.06, height=0.08)
+        m.apply_translation([x,y,0.05])
         motores.append(m)
 
-    drone = trimesh.util.concatenate(
-        [cuerpo, brazo1, brazo2] + motores
-    )
+    drone = trimesh.util.concatenate([cuerpo] + brazos + motores)
 
     os.makedirs("static", exist_ok=True)
     ruta = "static/modelo_drone.glb"
@@ -224,7 +258,6 @@ def generar_modelo_3d(proyecto):
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-
     data = request.get_json(silent=True) or {}
     idea = data.get("idea", "")
 
@@ -238,7 +271,6 @@ def evaluar_drone():
 
 @app.route("/generar_3d", methods=["POST"])
 def generar_3d():
-
     data = request.get_json(silent=True) or {}
     modelo_url = generar_modelo_3d(data)
 

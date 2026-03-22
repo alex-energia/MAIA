@@ -3,7 +3,6 @@
 <head>
     <title>MAIA INVENT</title>
 </head>
-
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
@@ -24,10 +23,9 @@
 <script>
 
 // =========================
-// 🔥 GENERAR IDEA (NO SE BORRA)
+// 🔥 GENERAR IDEA (MEJORADO)
 // =========================
 function evaluar() {
-
     const idea = document.getElementById("idea").value;
 
     fetch("/evaluar_drone", {
@@ -38,25 +36,53 @@ function evaluar() {
     .then(res => res.json())
     .then(data => {
 
-        document.getElementById("resultado").innerHTML =
-            "Impacto: " + data.impacto + "<br>" +
-            "Innovación: " + data.innovacion + "<br>" +
-            "Viabilidad: " + data.viabilidad + "<br><br>" +
-            data.mensaje;
+        // 🔥 MOSTRAR RESULTADO (COMPATIBLE CON SIMPLE Y AVANZADO)
+        let html = `
+            Impacto: ${data.impacto || "N/A"}<br>
+            Innovación: ${data.innovacion || "N/A"}<br>
+            Viabilidad: ${data.viabilidad || "N/A"}<br><br>
+            ${data.mensaje || ""}
+        `;
 
-        // 🔥 GUARDAR RESULTADO TEMPORAL
-        window.ultimoProyecto = {
-            idea: idea,
-            impacto: data.impacto,
-            innovacion: data.innovacion,
-            viabilidad: data.viabilidad,
-            mensaje: data.mensaje
-        };
+        // 🔥 SI EXISTE ANÁLISIS AVANZADO
+        if(data.analisis){
+            html += `<br><br>
+            <b>🔬 Análisis Técnico:</b> ${data.analisis.tecnico}<br>
+            <b>💰 Análisis Económico:</b> ${data.analisis.economico}<br>
+            <b>👨‍🔧 Análisis Profesional:</b> ${data.analisis.profesional}<br>`;
+        }
+
+        // 🔥 SOFTWARE
+        if(data.software){
+            html += `<br><br><b>🧠 Software:</b><br>`;
+            if(Array.isArray(data.software)){
+                html += data.software.join("<br>");
+            }else if(data.software.modulos){
+                html += data.software.modulos.join("<br>");
+            }
+        }
+
+        // 🔥 HARDWARE
+        if(data.hardware){
+            html += `<br><br><b>⚙️ Hardware:</b><br>`;
+            html += data.hardware.join("<br>");
+        }
+
+        // 🔥 MODELO 3D
+        if(data.modelo_3d){
+            html += `<br><br><b>🧊 Modelo 3D:</b><br>${data.modelo_3d}`;
+        }
+
+        document.getElementById("resultado").innerHTML = html;
+
+        // 🔥 GUARDAR TODO (NO SOLO LO BÁSICO)
+        window.ultimoProyecto = data;
+
     });
 }
 
 // =========================
-// 🔥 GUARDAR EN MEMORIA MAIA
+// 💾 GUARDAR EN MEMORIA MAIA (FULL)
 // =========================
 async function guardarProyectoInvent(){
 
@@ -65,38 +91,38 @@ async function guardarProyectoInvent(){
         return;
     }
 
-    let proyecto = window.ultimoProyecto;
-
-    // 🔥 GENERACIÓN AUTOMÁTICA
-    let software = [
-        "IA de análisis predictivo",
-        "Sistema autónomo de navegación",
-        "Visión artificial avanzada",
-        "Control desde MAIA App"
-    ];
-
-    let hardware = [
-        "Motores brushless",
-        "Sensores LIDAR",
-        "Cámara HD",
-        "Batería de larga duración",
-        "GPS inteligente"
-    ];
+    let idea = document.getElementById("idea").value;
+    let p = window.ultimoProyecto;
 
     let res = await fetch("/maia_guardar_proyecto", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            modulo: "invent",
-            nombre: "Proyecto basado en: " + proyecto.idea,
-            descripcion: proyecto.mensaje,
-            software: software,
-            hardware: hardware,
-            extra: {
-                impacto: proyecto.impacto,
-                innovacion: proyecto.innovacion,
-                viabilidad: proyecto.viabilidad
-            }
+
+            // 🔥 IDENTIDAD
+            modulo: "maia_invent",
+            nombre: idea,
+            descripcion: p.mensaje || idea,
+
+            // 🔥 ANÁLISIS COMPLETO
+            analisis: p.analisis || {
+                impacto: p.impacto,
+                innovacion: p.innovacion,
+                viabilidad: p.viabilidad
+            },
+
+            // 🔥 SOFTWARE TOTAL
+            software: p.software || [],
+
+            // 🔥 HARDWARE TOTAL
+            hardware: p.hardware || [],
+
+            // 🔥 MODELO 3D
+            modelo_3d: p.modelo_3d || "No generado",
+
+            // 🔥 TODO EL PROYECTO COMPLETO
+            extra: p
+
         })
     });
 

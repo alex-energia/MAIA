@@ -2,20 +2,64 @@
 <html>
 <head>
     <title>MAIA INVENT</title>
+
+    <style>
+        body {
+            font-family: Arial;
+        }
+
+        #panel_maia {
+            display: none;
+            background: black;
+            color: white;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        #barra_container {
+            width: 100%;
+            background: #ddd;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        #barra {
+            width: 0%;
+            height: 25px;
+            background: green;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
 </head>
+
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador de ideas disruptivas de drones</p>
 
-<textarea id="idea" placeholder="Ej: inseguridad urbana"></textarea>
-<br><br>
+<textarea id="idea" placeholder="Ej: inseguridad urbana"></textarea><br><br>
 
 <button onclick="evaluar()">Generar Idea</button>
 
+<!-- 🔥 NUEVO BOTÓN CAPACIDADES -->
+<button onclick="verCapacidades()">🚀 ¿Qué puede hacer MAIA?</button>
+
 <h2 id="resultado"></h2>
 
-<!-- 🔥 NUEVO BOTÓN -->
+<!-- 🔥 BARRA DE PROGRESO -->
+<div id="barra_container">
+    <div id="barra">0%</div>
+</div>
+
+<!-- 🔥 PANEL CAPACIDADES -->
+<div id="panel_maia"></div>
+
+<!-- 🔥 BOTÓN GUARDAR -->
 <button onclick="guardarProyectoInvent()">
     💾 Guardar proyecto en memoria MAIA
 </button>
@@ -28,6 +72,15 @@
 function evaluar() {
     const idea = document.getElementById("idea").value;
 
+    if(!idea || idea.length < 3){
+        alert("⚠️ Ingresa una idea válida");
+        return;
+    }
+
+    // 🔥 activar barra
+    document.getElementById("barra_container").style.display = "block";
+    iniciarProgreso();
+
     fetch("/evaluar_drone", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -36,7 +89,7 @@ function evaluar() {
     .then(res => res.json())
     .then(data => {
 
-        // 🔥 MOSTRAR RESULTADO (COMPATIBLE CON SIMPLE Y AVANZADO)
+        // 🔥 MOSTRAR RESULTADO
         let html = `
             Impacto: ${data.impacto || "N/A"}<br>
             Innovación: ${data.innovacion || "N/A"}<br>
@@ -44,45 +97,92 @@ function evaluar() {
             ${data.mensaje || ""}
         `;
 
-        // 🔥 SI EXISTE ANÁLISIS AVANZADO
         if(data.analisis){
             html += `<br><br>
-            <b>🔬 Análisis Técnico:</b> ${data.analisis.tecnico}<br>
-            <b>💰 Análisis Económico:</b> ${data.analisis.economico}<br>
-            <b>👨‍🔧 Análisis Profesional:</b> ${data.analisis.profesional}<br>`;
+            <b>🔬 Análisis Técnico:</b> ${data.analisis.tecnico || ""}<br>
+            <b>💰 Análisis Económico:</b> ${data.analisis.economico || ""}<br>
+            <b>👨‍🔧 Análisis Profesional:</b> ${data.analisis.profesional || ""}<br>`;
         }
 
-        // 🔥 SOFTWARE
         if(data.software){
             html += `<br><br><b>🧠 Software:</b><br>`;
             if(Array.isArray(data.software)){
                 html += data.software.join("<br>");
-            }else if(data.software.modulos){
+            } else if(data.software.modulos){
                 html += data.software.modulos.join("<br>");
+            } else {
+                html += JSON.stringify(data.software);
             }
         }
 
-        // 🔥 HARDWARE
         if(data.hardware){
             html += `<br><br><b>⚙️ Hardware:</b><br>`;
             html += data.hardware.join("<br>");
         }
 
-        // 🔥 MODELO 3D
         if(data.modelo_3d){
             html += `<br><br><b>🧊 Modelo 3D:</b><br>${data.modelo_3d}`;
         }
 
         document.getElementById("resultado").innerHTML = html;
 
-        // 🔥 GUARDAR TODO (NO SOLO LO BÁSICO)
         window.ultimoProyecto = data;
-
+    })
+    .catch(err => {
+        alert("❌ Error al generar idea");
+        console.error(err);
     });
 }
 
 // =========================
-// 💾 GUARDAR EN MEMORIA MAIA (FULL)
+// 🔥 PROGRESO EN VIVO
+// =========================
+function iniciarProgreso(){
+    let barra = document.getElementById("barra");
+
+    let intervalo = setInterval(() => {
+        fetch("/maia_progreso")
+        .then(r => r.json())
+        .then(data => {
+
+            barra.style.width = data.progreso + "%";
+            barra.innerText = data.progreso + "%";
+
+            if(data.estado === "COMPLETADO"){
+                clearInterval(intervalo);
+            }
+
+        })
+        .catch(() => {
+            clearInterval(intervalo);
+        });
+    }, 500);
+}
+
+// =========================
+// 🚀 CAPACIDADES MAIA
+// =========================
+function verCapacidades() {
+
+    fetch("/maia_capacidades")
+    .then(r => r.json())
+    .then(data => {
+
+        let panel = document.getElementById("panel_maia");
+        panel.style.display = "block";
+
+        panel.innerHTML = `
+            <h2>🚀 MAIA FASE ${data.fase}</h2>
+            <p>Sistema de ingeniería autónoma avanzada</p>
+            <ul>
+                ${data.capacidades.map(c => `<li>${c}</li>`).join("")}
+            </ul>
+        `;
+    });
+}
+
+// =========================
+// 💾 GUARDAR PROYECTO
 // =========================
 async function guardarProyectoInvent(){
 
@@ -98,36 +198,22 @@ async function guardarProyectoInvent(){
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-
-            // 🔥 IDENTIDAD
             modulo: "maia_invent",
             nombre: idea,
             descripcion: p.mensaje || idea,
-
-            // 🔥 ANÁLISIS COMPLETO
             analisis: p.analisis || {
                 impacto: p.impacto,
                 innovacion: p.innovacion,
                 viabilidad: p.viabilidad
             },
-
-            // 🔥 SOFTWARE TOTAL
             software: p.software || [],
-
-            // 🔥 HARDWARE TOTAL
             hardware: p.hardware || [],
-
-            // 🔥 MODELO 3D
             modelo_3d: p.modelo_3d || "No generado",
-
-            // 🔥 TODO EL PROYECTO COMPLETO
             extra: p
-
         })
     });
 
     let data = await res.json();
-
     alert(data.mensaje);
 }
 

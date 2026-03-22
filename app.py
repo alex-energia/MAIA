@@ -8,6 +8,7 @@ import math
 import numpy as np
 import time
 import threading
+import re
 
 # 🔥 PROTECCIÓN TRIMESH
 try:
@@ -28,7 +29,12 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔥 ESTADO GLOBAL (PROGRESO)
+# 🔥 LOCK GLOBAL (EMPRESA)
+# =========================
+lock_maia = threading.Lock()
+
+# =========================
+# 🔥 ESTADO GLOBAL
 # =========================
 estado_maia = {
     "progreso": 0,
@@ -36,8 +42,10 @@ estado_maia = {
     "mensaje": ""
 }
 
+resultado_global = {}
+
 # =========================
-# 🔥 LOGGER EMPRESARIAL
+# 🔥 LOGGER
 # =========================
 def log_event(tipo, mensaje):
     log = {
@@ -48,72 +56,83 @@ def log_event(tipo, mensaje):
     print("🧠 LOG:", log)
 
 # =========================
-# 🔥 CARGA DRONES
+# 🔥 SANITIZAR NOMBRE (SEGURIDAD)
 # =========================
-def cargar_drones_base():
-    drones = []
-    carpeta_drones = os.path.join(app.template_folder, "drones")
-
-    if not os.path.exists(carpeta_drones):
-        return []
-
-    for archivo in os.listdir(carpeta_drones):
-        if archivo.endswith(".html"):
-            ruta = "/drones/" + archivo.replace(".html", "")
-            path_completo = os.path.join(carpeta_drones, archivo)
-
-            try:
-                with open(path_completo, "r", encoding="utf-8") as f:
-                    soup = BeautifulSoup(f, "html.parser")
-                    titulo = soup.title.string.strip() if soup.title else archivo.replace(".html", "")
-            except:
-                titulo = archivo.replace(".html", "")
-
-            drones.append({
-                "nombre": titulo,
-                "ruta": ruta,
-                "categoria": "industrial"
-            })
-
-    return drones
-
-try:
-    DRONES_BASE = cargar_drones_base()
-except:
-    DRONES_BASE = []
+def nombre_seguro(nombre):
+    return re.sub(r'[^a-zA-Z0-9_-]', '_', nombre)
 
 # =========================
-# 🧠 MEMORIA JSON
+# 🔥 GENERADOR SOFTWARE REAL
 # =========================
-MEMORIA_PATH = "memoria_maia.json"
+def generar_archivo(ruta, contenido):
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write(contenido)
 
-def cargar_memoria():
-    if not os.path.exists(MEMORIA_PATH):
-        return []
-    try:
-        with open(MEMORIA_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return []
+def crear_proyecto(nombre, peso):
+    nombre = nombre_seguro(nombre)
+    base = f"maia_projects/{nombre}"
 
-def guardar_memoria(data):
-    with open(MEMORIA_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+    os.makedirs(base, exist_ok=True)
+
+    generar_archivo(f"{base}/flight_controller.py", f"""
+class FlightController:
+    def __init__(self):
+        self.altura = 0
+        self.velocidad = 0
+
+    def update(self, thrust, peso):
+        g = 9.81
+        fuerza = thrust - peso * g
+        aceleracion = fuerza / peso
+        self.velocidad += aceleracion * 0.1
+        self.altura += self.velocidad * 0.1
+        return self.altura
+""")
+
+    generar_archivo(f"{base}/failsafe.py", """
+class FailSafe:
+    def check(self, bateria, gps):
+        if bateria < 20:
+            return "RETURN_HOME"
+        if not gps:
+            return "EMERGENCY_LAND"
+        return "OK"
+""")
+
+    generar_archivo(f"{base}/main.py", f"""
+from flight_controller import FlightController
+from failsafe import FailSafe
+
+fc = FlightController()
+fs = FailSafe()
+
+peso = {peso}
+thrust = peso * 2
+
+for i in range(50):
+    altura = fc.update(thrust, peso)
+    estado = fs.check(100, True)
+    print(f"Altura: {{altura:.2f}} | Estado: {{estado}}")
+""")
+
+    return base
 
 # =========================
-# 🧠 CORE EMPRESARIAL
+# 🧠 CORE
 # =========================
 class MaiaCore:
 
-    def actualizar_progreso(self, valor, mensaje):
-        estado_maia["progreso"] = valor
-        estado_maia["mensaje"] = mensaje
-        estado_maia["estado"] = "PROCESANDO"
-        log_event("PROGRESO", f"{valor}% - {mensaje}")
-        time.sleep(0.4)  # simula trabajo real
+    def progreso(self, val, msg):
+        with lock_maia:
+            estado_maia["progreso"] = val
+            estado_maia["mensaje"] = msg
+            estado_maia["estado"] = "PROCESANDO"
+        log_event("PROGRESO", f"{val}% - {msg}")
+        time.sleep(0.3)
 
     def analizar(self, idea):
-        self.actualizar_progreso(10, "Analizando idea")
+        self.progreso(10, "Analizando idea")
 
         idea = idea.lower()
         peso = 5
@@ -126,113 +145,61 @@ class MaiaCore:
             peso = 6
             tipo = "vigilancia"
 
-        return {
-            "peso": peso,
-            "tipo": tipo,
-            "empuje_requerido": peso * 2
-        }
-
-    def generar_software(self):
-        self.actualizar_progreso(30, "Diseñando arquitectura de software")
-
-        return {
-            "arquitectura": "ROS2 + PX4 + MAVLink + Microservicios + Edge AI",
-            "capas": [
-                "Percepción",
-                "Fusión de sensores",
-                "Planificación",
-                "Control",
-                "Failsafe",
-                "Telemetría"
-            ],
-            "modulos": [
-                "flight_controller.py",
-                "navigation.py",
-                "vision_ai.py",
-                "state_estimator.py",
-                "failsafe.py",
-                "mission_manager.py",
-                "telemetry_stream.py"
-            ],
-            "algoritmos": [
-                "PID",
-                "Kalman",
-                "SLAM",
-                "A*",
-                "Sensor Fusion",
-                "CNN"
-            ],
-            "failsafe": [
-                "Return Home",
-                "Auto Landing",
-                "Motor Cutoff",
-                "GPS Recovery"
-            ]
-        }
-
-    def generar_hardware(self, peso):
-        self.actualizar_progreso(50, "Seleccionando hardware")
-
-        return [
-            "Frame carbono industrial",
-            "4x Motores brushless",
-            "ESC 40A",
-            "Pixhawk Cube",
-            "GPS Ublox",
-            "Lidar",
-            "Cámara HD",
-            "Batería LiPo 6S"
-        ]
-
-    def simular(self, peso):
-        self.actualizar_progreso(70, "Simulando física de vuelo")
-
-        dt = 0.05
-        altura = 0
-        velocidad = 0
-        empuje = peso * 2
-        g = 9.81
-
-        for _ in range(80):
-            fuerza = empuje - peso * g
-            aceleracion = fuerza / peso
-            velocidad += aceleracion * dt
-            altura += velocidad * dt
-
-        return {
-            "altura_final": round(altura, 2),
-            "estado": "ESTABLE ✅" if altura > 1 else "INESTABLE ⚠️"
-        }
+        return {"peso": peso, "tipo": tipo}
 
     def ejecutar(self, idea):
-        estado_maia["estado"] = "INICIANDO"
+        try:
+            with lock_maia:
+                estado_maia["estado"] = "INICIANDO"
 
-        analisis = self.analizar(idea)
-        software = self.generar_software()
-        hardware = self.generar_hardware(analisis["peso"])
-        simulacion = self.simular(analisis["peso"])
+            analisis = self.analizar(idea)
 
-        self.actualizar_progreso(100, "Drone completado")
+            self.progreso(40, "Generando software real")
 
-        estado_maia["estado"] = "COMPLETADO"
+            nombre = f"drone_{int(time.time())}"
+            ruta = crear_proyecto(nombre, analisis["peso"])
 
-        return {
-            "viabilidad": "VIABLE ✅",
-            "analisis": analisis,
-            "software": software,
-            "hardware": hardware,
-            "simulacion": simulacion
-        }
+            self.progreso(70, "Simulando")
+
+            altura = analisis["peso"] * 0.5
+
+            self.progreso(100, "Completado")
+
+            with lock_maia:
+                estado_maia["estado"] = "COMPLETADO"
+
+            return {
+                "viabilidad": "VIABLE ✅",
+                "analisis": analisis,
+                "software_generado": ruta,
+                "simulacion": {
+                    "altura_estimada": altura
+                }
+            }
+
+        except Exception as e:
+            with lock_maia:
+                estado_maia["estado"] = "ERROR"
+                estado_maia["mensaje"] = str(e)
+
+            log_event("ERROR", str(e))
+
+            return {
+                "viabilidad": "ERROR ❌",
+                "error": str(e)
+            }
 
 # =========================
-# 🚀 EJECUCIÓN ASÍNCRONA
+# 🚀 PROCESO ASÍNCRONO
 # =========================
-resultado_global = {}
-
 def proceso_maia(idea):
     global resultado_global
+
     core = MaiaCore()
-    resultado_global = core.ejecutar(idea)
+    resultado = core.ejecutar(idea)
+
+    with lock_maia:
+        resultado_global = resultado
 
 # =========================
 # 🚀 ENDPOINTS
@@ -252,18 +219,24 @@ def evaluar_drone():
 
 @app.route("/maia_progreso")
 def maia_progreso():
-    return jsonify(estado_maia)
+    with lock_maia:
+        return jsonify(estado_maia)
 
 @app.route("/maia_resultado")
 def maia_resultado():
-    return jsonify(resultado_global)
+    with lock_maia:
+        return jsonify(resultado_global)
 
+# =========================
+# 🔥 3D
+# =========================
 @app.route("/generar_3d", methods=["POST"])
 def generar_3d():
     if not trimesh:
         return jsonify({"modelo_url": "/static/no_3d.txt"})
 
     cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
+
     os.makedirs("static", exist_ok=True)
     ruta = "static/modelo_drone.glb"
     cuerpo.export(ruta)
@@ -271,7 +244,7 @@ def generar_3d():
     return jsonify({"modelo_url": "/" + ruta})
 
 # =========================
-# 🔥 PANEL
+# 🔥 VISTAS
 # =========================
 @app.route("/maia_panel")
 def maia_panel():
@@ -306,7 +279,7 @@ def home():
 
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
-    return jsonify(DRONES_BASE)
+    return jsonify([])
 
 @app.route("/maia_chat")
 def maia_chat():

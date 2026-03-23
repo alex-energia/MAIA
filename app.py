@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime
 
-# 🔥 PROTECCIÓN IMPORTS PESADOS
+# 🔥 IMPORTS PROTEGIDOS
 try:
     from bs4 import BeautifulSoup
 except:
@@ -24,7 +24,6 @@ import zipfile
 import re
 import sys
 
-# 🔥 PROTECCIÓN TRIMESH
 try:
     import trimesh
 except:
@@ -45,13 +44,10 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 🔒 LOCK GLOBAL
+# ESTADO GLOBAL
 # =========================
 lock_maia = threading.Lock()
 
-# =========================
-# 🔥 ESTADO GLOBAL
-# =========================
 estado_maia = {
     "progreso": 0,
     "estado": "IDLE",
@@ -61,7 +57,7 @@ estado_maia = {
 resultado_global = {}
 
 # =========================
-# 🧠 MEMORIA MAIA
+# MEMORIA
 # =========================
 MEMORY_FILE = "maia_memory.json"
 
@@ -87,27 +83,18 @@ def registrar_proyecto(data):
     guardar_memoria(memoria)
 
 # =========================
-# LOGGER
-# =========================
-def log_event(tipo, mensaje):
-    print(f"🧠 [{tipo}] {mensaje}")
-
-# =========================
-# SANITIZAR
+# UTILS
 # =========================
 def nombre_seguro(nombre):
     return re.sub(r'[^a-zA-Z0-9_-]', '_', nombre)
 
-# =========================
-# GENERADOR ARCHIVOS
-# =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
     with open(ruta, "w", encoding="utf-8") as f:
         f.write(contenido)
 
 # =========================
-# CREAR PROYECTO
+# GENERADOR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso):
     nombre = nombre_seguro(nombre)
@@ -158,25 +145,6 @@ for i in range(50):
     return base
 
 # =========================
-# VALIDACIÓN
-# =========================
-def validar_proyecto(ruta):
-    errores = []
-    for archivo in os.listdir(ruta):
-        if archivo.endswith(".py"):
-            ruta_archivo = os.path.join(ruta, archivo)
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "py_compile", ruta_archivo],
-                    capture_output=True,
-                    text=True,
-                    check=True
-                )
-            except subprocess.CalledProcessError as e:
-                errores.append(e.stderr)
-    return errores
-
-# =========================
 # EJECUCIÓN
 # =========================
 def ejecutar_main(ruta):
@@ -191,18 +159,6 @@ def ejecutar_main(ruta):
         return result.stdout if result.stdout else result.stderr
     except Exception as e:
         return str(e)
-
-# =========================
-# ZIP
-# =========================
-def exportar_zip(ruta):
-    zip_path = ruta + ".zip"
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(ruta):
-            for file in files:
-                full = os.path.join(root, file)
-                zipf.write(full, os.path.relpath(full, ruta))
-    return zip_path
 
 # =========================
 # CORE MAIA
@@ -220,14 +176,18 @@ class MaiaCore:
 
     def analizar(self, idea):
         self.progreso(10, "Analizando IA...")
-
         idea = idea.lower()
+
         peso = 5
         tipo = "general"
 
         if "incendio" in idea:
             peso += 6
             tipo = "emergencia"
+
+        if "mineria" in idea:
+            peso += 4
+            tipo = "industrial"
 
         return {"peso": peso, "tipo": tipo}
 
@@ -240,7 +200,10 @@ class MaiaCore:
             analisis = self.analizar(idea)
 
             self.progreso(40, "Generando proyecto...")
-            ruta = crear_proyecto(f"drone_{int(time.time())}", analisis["peso"])
+            ruta = crear_proyecto(
+                f"drone_{int(time.time())}",
+                analisis["peso"]
+            )
 
             self.progreso(70, "Simulando...")
             salida = ejecutar_main(ruta)
@@ -261,7 +224,7 @@ class MaiaCore:
             }
 
 # =========================
-# PROCESO (SIN BLOQUEO RENDER)
+# PROCESO ASYNC (NO BLOQUEA RENDER)
 # =========================
 def proceso_maia(idea):
     core = MaiaCore()
@@ -270,6 +233,11 @@ def proceso_maia(idea):
 # =========================
 # ENDPOINTS
 # =========================
+
+@app.route("/")
+def home():
+    return "🔥 MAIA ONLINE"
+
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
@@ -282,11 +250,13 @@ def evaluar_drone():
 
     return jsonify({"status": "ok"})
 
-
 @app.route("/maia_resultado")
 def maia_resultado():
     return jsonify(resultado_global)
 
+@app.route("/maia_progreso")
+def maia_progreso():
+    return jsonify(estado_maia)
 
 @app.route("/maia_capacidades")
 def maia_capacidades():
@@ -301,21 +271,29 @@ def maia_capacidades():
         ]
     })
 
+# 🔥 FIX 404
+@app.route("/maia_drones_aprobados")
+def maia_drones_aprobados():
+    return jsonify({"drones": []})
 
-@app.route("/maia_invent")
-def maia_invent():
-    return render_template("maia_invent.html")
+# 🔥 FIX GUARDADO
+@app.route("/guardar_proyecto", methods=["POST"])
+def guardar_proyecto():
+    data = request.get_json()
+    registrar_proyecto(data)
+    return jsonify({"status": "guardado"})
 
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
+@app.route("/descargar_proyecto")
+def descargar_proyecto():
+    zip_path = resultado_global.get("zip")
+    if zip_path and os.path.exists(zip_path):
+        return send_file(zip_path, as_attachment=True)
+    return "No disponible", 404
 
 # =========================
-# RUN (FIX RENDER 🔥)
+# RUN (RENDER FIX)
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 MAIA corriendo en puerto {port}")
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

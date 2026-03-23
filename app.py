@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, session, send_file
 from proyectos import proyectos_bp, init_db
+
 import os
 import json
 from datetime import datetime
@@ -114,7 +115,8 @@ def crear_proyecto(nombre, peso):
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
 
-    generar_archivo(f"{base}/flight_controller.py", f"""class FlightController:
+    generar_archivo(f"{base}/flight_controller.py", f"""
+class FlightController:
     def __init__(self):
         self.altura = 0
         self.velocidad = 0
@@ -125,9 +127,11 @@ def crear_proyecto(nombre, peso):
         aceleracion = fuerza / peso
         self.velocidad += aceleracion * 0.1
         self.altura += self.velocidad * 0.1
-        return self.altura""")
+        return self.altura
+""")
 
-    generar_archivo(f"{base}/failsafe.py", """class FailSafe:
+    generar_archivo(f"{base}/failsafe.py", """
+class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -136,7 +140,8 @@ def crear_proyecto(nombre, peso):
         return "OK"
 """)
 
-    generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
+    generar_archivo(f"{base}/main.py", f"""
+from flight_controller import FlightController
 from failsafe import FailSafe
 
 fc = FlightController()
@@ -201,6 +206,20 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
+# ANÁLISIS NEGATIVO
+# =========================
+def generar_analisis_negativo(idea):
+    return f"""La idea '{idea}' presenta limitaciones críticas:
+- Relación peso/empuje insuficiente
+- Riesgo de inestabilidad en vuelo
+- Consumo energético elevado
+💡 Recomendaciones:
+- Reducir peso estructural
+- Incrementar potencia de motores
+- Optimizar aerodinámica
+- Redefinir misión del drone"""
+
+# =========================
 # CORE
 # =========================
 class MaiaCore:
@@ -211,67 +230,113 @@ class MaiaCore:
             estado_maia["mensaje"] = msg
             estado_maia["estado"] = "PROCESANDO"
         log_event("PROGRESO", f"{val}% - {msg}")
-        time.sleep(0.3)
+        time.sleep(0.2)
 
     def analizar(self, idea):
-        self.progreso(10, "Analizando IA")
+        self.progreso(10, "Analizando con IA")
+
+        memoria = cargar_memoria()
+        idea = idea.lower()
 
         peso = 5
         tipo = "general"
-
-        idea = idea.lower()
 
         if "incendio" in idea:
             peso += 6
             tipo = "emergencia"
 
+        if "mineria" in idea:
+            peso += 4
+            tipo = "industrial"
+
+        if "seguridad" in idea:
+            peso += 2
+            tipo = "vigilancia"
+
+        proyectos = memoria["proyectos"]
+
+        if proyectos:
+            try:
+                promedio = sum(p["peso"] for p in proyectos if p.get("peso")) / len(proyectos)
+                if promedio > 8:
+                    peso -= 1
+                else:
+                    peso += 1
+            except:
+                pass
+
         return {"peso": peso, "tipo": tipo}
 
     def ejecutar(self, idea):
+        try:
+            print("🔥 Ejecutando MAIA con idea:", idea)
 
-        with lock_maia:
-            estado_maia["estado"] = "INICIANDO"
-            estado_maia["progreso"] = 0
+            analisis = self.analizar(idea)
 
-        analisis = self.analizar(idea)
+            if analisis["peso"] > 30:
+                return {
+                    "viabilidad": "NO VIABLE ❌",
+                    "analisis": analisis,
+                    "error": generar_analisis_negativo(idea)
+                }
 
-        self.progreso(30, "Generando software")
-        nombre = f"drone_{int(time.time())}"
-        ruta = crear_proyecto(nombre, analisis["peso"])
+            self.progreso(30, "Generando software")
+            nombre = f"drone_{int(time.time())}"
+            ruta = crear_proyecto(nombre, analisis["peso"])
 
-        self.progreso(60, "Ejecutando simulación")
-        salida = ejecutar_main(ruta)
+            self.progreso(50, "Validando código")
+            errores = validar_proyecto(ruta)
 
-        self.progreso(90, "Empaquetando")
-        zip_path = exportar_zip(ruta)
+            self.progreso(70, "Ejecutando simulación")
+            salida = ejecutar_main(ruta)
 
-        self.progreso(100, "Completado")
+            self.progreso(85, "Empaquetando")
+            zip_path = exportar_zip(ruta)
 
-        resultado = {
-            "viabilidad": "VIABLE ✅",
-            "analisis": analisis,
-            "salida": salida,
-            "software_generado": ruta,
-            "zip": zip_path
-        }
+            self.progreso(100, "Completado")
 
-        return resultado
+            registrar_proyecto({
+                "idea": idea,
+                "tipo": analisis["tipo"],
+                "peso": analisis["peso"],
+                "viabilidad": "VIABLE"
+            })
+
+            return {
+                "viabilidad": "VIABLE ✅" if not errores else "REVISAR ⚠️",
+                "analisis": analisis,
+                "errores": errores,
+                "salida": salida,
+                "software_generado": ruta,
+                "zip": zip_path
+            }
+
+        except Exception as e:
+            print("💥 ERROR MAIA:", str(e))
+            return {
+                "viabilidad": "ERROR ❌",
+                "error": str(e)
+            }
 
 # =========================
-# PROCESO MAIA 🔥
+# PROCESO ASYNC
 # =========================
 def proceso_maia(idea):
     global resultado_global
+
+    with lock_maia:
+        estado_maia["progreso"] = 0
+        estado_maia["estado"] = "INICIANDO"
+        estado_maia["mensaje"] = "Arrancando IA..."
 
     core = MaiaCore()
     resultado = core.ejecutar(idea)
 
     with lock_maia:
         resultado_global = resultado
-        estado_maia["estado"] = "COMPLETADO"
 
 # =========================
-# 🚀 ENDPOINTS
+# ENDPOINTS
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
@@ -281,15 +346,10 @@ def evaluar_drone():
     if len(idea.strip()) < 5:
         return jsonify({"error": "Idea insuficiente"})
 
-    # 🔥 RESETEAR ESTADO
-    with lock_maia:
-        estado_maia["progreso"] = 0
-        estado_maia["estado"] = "INICIANDO"
-        estado_maia["mensaje"] = "Arrancando MAIA..."
+    hilo = threading.Thread(target=proceso_maia, args=(idea,))
+    hilo.start()
 
-    proceso_maia(idea)
-
-    return jsonify({"status": "ok"})
+    return jsonify({"status": "procesando"})
 
 @app.route("/maia_progreso")
 def maia_progreso():
@@ -315,12 +375,12 @@ def maia_capacidades():
     return jsonify({
         "fase": 13,
         "capacidades": [
-            "Capa 1: Interfaz (HTML/JS)",
-            "Capa 2: API Flask",
-            "Capa 3: Motor inteligente MAIA",
+            "Capa 1 → Interfaz (UI)",
+            "Capa 2 → API Flask",
+            "Capa 3 → Núcleo Inteligente",
             "Simulación de drones",
-            "Generación automática de código",
-            "Sistema de aprendizaje básico"
+            "Aprendizaje automático básico",
+            "Memoria persistente"
         ]
     })
 
@@ -336,5 +396,9 @@ def home():
 # RUN
 # =========================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    try:
+        port = int(os.environ.get("PORT", 10000))
+        print(f"🚀 MAIA corriendo en puerto {port}")
+        app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
+    except Exception as e:
+        print("💥 ERROR INICIANDO MAIA:", str(e))

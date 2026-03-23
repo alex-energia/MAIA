@@ -2,14 +2,12 @@
 <html>
 <head>
     <title>MAIA INVENT</title>
-
     <style>
         body {
             background: #0b0b0b;
             color: #00ffcc;
             font-family: Arial;
         }
-
         textarea {
             width: 300px;
             height: 80px;
@@ -17,7 +15,6 @@
             color: #00ffcc;
             border: 1px solid #00ffcc;
         }
-
         button {
             background: #111;
             color: #00ffcc;
@@ -26,20 +23,17 @@
             margin: 5px;
             cursor: pointer;
         }
-
         #barra {
             width: 100%;
             background: #111;
             border: 1px solid #00ffcc;
         }
-
         #progreso {
             width: 0%;
             height: 20px;
             background: #00ffcc;
             transition: width 0.3s;
         }
-
         #panel_maia {
             display: none;
             background: black;
@@ -47,17 +41,16 @@
             margin-top: 20px;
             border: 1px solid #00ffcc;
         }
-
         #error_box {
             color: red;
             margin-top: 10px;
         }
-
         pre {
             background: #111;
             border: 1px solid #00ffcc;
             padding: 10px;
             margin-top: 10px;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -99,6 +92,11 @@
 <h3>🖥️ Salida del sistema</h3>
 <pre id="salida"></pre>
 
+<h3>🐞 Errores</h3>
+<ul id="errores"></ul>
+
+<button onclick="descargarZIP()">⬇️ Descargar Proyecto</button>
+
 <hr>
 
 <div id="panel_maia">
@@ -121,7 +119,6 @@
 <br><br>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
-
 <p id="estado_guardado"></p>
 
 <script>
@@ -144,14 +141,18 @@ async function generarDrone() {
         return;
     }
 
+    // 🔥 LIMPIEZA TOTAL UI
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "🧠 Iniciando...";
     document.getElementById("error_box").innerText = "";
     document.getElementById("analisis_negativo").innerText = "";
     document.getElementById("salida").innerText = "";
+    document.getElementById("simulacion").innerText = "";
+    document.getElementById("software").innerHTML = "";
+    document.getElementById("hardware").innerHTML = "";
+    document.getElementById("errores").innerHTML = "";
 
     try {
-
         let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -160,7 +161,6 @@ async function generarDrone() {
 
         let data = await res.json();
 
-        // 🔥 SI BACKEND FALLA
         if (data.error) {
             document.getElementById("error_box").innerText = data.error;
             return;
@@ -183,14 +183,12 @@ function escucharProgreso() {
     intervaloGlobal = setInterval(async () => {
 
         try {
-
             let res = await fetch("/maia_progreso");
             let data = await res.json();
 
             document.getElementById("progreso").style.width = (data.progreso || 0) + "%";
             document.getElementById("estado").innerText = data.mensaje || "Procesando...";
 
-            // 🔥 PROTECCIÓN SI SE QUEDA PEGADO
             if (data.progreso === 0) {
                 document.getElementById("estado").innerText = "⏳ Inicializando IA...";
             }
@@ -214,7 +212,6 @@ function escucharProgreso() {
 async function cargarResultado() {
 
     try {
-
         let res = await fetch("/maia_resultado");
         let data = await res.json();
 
@@ -225,32 +222,15 @@ async function cargarResultado() {
 
         let sw = document.getElementById("software");
         let hw = document.getElementById("hardware");
+        let erroresUI = document.getElementById("errores");
 
-        sw.innerHTML = "";
-        hw.innerHTML = "";
-
-        // =========================
-        // 🔴 NEGATIVO (MEJORADO)
-        // =========================
+        // 🔴 NEGATIVO REAL
         if (data.viabilidad && data.viabilidad.includes("NO")) {
-
-            document.getElementById("analisis_negativo").innerHTML = `
-            ❌ PROYECTO NO VIABLE<br><br>
-            📉 DIAGNÓSTICO:<br>
-            ${data.error || "Limitaciones físicas detectadas"}<br><br>
-            💡 SOLUCIONES:<br>
-            - Reducir peso<br>
-            - Aumentar potencia<br>
-            - Mejorar eficiencia<br>
-            - Redefinir misión
-            `;
-
+            document.getElementById("analisis_negativo").innerText = data.error;
             return;
         }
 
-        // =========================
         // ✅ POSITIVO
-        // =========================
         if (data.analisis) {
             sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
             sw.innerHTML += "<li>Tipo: " + data.analisis.tipo + "</li>";
@@ -268,13 +248,23 @@ async function cargarResultado() {
             });
         }
 
+        // 🔥 SIMULACIÓN
         if (data.simulacion) {
             document.getElementById("simulacion").innerText =
                 "Altura estimada: " + (data.simulacion.altura_estimada || "N/A");
         }
 
-        if (data.salida) {
-            document.getElementById("salida").innerText = data.salida;
+        // 🔥 SALIDA REAL
+        document.getElementById("salida").innerText =
+            data.salida || "Sin salida de simulación";
+
+        // 🔥 ERRORES REALES
+        if (data.errores && data.errores.length > 0) {
+            data.errores.forEach(e => {
+                let li = document.createElement("li");
+                li.innerText = e;
+                erroresUI.appendChild(li);
+            });
         }
 
     } catch {
@@ -283,7 +273,14 @@ async function cargarResultado() {
 }
 
 // =========================
-// ⚡ PANEL DINÁMICO REAL
+// 📥 DESCARGAR ZIP
+// =========================
+function descargarZIP() {
+    window.open("/descargar_proyecto");
+}
+
+// =========================
+// ⚡ PANEL DINÁMICO
 // =========================
 async function togglePanel() {
 
@@ -294,7 +291,6 @@ async function togglePanel() {
         panel.style.display = "block";
 
         try {
-
             let res = await fetch("/maia_capacidades");
             let data = await res.json();
 

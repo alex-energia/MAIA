@@ -44,22 +44,43 @@ estado_maia = {
     "estado": "IDLE",
     "mensaje": ""
 }
+
 resultado_global = {}
 
 # =========================
-# 🔥 LOGGER PRO
+# 🧠 MEMORIA MAIA
+# =========================
+MEMORY_FILE = "maia_memory.json"
+
+def cargar_memoria():
+    if not os.path.exists(MEMORY_FILE):
+        return {"proyectos": []}
+    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def guardar_memoria(memoria):
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(memoria, f, indent=4)
+
+def registrar_proyecto(data):
+    memoria = cargar_memoria()
+    memoria["proyectos"].append(data)
+    guardar_memoria(memoria)
+
+# =========================
+# LOGGER
 # =========================
 def log_event(tipo, mensaje):
     print(f"🧠 [{tipo}] {mensaje}")
 
 # =========================
-# 🔐 SANITIZAR
+# SANITIZAR
 # =========================
 def nombre_seguro(nombre):
     return re.sub(r'[^a-zA-Z0-9_-]', '_', nombre)
 
 # =========================
-# 🔥 GENERADOR ARCHIVOS
+# GENERADOR ARCHIVOS
 # =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
@@ -67,7 +88,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# 🔥 CREAR PROYECTO (FIX REAL)
+# CREAR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso):
     nombre = nombre_seguro(nombre)
@@ -118,7 +139,7 @@ for i in range(50):
     return base
 
 # =========================
-# 🔥 VALIDACIÓN ROBUSTA
+# VALIDACIÓN
 # =========================
 def validar_proyecto(ruta):
     errores = []
@@ -137,7 +158,7 @@ def validar_proyecto(ruta):
     return errores
 
 # =========================
-# 🔥 EJECUCIÓN SEGURA
+# EJECUCIÓN
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -153,7 +174,7 @@ def ejecutar_main(ruta):
         return str(e)
 
 # =========================
-# 🔥 ZIP
+# ZIP
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
@@ -165,7 +186,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# 🔥 ANÁLISIS NEGATIVO INTELIGENTE
+# ANÁLISIS NEGATIVO
 # =========================
 def generar_analisis_negativo(idea):
     return f"""
@@ -173,18 +194,17 @@ La idea '{idea}' presenta limitaciones críticas:
 
 - Relación peso/empuje insuficiente
 - Riesgo de inestabilidad en vuelo
-- Posible consumo energético elevado
+- Consumo energético elevado
 
-Recomendaciones:
-
+💡 Recomendaciones:
 - Reducir peso estructural
 - Incrementar potencia de motores
 - Optimizar aerodinámica
-- Ajustar misión del drone a escenarios realistas
+- Redefinir misión del drone
 """
 
 # =========================
-# 🧠 CORE
+# CORE INTELIGENTE (CAPA 3)
 # =========================
 class MaiaCore:
 
@@ -193,25 +213,38 @@ class MaiaCore:
             estado_maia["progreso"] = val
             estado_maia["mensaje"] = msg
             estado_maia["estado"] = "PROCESANDO"
-
         log_event("PROGRESO", f"{val}% - {msg}")
         time.sleep(0.3)
 
     def analizar(self, idea):
-        self.progreso(10, "Analizando idea")
+        self.progreso(10, "Analizando con IA")
 
+        memoria = cargar_memoria()
         idea = idea.lower()
+
         peso = 5
         tipo = "general"
 
         if "incendio" in idea:
-            peso = 12
+            peso += 6
             tipo = "emergencia"
-        elif "seguridad" in idea:
-            peso = 6
+
+        if "mineria" in idea:
+            peso += 4
+            tipo = "industrial"
+
+        if "seguridad" in idea:
+            peso += 2
             tipo = "vigilancia"
-        elif "gigante" in idea:
-            peso = 50  # 🔥 caso negativo real
+
+        # 🔥 aprendizaje
+        proyectos = memoria["proyectos"]
+        if proyectos:
+            promedio = sum(p["peso"] for p in proyectos if p.get("peso")) / len(proyectos)
+            if promedio > 8:
+                peso -= 1
+            else:
+                peso += 1
 
         return {"peso": peso, "tipo": tipo}
 
@@ -222,8 +255,11 @@ class MaiaCore:
 
             analisis = self.analizar(idea)
 
-            # 🔥 VALIDACIÓN FÍSICA REAL
+            # 🔴 NO VIABLE
             if analisis["peso"] > 30:
+                with lock_maia:
+                    estado_maia["estado"] = "COMPLETADO"
+
                 return {
                     "viabilidad": "NO VIABLE ❌",
                     "analisis": analisis,
@@ -231,26 +267,30 @@ class MaiaCore:
                 }
 
             self.progreso(30, "Generando software")
-
             nombre = f"drone_{int(time.time())}"
             ruta = crear_proyecto(nombre, analisis["peso"])
 
             self.progreso(50, "Validando código")
-
             errores = validar_proyecto(ruta)
 
             self.progreso(70, "Ejecutando simulación")
-
             salida = ejecutar_main(ruta)
 
             self.progreso(85, "Empaquetando")
-
             zip_path = exportar_zip(ruta)
 
             self.progreso(100, "Completado")
 
             with lock_maia:
                 estado_maia["estado"] = "COMPLETADO"
+
+            # 🔥 guardar memoria
+            registrar_proyecto({
+                "idea": idea,
+                "tipo": analisis["tipo"],
+                "peso": analisis["peso"],
+                "viabilidad": "VIABLE"
+            })
 
             return {
                 "viabilidad": "VIABLE ✅" if not errores else "REVISAR ⚠️",
@@ -274,30 +314,26 @@ class MaiaCore:
             }
 
 # =========================
-# 🚀 PROCESO
+# PROCESO
 # =========================
 def proceso_maia(idea):
     global resultado_global
     core = MaiaCore()
     resultado = core.ejecutar(idea)
-
     with lock_maia:
         resultado_global = resultado
 
 # =========================
-# 🚀 ENDPOINTS
+# ENDPOINTS
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
     idea = data.get("idea", "")
-
     if len(idea.strip()) < 5:
         return jsonify({"error": "Idea insuficiente"})
-
     hilo = threading.Thread(target=proceso_maia, args=(idea,))
     hilo.start()
-
     return jsonify({"status": "procesando"})
 
 @app.route("/maia_progreso")
@@ -313,100 +349,37 @@ def maia_resultado():
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
-
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-
     return "No disponible", 404
 
 # =========================
-# 🔥 CAPACIDADES DINÁMICAS
+# CAPACIDADES
 # =========================
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 12,
+        "fase": 13,
         "capacidades": [
-            "Generación automática de software funcional",
-            "Simulación física real",
-            "Validación de código",
-            "Ejecución automática",
-            "Exportación profesional (.zip)",
-            "Arquitectura modular",
-            "Failsafe integrado",
-            "Sistema de progreso en tiempo real",
-            "Análisis de viabilidad inteligente",
-            "Detección de proyectos no viables",
-            "Recomendaciones técnicas automáticas"
+            "Aprendizaje automático básico",
+            "Memoria persistente",
+            "Análisis dinámico de ideas",
+            "Simulación real",
+            "Detección de inviabilidad",
+            "Recomendaciones inteligentes"
         ]
     })
 
 # =========================
-# 🔥 3D
+# VISTAS
 # =========================
-@app.route("/generar_3d", methods=["POST"])
-def generar_3d():
-    if not trimesh:
-        return jsonify({"modelo_url": "/static/no_3d.txt"})
-
-    cuerpo = trimesh.creation.box(extents=(0.4, 0.4, 0.08))
-    os.makedirs("static", exist_ok=True)
-
-    ruta = "static/modelo_drone.glb"
-    cuerpo.export(ruta)
-
-    return jsonify({"modelo_url": "/" + ruta})
-
-# =========================
-# 🔥 VISTAS
-# =========================
-@app.route("/maia_panel")
-def maia_panel():
-    return render_template("maia_panel.html")
-
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")
 
-@app.route("/maia_lab")
-def maia_lab():
-    return render_template("maia_lab.html")
-
-@app.route("/maia_simulador")
-def maia_simulador():
-    return render_template("maia_simulador.html")
-
-@app.route("/maia_architect")
-def maia_architect():
-    return render_template("maia_architect.html")
-
-# =========================
-# RESTO
-# =========================
-@app.route("/ping")
-def ping():
-    return "OK"
-
 @app.route("/")
 def home():
     return render_template("index.html")
-
-@app.route("/maia_drones_aprobados")
-def maia_drones_aprobados():
-    return jsonify([])
-
-@app.route("/maia_chat")
-def maia_chat():
-    return render_template("maia_chat.html")
-
-@app.route("/drones/<drone_file>")
-def abrir_drone(drone_file):
-    ruta_html = f"drones/{drone_file}.html"
-
-    if os.path.exists(os.path.join(app.template_folder, ruta_html)):
-        return render_template(ruta_html)
-
-    return "Drone no encontrado", 404
 
 # =========================
 # RUN

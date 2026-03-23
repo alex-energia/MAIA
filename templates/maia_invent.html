@@ -53,7 +53,6 @@
             margin-top: 10px;
         }
     </style>
-
 </head>
 
 <body>
@@ -87,6 +86,9 @@
 <h3>⚙️ Hardware</h3>
 <ul id="hardware"></ul>
 
+<h3>📊 Simulación</h3>
+<p id="simulacion"></p>
+
 <hr>
 
 <div id="panel_maia">
@@ -108,6 +110,7 @@
 <br><br>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
+
 <p id="estado_guardado"></p>
 
 <script>
@@ -130,14 +133,12 @@ async function generarDrone() {
         return;
     }
 
-    // RESET
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "🧠 Iniciando...";
     document.getElementById("error_box").innerText = "";
     document.getElementById("analisis_negativo").innerText = "";
 
     try {
-
         await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -161,17 +162,11 @@ function escucharProgreso() {
     intervaloGlobal = setInterval(async () => {
 
         try {
-
             let res = await fetch("/maia_progreso");
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
-            document.getElementById("estado").innerText = data.mensaje;
-
-            // 🔥 FALLBACK si backend no responde bien
-            if (data.progreso === 0) {
-                document.getElementById("estado").innerText = "⏳ Procesando...";
-            }
+            document.getElementById("estado").innerText = data.mensaje || "Procesando...";
 
             if (data.estado === "COMPLETADO" || data.estado === "ERROR") {
                 clearInterval(intervaloGlobal);
@@ -183,11 +178,11 @@ function escucharProgreso() {
             document.getElementById("error_box").innerText = "❌ Error leyendo progreso";
         }
 
-    }, 600);
+    }, 500);
 }
 
 // =========================
-// 📦 RESULTADO
+// 📦 RESULTADO COMPLETO
 // =========================
 async function cargarResultado() {
 
@@ -198,7 +193,7 @@ async function cargarResultado() {
 
         droneActual = data;
 
-        document.getElementById("nombre").innerText = "Drone generado";
+        document.getElementById("nombre").innerText = "🚁 Drone generado por MAIA";
         document.getElementById("viabilidad").innerText = data.viabilidad || "Sin datos";
 
         let sw = document.getElementById("software");
@@ -207,31 +202,57 @@ async function cargarResultado() {
         sw.innerHTML = "";
         hw.innerHTML = "";
 
-        // 🔥 NEGATIVO INTELIGENTE
+        // =========================
+        // 🔴 ANÁLISIS NEGATIVO PRO
+        // =========================
         if (data.viabilidad && data.viabilidad.includes("NO")) {
 
             document.getElementById("analisis_negativo").innerHTML = `
-            ❌ Proyecto NO viable<br><br>
-            📉 Justificación:<br>
-            ${data.error || "Limitaciones físicas o técnicas detectadas"}<br><br>
+            ❌ PROYECTO NO VIABLE<br><br>
 
-            💡 Cómo hacerlo viable:<br>
-            - Reducir peso estructural<br>
+            📉 DIAGNÓSTICO:<br>
+            El diseño presenta incompatibilidades entre peso, empuje y consumo energético.<br>
+            También puede existir sobrecarga estructural o falta de eficiencia aerodinámica.<br><br>
+
+            🧠 CAUSAS POSIBLES:<br>
+            - Relación empuje/peso insuficiente<br>
+            - Exceso de carga útil<br>
+            - Limitaciones en batería<br>
+            - Diseño no optimizado<br><br>
+
+            💡 SOLUCIONES:<br>
+            - Reducir peso del drone<br>
             - Aumentar potencia de motores<br>
-            - Optimizar consumo energético<br>
-            - Redefinir misión del drone<br>
+            - Usar baterías de mayor densidad<br>
+            - Rediseñar misión en fases<br>
             `;
 
             return;
         }
 
+        // =========================
         // ✅ POSITIVO
+        // =========================
         if (data.analisis) {
             sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
+            sw.innerHTML += "<li>Tipo: " + data.analisis.tipo + "</li>";
         }
 
         if (data.software_generado) {
             sw.innerHTML += "<li>Proyecto: " + data.software_generado + "</li>";
+        }
+
+        if (data.hardware) {
+            data.hardware.forEach(h => {
+                let li = document.createElement("li");
+                li.innerText = h;
+                hw.appendChild(li);
+            });
+        }
+
+        if (data.simulacion) {
+            document.getElementById("simulacion").innerText =
+                "Altura estimada: " + (data.simulacion.altura_estimada || "N/A");
         }
 
     } catch {
@@ -240,7 +261,7 @@ async function cargarResultado() {
 }
 
 // =========================
-// ⚡ PANEL MAIA (FIX)
+// ⚡ PANEL MAIA
 // =========================
 function togglePanel() {
 

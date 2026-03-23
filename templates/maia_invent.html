@@ -2,6 +2,52 @@
 <html>
 <head>
     <title>MAIA INVENT</title>
+
+    <style>
+        body {
+            background: #0b0b0b;
+            color: #00ffcc;
+            font-family: Arial;
+        }
+
+        textarea {
+            width: 300px;
+            height: 80px;
+            background: black;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+        }
+
+        button {
+            background: #111;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            padding: 8px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        #barra {
+            width: 100%;
+            background: #111;
+            border: 1px solid #00ffcc;
+        }
+
+        #progreso {
+            width: 0%;
+            height: 20px;
+            background: #00ffcc;
+        }
+
+        #panel_maia {
+            display: none;
+            background: black;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid #00ffcc;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -9,8 +55,20 @@
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador autónomo de drones disruptivos</p>
 
+<!-- 🔥 INPUT NUEVO -->
+<textarea id="idea" placeholder="Ej: dron para incendios, vigilancia, mineria..."></textarea><br>
+
 <button onclick="generarDrone()">🚀 Generar Drone</button>
 <button onclick="limpiar()">🧹 Limpiar</button>
+
+<!-- 🔥 BOTÓN NUEVO -->
+<button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
+
+<!-- 🔥 BARRA PROGRESO -->
+<div id="barra">
+    <div id="progreso"></div>
+</div>
+<p id="estado"></p>
 
 <hr>
 
@@ -26,6 +84,14 @@
 
 <hr>
 
+<!-- 🔥 PANEL DINÁMICO -->
+<div id="panel_maia">
+    <h2>🔥 Capacidades MAIA (Fase Actual)</h2>
+    <ul id="lista_capacidades"></ul>
+</div>
+
+<hr>
+
 <h3>💾 Guardar Proyecto</h3>
 
 <select id="categoria">
@@ -38,58 +104,76 @@
 <br><br>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
-
 <p id="estado_guardado"></p>
 
 <script>
 
 // =========================
-// 🧠 MEMORIA LOCAL ANTI-REPETICIÓN
+// 🧠 MEMORIA
 // =========================
 let droneActual = null;
 let historial = new Set();
 
-// Cargar historial guardado en navegador
 if (localStorage.getItem("drones_generados")) {
     historial = new Set(JSON.parse(localStorage.getItem("drones_generados")));
 }
 
 // =========================
-// 🚀 GENERAR DRONE SIN REPETIR (DOBLE FILTRO)
+// 🚀 GENERAR (AHORA REAL)
 // =========================
 async function generarDrone() {
 
-    for (let intento = 0; intento < 10; intento++) {
+    let idea = document.getElementById("idea").value;
 
-        const res = await fetch("/generar_drone_maia");
-        const data = await res.json();
-
-        // 🚫 Si ya existe, intenta de nuevo
-        if (historial.has(data.nombre)) {
-            continue;
-        }
-
-        // ✅ Nuevo drone válido
-        droneActual = data;
-        historial.add(data.nombre);
-
-        // Guardar en navegador
-        localStorage.setItem("drones_generados", JSON.stringify([...historial]));
-
-        renderDrone(data);
+    if (!idea || idea.length < 3) {
+        alert("Escribe una idea primero");
         return;
     }
 
-    alert("⚠️ No se pudo generar un drone nuevo, intenta limpiar.");
+    document.getElementById("estado").innerText = "🧠 MAIA trabajando...";
+
+    await fetch("/evaluar_drone", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({idea: idea})
+    });
+
+    escucharProgreso();
 }
 
 // =========================
-// 🎨 RENDER
+// 📊 PROGRESO EN VIVO
 // =========================
-function renderDrone(data) {
+function escucharProgreso() {
 
-    document.getElementById("nombre").innerText = data.nombre;
-    document.getElementById("intro").innerText = data.introduccion;
+    let intervalo = setInterval(async () => {
+
+        let res = await fetch("/maia_progreso");
+        let data = await res.json();
+
+        document.getElementById("progreso").style.width = data.progreso + "%";
+        document.getElementById("estado").innerText = data.mensaje;
+
+        if (data.estado === "COMPLETADO") {
+            clearInterval(intervalo);
+            cargarResultado();
+        }
+
+    }, 500);
+}
+
+// =========================
+// 📦 RESULTADO
+// =========================
+async function cargarResultado() {
+
+    let res = await fetch("/maia_resultado");
+    let data = await res.json();
+
+    droneActual = data;
+
+    document.getElementById("nombre").innerText = "Drone generado";
+    document.getElementById("intro").innerText = "Sistema autónomo generado por MAIA";
     document.getElementById("viabilidad").innerText = data.viabilidad;
 
     let sw = document.getElementById("software");
@@ -98,40 +182,54 @@ function renderDrone(data) {
     sw.innerHTML = "";
     hw.innerHTML = "";
 
-    data.software.forEach(s => {
-        let li = document.createElement("li");
-        li.innerText = s;
-        sw.appendChild(li);
-    });
+    if (data.analisis) {
+        sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
+    }
 
-    data.hardware.forEach(h => {
-        let li = document.createElement("li");
-        li.innerText = h;
-        hw.appendChild(li);
-    });
+    if (data.software_generado) {
+        sw.innerHTML += "<li>Proyecto: " + data.software_generado + "</li>";
+    }
 }
 
 // =========================
-// 🧹 LIMPIAR TODO (INCLUYE HISTORIAL)
+// ⚡ PANEL MAIA
+// =========================
+function togglePanel() {
+
+    let panel = document.getElementById("panel_maia");
+
+    if (panel.style.display === "none") {
+        panel.style.display = "block";
+        cargarCapacidades();
+    } else {
+        panel.style.display = "none";
+    }
+}
+
+function cargarCapacidades() {
+
+    let lista = document.getElementById("lista_capacidades");
+
+    lista.innerHTML = `
+        <li>✔ Generación automática de drones</li>
+        <li>✔ Construcción de software real</li>
+        <li>✔ Validación automática de código</li>
+        <li>✔ Simulación física básica</li>
+        <li>✔ Exportación en ZIP</li>
+        <li>✔ Sistema anti-errores</li>
+        <li>✔ Arquitectura escalable</li>
+    `;
+}
+
+// =========================
+// 🧹 LIMPIAR
 // =========================
 function limpiar() {
-
-    document.getElementById("nombre").innerText = "";
-    document.getElementById("intro").innerText = "";
-    document.getElementById("viabilidad").innerText = "";
-    document.getElementById("software").innerHTML = "";
-    document.getElementById("hardware").innerHTML = "";
-    document.getElementById("estado_guardado").innerText = "";
-
-    droneActual = null;
-
-    // 🔥 BORRA HISTORIAL COMPLETO
-    historial.clear();
-    localStorage.removeItem("drones_generados");
+    location.reload();
 }
 
 // =========================
-// 💾 GUARDAR DRONE
+// 💾 GUARDAR
 // =========================
 async function guardar() {
 
@@ -151,14 +249,8 @@ async function guardar() {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            nombre: droneActual.nombre,
-            tecnologia: categoria,
-            pais: "N/A",
-            ciudad: "N/A",
-            moneda: "N/A",
-            horizonte: "N/A",
-            potencia: "N/A",
-            unidad: "N/A"
+            nombre: "Drone MAIA",
+            tecnologia: categoria
         })
     });
 

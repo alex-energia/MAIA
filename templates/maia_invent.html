@@ -52,6 +52,13 @@
             color: red;
             margin-top: 10px;
         }
+
+        pre {
+            background: #111;
+            border: 1px solid #00ffcc;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -89,10 +96,14 @@
 <h3>📊 Simulación</h3>
 <p id="simulacion"></p>
 
+<h3>🖥️ Salida del sistema</h3>
+<pre id="salida"></pre>
+
 <hr>
 
 <div id="panel_maia">
     <h2>🔥 Capacidades MAIA (Fase Actual)</h2>
+    <p id="fase"></p>
     <ul id="lista_capacidades"></ul>
 </div>
 
@@ -137,13 +148,23 @@ async function generarDrone() {
     document.getElementById("estado").innerText = "🧠 Iniciando...";
     document.getElementById("error_box").innerText = "";
     document.getElementById("analisis_negativo").innerText = "";
+    document.getElementById("salida").innerText = "";
 
     try {
-        await fetch("/evaluar_drone", {
+
+        let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({idea: idea})
         });
+
+        let data = await res.json();
+
+        // 🔥 SI BACKEND FALLA
+        if (data.error) {
+            document.getElementById("error_box").innerText = data.error;
+            return;
+        }
 
         escucharProgreso();
 
@@ -162,11 +183,17 @@ function escucharProgreso() {
     intervaloGlobal = setInterval(async () => {
 
         try {
+
             let res = await fetch("/maia_progreso");
             let data = await res.json();
 
-            document.getElementById("progreso").style.width = data.progreso + "%";
+            document.getElementById("progreso").style.width = (data.progreso || 0) + "%";
             document.getElementById("estado").innerText = data.mensaje || "Procesando...";
+
+            // 🔥 PROTECCIÓN SI SE QUEDA PEGADO
+            if (data.progreso === 0) {
+                document.getElementById("estado").innerText = "⏳ Inicializando IA...";
+            }
 
             if (data.estado === "COMPLETADO" || data.estado === "ERROR") {
                 clearInterval(intervaloGlobal);
@@ -178,11 +205,11 @@ function escucharProgreso() {
             document.getElementById("error_box").innerText = "❌ Error leyendo progreso";
         }
 
-    }, 500);
+    }, 600);
 }
 
 // =========================
-// 📦 RESULTADO COMPLETO
+// 📦 RESULTADO
 // =========================
 async function cargarResultado() {
 
@@ -203,28 +230,19 @@ async function cargarResultado() {
         hw.innerHTML = "";
 
         // =========================
-        // 🔴 ANÁLISIS NEGATIVO PRO
+        // 🔴 NEGATIVO (MEJORADO)
         // =========================
         if (data.viabilidad && data.viabilidad.includes("NO")) {
 
             document.getElementById("analisis_negativo").innerHTML = `
             ❌ PROYECTO NO VIABLE<br><br>
-
             📉 DIAGNÓSTICO:<br>
-            El diseño presenta incompatibilidades entre peso, empuje y consumo energético.<br>
-            También puede existir sobrecarga estructural o falta de eficiencia aerodinámica.<br><br>
-
-            🧠 CAUSAS POSIBLES:<br>
-            - Relación empuje/peso insuficiente<br>
-            - Exceso de carga útil<br>
-            - Limitaciones en batería<br>
-            - Diseño no optimizado<br><br>
-
+            ${data.error || "Limitaciones físicas detectadas"}<br><br>
             💡 SOLUCIONES:<br>
-            - Reducir peso del drone<br>
-            - Aumentar potencia de motores<br>
-            - Usar baterías de mayor densidad<br>
-            - Rediseñar misión en fases<br>
+            - Reducir peso<br>
+            - Aumentar potencia<br>
+            - Mejorar eficiencia<br>
+            - Redefinir misión
             `;
 
             return;
@@ -255,38 +273,50 @@ async function cargarResultado() {
                 "Altura estimada: " + (data.simulacion.altura_estimada || "N/A");
         }
 
+        if (data.salida) {
+            document.getElementById("salida").innerText = data.salida;
+        }
+
     } catch {
         document.getElementById("error_box").innerText = "❌ Error cargando resultado";
     }
 }
 
 // =========================
-// ⚡ PANEL MAIA
+// ⚡ PANEL DINÁMICO REAL
 // =========================
-function togglePanel() {
+async function togglePanel() {
 
     let panel = document.getElementById("panel_maia");
 
     if (panel.style.display === "none" || panel.style.display === "") {
+
         panel.style.display = "block";
-        cargarCapacidades();
+
+        try {
+
+            let res = await fetch("/maia_capacidades");
+            let data = await res.json();
+
+            document.getElementById("fase").innerText = "Nivel actual: " + data.fase;
+
+            let lista = document.getElementById("lista_capacidades");
+            lista.innerHTML = "";
+
+            data.capacidades.forEach(cap => {
+                let li = document.createElement("li");
+                li.innerText = cap;
+                lista.appendChild(li);
+            });
+
+        } catch {
+            document.getElementById("lista_capacidades").innerHTML =
+                "<li>Error cargando capacidades</li>";
+        }
+
     } else {
         panel.style.display = "none";
     }
-}
-
-function cargarCapacidades() {
-
-    document.getElementById("lista_capacidades").innerHTML = `
-        <li>✔ Generación automática de drones</li>
-        <li>✔ Construcción de software real</li>
-        <li>✔ Validación automática de código</li>
-        <li>✔ Simulación física</li>
-        <li>✔ Exportación en ZIP</li>
-        <li>✔ Sistema anti-errores</li>
-        <li>✔ Análisis de viabilidad</li>
-        <li>✔ Recomendaciones inteligentes</li>
-    `;
 }
 
 // =========================

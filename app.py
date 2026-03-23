@@ -3,9 +3,20 @@ from proyectos import proyectos_bp, init_db
 import os
 import json
 from datetime import datetime
-from bs4 import BeautifulSoup
+
+# 🔥 PROTECCIÓN IMPORTS PESADOS
+try:
+    from bs4 import BeautifulSoup
+except:
+    BeautifulSoup = None
+
 import math
-import numpy as np
+
+try:
+    import numpy as np
+except:
+    np = None
+
 import time
 import threading
 import subprocess
@@ -18,6 +29,8 @@ try:
     import trimesh
 except:
     trimesh = None
+
+print("🔥 MAIA STARTING...")
 
 # =========================
 # APP
@@ -53,14 +66,20 @@ resultado_global = {}
 MEMORY_FILE = "maia_memory.json"
 
 def cargar_memoria():
-    if not os.path.exists(MEMORY_FILE):
+    try:
+        if not os.path.exists(MEMORY_FILE):
+            return {"proyectos": []}
+        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
         return {"proyectos": []}
-    with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 def guardar_memoria(memoria):
-    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(memoria, f, indent=4)
+    try:
+        with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+            json.dump(memoria, f, indent=4)
+    except:
+        pass
 
 def registrar_proyecto(data):
     memoria = cargar_memoria()
@@ -204,7 +223,7 @@ La idea '{idea}' presenta limitaciones críticas:
 """
 
 # =========================
-# CORE INTELIGENTE (CAPA 3)
+# CORE
 # =========================
 class MaiaCore:
 
@@ -214,7 +233,7 @@ class MaiaCore:
             estado_maia["mensaje"] = msg
             estado_maia["estado"] = "PROCESANDO"
         log_event("PROGRESO", f"{val}% - {msg}")
-        time.sleep(0.3)
+        time.sleep(0.2)
 
     def analizar(self, idea):
         self.progreso(10, "Analizando con IA")
@@ -237,14 +256,17 @@ class MaiaCore:
             peso += 2
             tipo = "vigilancia"
 
-        # 🔥 aprendizaje
         proyectos = memoria["proyectos"]
+
         if proyectos:
-            promedio = sum(p["peso"] for p in proyectos if p.get("peso")) / len(proyectos)
-            if promedio > 8:
-                peso -= 1
-            else:
-                peso += 1
+            try:
+                promedio = sum(p["peso"] for p in proyectos if p.get("peso")) / len(proyectos)
+                if promedio > 8:
+                    peso -= 1
+                else:
+                    peso += 1
+            except:
+                pass
 
         return {"peso": peso, "tipo": tipo}
 
@@ -255,11 +277,7 @@ class MaiaCore:
 
             analisis = self.analizar(idea)
 
-            # 🔴 NO VIABLE
             if analisis["peso"] > 30:
-                with lock_maia:
-                    estado_maia["estado"] = "COMPLETADO"
-
                 return {
                     "viabilidad": "NO VIABLE ❌",
                     "analisis": analisis,
@@ -281,10 +299,6 @@ class MaiaCore:
 
             self.progreso(100, "Completado")
 
-            with lock_maia:
-                estado_maia["estado"] = "COMPLETADO"
-
-            # 🔥 guardar memoria
             registrar_proyecto({
                 "idea": idea,
                 "tipo": analisis["tipo"],
@@ -302,49 +316,39 @@ class MaiaCore:
             }
 
         except Exception as e:
-            with lock_maia:
-                estado_maia["estado"] = "ERROR"
-                estado_maia["mensaje"] = str(e)
-
-            log_event("ERROR", str(e))
-
             return {
                 "viabilidad": "ERROR ❌",
                 "error": str(e)
             }
 
 # =========================
-# PROCESO
+# 🚀 ENDPOINTS
 # =========================
-def proceso_maia(idea):
-    global resultado_global
-    core = MaiaCore()
-    resultado = core.ejecutar(idea)
-    with lock_maia:
-        resultado_global = resultado
 
-# =========================
-# ENDPOINTS
-# =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
     idea = data.get("idea", "")
+
     if len(idea.strip()) < 5:
         return jsonify({"error": "Idea insuficiente"})
-    hilo = threading.Thread(target=proceso_maia, args=(idea,))
-    hilo.start()
-    return jsonify({"status": "procesando"})
+
+    # 🔥 SIN THREAD (ESTABLE EN RENDER)
+    proceso_maia(idea)
+
+    return jsonify({"status": "ok"})
 
 @app.route("/maia_progreso")
 def maia_progreso():
-    with lock_maia:
-        return jsonify(estado_maia)
+    return jsonify(estado_maia)
 
 @app.route("/maia_resultado")
 def maia_resultado():
-    with lock_maia:
-        return jsonify(resultado_global)
+    return jsonify(resultado_global)
+
+@app.route("/ping")
+def ping():
+    return "OK MAIA"
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
@@ -353,9 +357,6 @@ def descargar_proyecto():
         return send_file(zip_path, as_attachment=True)
     return "No disponible", 404
 
-# =========================
-# CAPACIDADES
-# =========================
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
@@ -370,9 +371,6 @@ def maia_capacidades():
         ]
     })
 
-# =========================
-# VISTAS
-# =========================
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")

@@ -124,13 +124,7 @@
 <script>
 
 // =========================
-// 🧠 ESTADO
-// =========================
-let droneActual = null;
-let intervaloGlobal = null;
-
-// =========================
-// 🚀 GENERAR
+// 🚀 GENERAR (FIX REAL)
 // =========================
 async function generarDrone() {
 
@@ -141,9 +135,9 @@ async function generarDrone() {
         return;
     }
 
-    // 🔥 LIMPIEZA TOTAL UI
-    document.getElementById("progreso").style.width = "0%";
-    document.getElementById("estado").innerText = "🧠 Iniciando...";
+    // LIMPIEZA UI
+    document.getElementById("progreso").style.width = "10%";
+    document.getElementById("estado").innerText = "🧠 Procesando...";
     document.getElementById("error_box").innerText = "";
     document.getElementById("analisis_negativo").innerText = "";
     document.getElementById("salida").innerText = "";
@@ -153,6 +147,7 @@ async function generarDrone() {
     document.getElementById("errores").innerHTML = "";
 
     try {
+
         let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -166,45 +161,16 @@ async function generarDrone() {
             return;
         }
 
-        escucharProgreso();
+        // progreso visual
+        document.getElementById("progreso").style.width = "60%";
 
-    } catch (e) {
+        setTimeout(cargarResultado, 800);
+
+    } catch {
         document.getElementById("error_box").innerText = "❌ Error conectando con MAIA";
     }
 }
 
-// =========================
-// 📊 PROGRESO
-// =========================
-function escucharProgreso() {
-
-    if (intervaloGlobal) clearInterval(intervaloGlobal);
-
-    intervaloGlobal = setInterval(async () => {
-
-        try {
-            let res = await fetch("/maia_progreso");
-            let data = await res.json();
-
-            document.getElementById("progreso").style.width = (data.progreso || 0) + "%";
-            document.getElementById("estado").innerText = data.mensaje || "Procesando...";
-
-            if (data.progreso === 0) {
-                document.getElementById("estado").innerText = "⏳ Inicializando IA...";
-            }
-
-            if (data.estado === "COMPLETADO" || data.estado === "ERROR") {
-                clearInterval(intervaloGlobal);
-                cargarResultado();
-            }
-
-        } catch {
-            clearInterval(intervaloGlobal);
-            document.getElementById("error_box").innerText = "❌ Error leyendo progreso";
-        }
-
-    }, 600);
-}
 
 // =========================
 // 📦 RESULTADO
@@ -212,10 +178,12 @@ function escucharProgreso() {
 async function cargarResultado() {
 
     try {
+
         let res = await fetch("/maia_resultado");
         let data = await res.json();
 
-        droneActual = data;
+        document.getElementById("progreso").style.width = "100%";
+        document.getElementById("estado").innerText = "✅ Completado";
 
         document.getElementById("nombre").innerText = "🚁 Drone generado por MAIA";
         document.getElementById("viabilidad").innerText = data.viabilidad || "Sin datos";
@@ -224,13 +192,13 @@ async function cargarResultado() {
         let hw = document.getElementById("hardware");
         let erroresUI = document.getElementById("errores");
 
-        // 🔴 NEGATIVO REAL
+        // NO VIABLE
         if (data.viabilidad && data.viabilidad.includes("NO")) {
             document.getElementById("analisis_negativo").innerText = data.error;
             return;
         }
 
-        // ✅ POSITIVO
+        // POSITIVO
         if (data.analisis) {
             sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
             sw.innerHTML += "<li>Tipo: " + data.analisis.tipo + "</li>";
@@ -240,25 +208,9 @@ async function cargarResultado() {
             sw.innerHTML += "<li>Proyecto: " + data.software_generado + "</li>";
         }
 
-        if (data.hardware) {
-            data.hardware.forEach(h => {
-                let li = document.createElement("li");
-                li.innerText = h;
-                hw.appendChild(li);
-            });
-        }
-
-        // 🔥 SIMULACIÓN
-        if (data.simulacion) {
-            document.getElementById("simulacion").innerText =
-                "Altura estimada: " + (data.simulacion.altura_estimada || "N/A");
-        }
-
-        // 🔥 SALIDA REAL
         document.getElementById("salida").innerText =
             data.salida || "Sin salida de simulación";
 
-        // 🔥 ERRORES REALES
         if (data.errores && data.errores.length > 0) {
             data.errores.forEach(e => {
                 let li = document.createElement("li");
@@ -272,15 +224,17 @@ async function cargarResultado() {
     }
 }
 
+
 // =========================
-// 📥 DESCARGAR ZIP
+// 📥 DESCARGAR
 // =========================
 function descargarZIP() {
     window.open("/descargar_proyecto");
 }
 
+
 // =========================
-// ⚡ PANEL DINÁMICO
+// ⚡ PANEL MAIA (FIX)
 // =========================
 async function togglePanel() {
 
@@ -294,7 +248,8 @@ async function togglePanel() {
             let res = await fetch("/maia_capacidades");
             let data = await res.json();
 
-            document.getElementById("fase").innerText = "Nivel actual: " + data.fase;
+            document.getElementById("fase").innerText =
+                "Nivel actual: " + data.fase;
 
             let lista = document.getElementById("lista_capacidades");
             lista.innerHTML = "";
@@ -315,6 +270,7 @@ async function togglePanel() {
     }
 }
 
+
 // =========================
 // 🧹 LIMPIAR
 // =========================
@@ -322,15 +278,11 @@ function limpiar() {
     location.reload();
 }
 
+
 // =========================
 // 💾 GUARDAR
 // =========================
 async function guardar() {
-
-    if (!droneActual) {
-        alert("Primero genera un drone");
-        return;
-    }
 
     let categoria = document.getElementById("categoria").value;
 
@@ -348,7 +300,8 @@ async function guardar() {
         })
     });
 
-    document.getElementById("estado_guardado").innerText = "✅ Guardado correctamente";
+    document.getElementById("estado_guardado").innerText =
+        "✅ Guardado correctamente";
 }
 
 </script>

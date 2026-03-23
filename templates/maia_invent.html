@@ -1,58 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MAIA INVENT</title>
-    <style>
-        body {
-            background: #0b0b0b;
-            color: #00ffcc;
-            font-family: Arial;
-        }
-        textarea {
-            width: 300px;
-            height: 80px;
-            background: black;
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
-        }
-        button {
-            background: #111;
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
-            padding: 8px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        #barra {
-            width: 100%;
-            background: #111;
-            border: 1px solid #00ffcc;
-        }
-        #progreso {
-            width: 0%;
-            height: 20px;
-            background: #00ffcc;
-            transition: width 0.3s;
-        }
-        #panel_maia {
-            display: none;
-            background: black;
-            padding: 20px;
-            margin-top: 20px;
-            border: 1px solid #00ffcc;
-        }
-        #error_box {
-            color: red;
-            margin-top: 10px;
-        }
-        pre {
-            background: #111;
-            border: 1px solid #00ffcc;
-            padding: 10px;
-            margin-top: 10px;
-            white-space: pre-wrap;
-        }
-    </style>
+<!DOCTYPE html><html><head>
+<title>MAIA INVENT</title>
+<style>
+body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
+textarea { width: 300px; height: 80px; background: black; color: #00ffcc; border: 1px solid #00ffcc; }
+button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8px; margin: 5px; cursor: pointer; }
+#barra { width: 100%; background: #111; border: 1px solid #00ffcc; }
+#progreso { width: 0%; height: 20px; background: #00ffcc; transition: width 0.3s; }
+#panel_maia { display: none; background: black; padding: 20px; margin-top: 20px; border: 1px solid #00ffcc; }
+#error_box { color: red; margin-top: 10px; }
+pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+</style>
 </head>
 
 <body>
@@ -67,7 +24,7 @@
 <button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
 
 <div id="barra">
-    <div id="progreso"></div>
+<div id="progreso"></div>
 </div>
 
 <p id="estado"></p>
@@ -100,9 +57,9 @@
 <hr>
 
 <div id="panel_maia">
-    <h2>🔥 Capacidades MAIA (Fase Actual)</h2>
-    <p id="fase"></p>
-    <ul id="lista_capacidades"></ul>
+<h2>🔥 Capacidades MAIA (Fase Actual)</h2>
+<p id="fase"></p>
+<ul id="lista_capacidades"></ul>
 </div>
 
 <hr>
@@ -110,10 +67,10 @@
 <h3>💾 Guardar Proyecto</h3>
 
 <select id="categoria">
-    <option value="">Seleccionar tipo</option>
-    <option value="comercial">Comercial</option>
-    <option value="industrial">Industrial</option>
-    <option value="militar">Militar</option>
+<option value="">Seleccionar tipo</option>
+<option value="comercial">Comercial</option>
+<option value="industrial">Industrial</option>
+<option value="militar">Militar</option>
 </select>
 
 <br><br>
@@ -124,10 +81,9 @@
 <script>
 
 // =========================
-// 🚀 GENERAR (FIX REAL)
+// 🚀 GENERAR (MEJORADO REAL)
 // =========================
 async function generarDrone() {
-
     let idea = document.getElementById("idea").value;
 
     if (!idea || idea.length < 3) {
@@ -135,19 +91,11 @@ async function generarDrone() {
         return;
     }
 
-    // LIMPIEZA UI
-    document.getElementById("progreso").style.width = "10%";
-    document.getElementById("estado").innerText = "🧠 Procesando...";
+    document.getElementById("progreso").style.width = "15%";
+    document.getElementById("estado").innerText = "🧠 Enviando a MAIA...";
     document.getElementById("error_box").innerText = "";
-    document.getElementById("analisis_negativo").innerText = "";
-    document.getElementById("salida").innerText = "";
-    document.getElementById("simulacion").innerText = "";
-    document.getElementById("software").innerHTML = "";
-    document.getElementById("hardware").innerHTML = "";
-    document.getElementById("errores").innerHTML = "";
 
     try {
-
         let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -161,24 +109,27 @@ async function generarDrone() {
             return;
         }
 
-        // progreso visual
-        document.getElementById("progreso").style.width = "60%";
+        // 🔥 Simulación progreso real
+        document.getElementById("progreso").style.width = "50%";
+        document.getElementById("estado").innerText = "⚙️ Generando drone...";
 
-        setTimeout(cargarResultado, 800);
+        setTimeout(() => {
+            document.getElementById("progreso").style.width = "80%";
+            document.getElementById("estado").innerText = "📊 Ejecutando simulación...";
+        }, 600);
 
-    } catch {
+        setTimeout(cargarResultado, 1200);
+
+    } catch (e) {
         document.getElementById("error_box").innerText = "❌ Error conectando con MAIA";
     }
 }
-
 
 // =========================
 // 📦 RESULTADO
 // =========================
 async function cargarResultado() {
-
     try {
-
         let res = await fetch("/maia_resultado");
         let data = await res.json();
 
@@ -189,16 +140,13 @@ async function cargarResultado() {
         document.getElementById("viabilidad").innerText = data.viabilidad || "Sin datos";
 
         let sw = document.getElementById("software");
-        let hw = document.getElementById("hardware");
         let erroresUI = document.getElementById("errores");
 
-        // NO VIABLE
         if (data.viabilidad && data.viabilidad.includes("NO")) {
             document.getElementById("analisis_negativo").innerText = data.error;
             return;
         }
 
-        // POSITIVO
         if (data.analisis) {
             sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
             sw.innerHTML += "<li>Tipo: " + data.analisis.tipo + "</li>";
@@ -209,9 +157,9 @@ async function cargarResultado() {
         }
 
         document.getElementById("salida").innerText =
-            data.salida || "Sin salida de simulación";
+            data.salida || "Sin salida";
 
-        if (data.errores && data.errores.length > 0) {
+        if (data.errores) {
             data.errores.forEach(e => {
                 let li = document.createElement("li");
                 li.innerText = e;
@@ -224,7 +172,6 @@ async function cargarResultado() {
     }
 }
 
-
 // =========================
 // 📥 DESCARGAR
 // =========================
@@ -232,44 +179,41 @@ function descargarZIP() {
     window.open("/descargar_proyecto");
 }
 
-
 // =========================
-// ⚡ PANEL MAIA (FIX)
+// ⚡ PANEL MAIA (CON CAPAS)
 // =========================
 async function togglePanel() {
-
     let panel = document.getElementById("panel_maia");
 
     if (panel.style.display === "none" || panel.style.display === "") {
-
         panel.style.display = "block";
 
-        try {
-            let res = await fetch("/maia_capacidades");
-            let data = await res.json();
+        let lista = document.getElementById("lista_capacidades");
+        lista.innerHTML = "";
 
-            document.getElementById("fase").innerText =
-                "Nivel actual: " + data.fase;
+        // 🔥 CAPAS REALES (IMPORTANTE)
+        let capas = [
+            "🟢 Capa 1 → Interfaz (HTML + JS)",
+            "🔵 Capa 2 → Backend Flask (API)",
+            "🔴 Capa 3 → Núcleo Inteligente MAIA",
+            "🧠 Aprendizaje automático",
+            "💾 Memoria persistente",
+            "📊 Simulación de vuelo",
+            "⚠️ Detección de errores"
+        ];
 
-            let lista = document.getElementById("lista_capacidades");
-            lista.innerHTML = "";
+        document.getElementById("fase").innerText = "Arquitectura MAIA - Sistema Activo";
 
-            data.capacidades.forEach(cap => {
-                let li = document.createElement("li");
-                li.innerText = cap;
-                lista.appendChild(li);
-            });
-
-        } catch {
-            document.getElementById("lista_capacidades").innerHTML =
-                "<li>Error cargando capacidades</li>";
-        }
+        capas.forEach(c => {
+            let li = document.createElement("li");
+            li.innerText = c;
+            lista.appendChild(li);
+        });
 
     } else {
         panel.style.display = "none";
     }
 }
-
 
 // =========================
 // 🧹 LIMPIAR
@@ -278,12 +222,10 @@ function limpiar() {
     location.reload();
 }
 
-
 // =========================
 // 💾 GUARDAR
 // =========================
 async function guardar() {
-
     let categoria = document.getElementById("categoria").value;
 
     if (!categoria) {

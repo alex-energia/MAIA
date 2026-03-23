@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime
 
-# 🔥 IMPORTS PROTEGIDOS
+# 🔥 PROTECCIÓN IMPORTS PESADOS
 try:
     from bs4 import BeautifulSoup
 except:
@@ -24,6 +24,7 @@ import zipfile
 import re
 import sys
 
+# 🔥 PROTECCIÓN TRIMESH
 try:
     import trimesh
 except:
@@ -46,8 +47,6 @@ app.register_blueprint(proyectos_bp)
 # =========================
 # ESTADO GLOBAL
 # =========================
-lock_maia = threading.Lock()
-
 estado_maia = {
     "progreso": 0,
     "estado": "IDLE",
@@ -83,7 +82,7 @@ def registrar_proyecto(data):
     guardar_memoria(memoria)
 
 # =========================
-# UTILS
+# UTILIDADES
 # =========================
 def nombre_seguro(nombre):
     return re.sub(r'[^a-zA-Z0-9_-]', '_', nombre)
@@ -94,7 +93,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# GENERADOR PROYECTO
+# CREAR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso):
     nombre = nombre_seguro(nombre)
@@ -145,7 +144,7 @@ for i in range(50):
     return base
 
 # =========================
-# EJECUCIÓN
+# EJECUCIÓN SEGURA (ANTI RENDER CRASH)
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -154,7 +153,7 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=3
         )
         return result.stdout if result.stdout else result.stderr
     except Exception as e:
@@ -166,11 +165,9 @@ def ejecutar_main(ruta):
 class MaiaCore:
 
     def progreso(self, val, msg):
-        with lock_maia:
-            estado_maia["progreso"] = val
-            estado_maia["mensaje"] = msg
-            estado_maia["estado"] = "PROCESANDO"
-
+        estado_maia["progreso"] = val
+        estado_maia["mensaje"] = msg
+        estado_maia["estado"] = "PROCESANDO"
         print(f"🧠 {val}% - {msg}")
         time.sleep(0.2)
 
@@ -189,6 +186,10 @@ class MaiaCore:
             peso += 4
             tipo = "industrial"
 
+        if "seguridad" in idea:
+            peso += 2
+            tipo = "vigilancia"
+
         return {"peso": peso, "tipo": tipo}
 
     def ejecutar(self, idea):
@@ -200,10 +201,7 @@ class MaiaCore:
             analisis = self.analizar(idea)
 
             self.progreso(40, "Generando proyecto...")
-            ruta = crear_proyecto(
-                f"drone_{int(time.time())}",
-                analisis["peso"]
-            )
+            ruta = crear_proyecto(f"drone_{int(time.time())}", analisis["peso"])
 
             self.progreso(70, "Simulando...")
             salida = ejecutar_main(ruta)
@@ -218,13 +216,14 @@ class MaiaCore:
             }
 
         except Exception as e:
+            print("💥 ERROR:", str(e))
             resultado_global = {
                 "viabilidad": "ERROR ❌",
                 "error": str(e)
             }
 
 # =========================
-# PROCESO ASYNC (NO BLOQUEA RENDER)
+# PROCESO (THREAD SEGURO)
 # =========================
 def proceso_maia(idea):
     core = MaiaCore()
@@ -233,11 +232,6 @@ def proceso_maia(idea):
 # =========================
 # ENDPOINTS
 # =========================
-
-@app.route("/")
-def home():
-    return "🔥 MAIA ONLINE"
-
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
@@ -247,51 +241,36 @@ def evaluar_drone():
         return jsonify({"error": "Idea muy corta"})
 
     threading.Thread(target=proceso_maia, args=(idea,)).start()
-
     return jsonify({"status": "ok"})
 
 @app.route("/maia_resultado")
 def maia_resultado():
     return jsonify(resultado_global)
 
-@app.route("/maia_progreso")
-def maia_progreso():
-    return jsonify(estado_maia)
-
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
         "fase": 13,
         "capacidades": [
-            "Capa 1 → Interfaz (Frontend)",
-            "Capa 2 → API Flask",
+            "Capa 1 → Interfaz (HTML + JS)",
+            "Capa 2 → Backend Flask",
             "Capa 3 → Núcleo MAIA",
-            "Capa 4 → Simulación física",
-            "Capa 5 → Memoria persistente"
+            "Simulación de drones",
+            "Memoria persistente"
         ]
     })
 
-# 🔥 FIX 404
-@app.route("/maia_drones_aprobados")
-def maia_drones_aprobados():
-    return jsonify({"drones": []})
+# 🔥 ESTE ERA EL ERROR 404
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
 
-# 🔥 FIX GUARDADO
-@app.route("/guardar_proyecto", methods=["POST"])
-def guardar_proyecto():
-    data = request.get_json()
-    registrar_proyecto(data)
-    return jsonify({"status": "guardado"})
-
-@app.route("/descargar_proyecto")
-def descargar_proyecto():
-    zip_path = resultado_global.get("zip")
-    if zip_path and os.path.exists(zip_path):
-        return send_file(zip_path, as_attachment=True)
-    return "No disponible", 404
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 # =========================
-# RUN (RENDER FIX)
+# RUN (RENDER OK)
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

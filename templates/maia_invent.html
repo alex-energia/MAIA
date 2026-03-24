@@ -13,14 +13,12 @@ button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8
 #error_box { color: red; margin-top: 10px; }
 pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
 
-/* 🔥 NUEVO: CAPAS VISUALES */
 #capas_estado {
     margin-top: 10px;
     font-size: 14px;
     color: #00ffaa;
 }
 </style>
-
 </head>
 
 <body>
@@ -39,7 +37,6 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 <p id="estado"></p>
 <p id="error_box"></p>
 
-<!-- 🔥 NUEVO -->
 <div id="capas_estado"></div>
 
 <hr>
@@ -78,86 +75,96 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 </select>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
-
 <p id="estado_guardado"></p>
 
 <script>
 
+// 🔥 CONTROL GLOBAL (EVITA BUGS)
+let ejecutando = false;
+let intervaloGlobal = null;
+
 // =========================
-// 🚀 GENERAR DRONE (CAPAS ACTIVAS)
+// 🚀 GENERAR DRONE
 // =========================
 async function generarDrone() {
+
+    if (ejecutando) return; // 🔥 evita doble click
+    ejecutando = true;
 
     let idea = document.getElementById("idea").value;
 
     if (!idea || idea.length < 3) {
         alert("Escribe una idea");
+        ejecutando = false;
         return;
     }
 
-    document.getElementById("error_box").innerText = "";
+    limpiarUI();
+
     document.getElementById("estado").innerText = "🧠 Activando MAIA...";
     document.getElementById("progreso").style.width = "5%";
 
-    // 🔥 CAPA 1
     document.getElementById("capas_estado").innerHTML =
         "🟢 Capa 1 → Interfaz activa";
 
     try {
 
-        await fetch("/evaluar_drone", {
+        let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({idea})
         });
 
-        // 🔵 CAPA 2
+        if (!res.ok) throw new Error("Backend no responde");
+
         document.getElementById("capas_estado").innerHTML =
-            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend ejecutando";
+            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
 
         monitorearProgreso();
 
     } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error conectando con MAIA";
+        document.getElementById("error_box").innerText = "❌ Error real con MAIA";
+        ejecutando = false;
     }
 }
 
 // =========================
-// 📊 PROGRESO REAL (CAPA 3)
+// 📊 PROGRESO
 // =========================
-async function monitorearProgreso() {
+function monitorearProgreso() {
 
-    let intervalo = setInterval(async () => {
+    if (intervaloGlobal) clearInterval(intervaloGlobal);
+
+    intervaloGlobal = setInterval(async () => {
 
         try {
-
             let res = await fetch("/maia_progreso");
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
             document.getElementById("estado").innerText = data.mensaje;
 
-            // 🔴 CAPA 3
             if (data.progreso > 30) {
                 document.getElementById("capas_estado").innerHTML =
                     "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
             }
 
             if (data.progreso >= 100) {
-                clearInterval(intervalo);
+                clearInterval(intervaloGlobal);
                 cargarResultado();
             }
 
         } catch (e) {
-            clearInterval(intervalo);
+            clearInterval(intervaloGlobal);
             document.getElementById("error_box").innerText = "❌ Error en progreso";
+            ejecutando = false;
         }
 
-    }, 800);
+    }, 700);
 }
 
 // =========================
-// 📦 RESULTADO FINAL
+// 📦 RESULTADO
 // =========================
 async function cargarResultado() {
 
@@ -178,16 +185,18 @@ async function cargarResultado() {
         }
 
         sw.innerHTML += `<li>Ruta: ${data.software_generado}</li>`;
-
         document.getElementById("salida").innerText = data.salida;
+
+        ejecutando = false;
 
     } catch (e) {
         document.getElementById("error_box").innerText = "❌ Error cargando resultado";
+        ejecutando = false;
     }
 }
 
 // =========================
-// ⚡ PANEL REAL MAIA (NIVEL)
+// ⚡ PANEL MAIA
 // =========================
 async function togglePanel() {
 
@@ -200,44 +209,57 @@ async function togglePanel() {
 
     panel.style.display = "block";
 
-    let res = await fetch("/maia_capacidades");
-    let data = await res.json();
+    try {
 
-    // 🔥 NIVEL REAL
-    document.getElementById("fase").innerText =
-        "🚀 MAIA NIVEL ACTUAL: SISTEMA AUTÓNOMO AVANZADO (CAPA 3+)";
+        let res = await fetch("/maia_capacidades");
+        let data = await res.json();
 
-    let lista = document.getElementById("lista_capacidades");
-    lista.innerHTML = "";
+        document.getElementById("fase").innerText =
+            "🚀 MAIA NIVEL: CAPA 3+ (SISTEMA AUTÓNOMO AVANZADO)";
 
-    data.capacidades.forEach(c => {
-        let li = document.createElement("li");
-        li.innerText = c;
-        lista.appendChild(li);
-    });
+        let lista = document.getElementById("lista_capacidades");
+        lista.innerHTML = "";
 
-    // 🔥 EXTRA (NO BORRA LO TUYO)
-    let extras = [
-        "🧠 Generación de software funcional",
-        "⚙️ Simulación física",
-        "📦 Exportación automática",
-        "💾 Memoria persistente",
-        "🧬 Evolución por errores"
-    ];
+        data.capacidades.forEach(c => {
+            let li = document.createElement("li");
+            li.innerText = c;
+            lista.appendChild(li);
+        });
 
-    extras.forEach(e => {
-        let li = document.createElement("li");
-        li.innerText = e;
-        lista.appendChild(li);
-    });
+        let extras = [
+            "🧠 Generación de software real",
+            "⚙️ Simulación física",
+            "📦 Exportación automática",
+            "💾 Memoria persistente",
+            "🧬 Evolución por errores"
+        ];
+
+        extras.forEach(e => {
+            let li = document.createElement("li");
+            li.innerText = e;
+            lista.appendChild(li);
+        });
+
+    } catch (e) {
+        document.getElementById("error_box").innerText = "❌ Error cargando capacidades";
+    }
 }
 
 // =========================
-// 🧹 LIMPIAR REAL
+// 🧹 LIMPIAR (FIX REAL)
 // =========================
 function limpiar() {
 
+    if (intervaloGlobal) clearInterval(intervaloGlobal);
+
+    ejecutando = false;
+
     document.getElementById("idea").value = "";
+    limpiarUI();
+}
+
+// 🔥 LIMPIEZA CENTRAL
+function limpiarUI() {
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
     document.getElementById("salida").innerText = "";
@@ -245,6 +267,7 @@ function limpiar() {
     document.getElementById("capas_estado").innerHTML = "";
     document.getElementById("viabilidad").innerText = "";
     document.getElementById("nombre").innerText = "";
+    document.getElementById("error_box").innerText = "";
 }
 
 // =========================

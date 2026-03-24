@@ -96,13 +96,19 @@
     </div>
 
     <!-- ========================= -->
-    <!-- 🔥 SCRIPT MAIA (CARGA SEGURA) -->
+    <!-- 🔥 SCRIPT MAIA (DESACTIVADO PARA EVITAR ERRORES) -->
     <!-- ========================= -->
 
     <script>
         window.addEventListener("load", function(){
 
-            // 🔥 evita duplicación de script
+            console.log("⚠️ maia.js DESACTIVADO temporalmente");
+
+            // 🔴 IMPORTANTE:
+            // Se deja el código comentado para no borrar nada,
+            // pero evita que rompa toda la aplicación
+
+            /*
             if(!document.getElementById("maia-script")){
                 const script = document.createElement("script");
                 script.src = "{{ url_for('static', filename='js/maia.js') }}";
@@ -110,6 +116,7 @@
                 script.id = "maia-script";
                 document.body.appendChild(script);
             }
+            */
 
         });
     </script>

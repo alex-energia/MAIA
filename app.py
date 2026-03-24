@@ -111,8 +111,7 @@ def crear_proyecto(nombre, peso):
         aceleracion = fuerza / peso
         self.velocidad += aceleracion * 0.1
         self.altura += self.velocidad * 0.1
-        return self.altura
-""")
+        return self.altura""")
 
     generar_archivo(f"{base}/failsafe.py", """class FailSafe:
     def check(self, bateria, gps):
@@ -157,7 +156,7 @@ def ejecutar_main(ruta):
         return str(e)
 
 # =========================
-# ZIP EXPORT
+# ZIP
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
@@ -169,7 +168,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# CORE MAIA
+# CORE
 # =========================
 class MaiaCore:
 
@@ -190,9 +189,11 @@ class MaiaCore:
         if "incendio" in idea:
             peso += 6
             tipo = "emergencia"
+
         if "mineria" in idea:
             peso += 4
             tipo = "industrial"
+
         if "seguridad" in idea:
             peso += 2
             tipo = "vigilancia"
@@ -201,6 +202,7 @@ class MaiaCore:
 
     def ejecutar(self, idea):
         global resultado_global
+
         try:
             print("🔥 Ejecutando MAIA:", idea)
 
@@ -212,7 +214,6 @@ class MaiaCore:
             self.progreso(70, "Simulando...")
             salida = ejecutar_main(ruta)
 
-            # 🔥 FIX CLAVE
             zip_path = exportar_zip(ruta)
 
             self.progreso(100, "Completado")
@@ -240,8 +241,34 @@ def proceso_maia(idea):
     core.ejecutar(idea)
 
 # =========================
-# ENDPOINTS
+# 🔥 ENDPOINTS CRÍTICOS (LO QUE FALTABA)
 # =========================
+
+@app.route("/maia_drones_aprobados")
+def maia_drones_aprobados():
+    categoria = request.args.get("categoria", "general")
+
+    drones = [
+        {"nombre": f"Drone {categoria.upper()} X1", "ruta": "/maia_invent"},
+        {"nombre": f"Drone {categoria.upper()} PRO", "ruta": "/maia_invent"}
+    ]
+
+    return jsonify(drones)
+
+@app.route("/maia_voz", methods=["POST"])
+def maia_voz():
+    data = request.get_json(silent=True) or {}
+    pregunta = data.get("pregunta", "")
+    return jsonify({"respuesta": f"MAIA responde a: {pregunta}"})
+
+@app.route("/maia_chat")
+def maia_chat():
+    return "<h2>💬 Chat MAIA próximamente</h2>"
+
+# =========================
+# ENDPOINTS ORIGINALES
+# =========================
+
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
@@ -253,24 +280,22 @@ def evaluar_drone():
     threading.Thread(target=proceso_maia, args=(idea,)).start()
     return jsonify({"status": "ok"})
 
-
 @app.route("/maia_resultado")
 def maia_resultado():
     return jsonify(resultado_global)
-
 
 @app.route("/maia_progreso")
 def maia_progreso():
     return jsonify(estado_maia)
 
-
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
+
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-    return "No disponible", 404
 
+    return "No disponible", 404
 
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
@@ -284,9 +309,9 @@ def guardar_proyecto():
         })
 
         return jsonify({"status": "guardado"})
+
     except Exception as e:
         return jsonify({"error": str(e)})
-
 
 @app.route("/maia_capacidades")
 def maia_capacidades():
@@ -301,16 +326,13 @@ def maia_capacidades():
         ]
     })
 
-
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")
 
-
 @app.route("/")
 def home():
     return render_template("index.html")
-
 
 # =========================
 # RUN

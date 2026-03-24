@@ -1,5 +1,5 @@
 <script>
-window.addEventListener("load", () => {
+window.addEventListener("DOMContentLoaded", () => {
 
 let ejecutando = false;
 let intervaloGlobal = null;
@@ -34,7 +34,7 @@ window.generarDrone = async function() {
             body: JSON.stringify({idea})
         });
 
-        if (!res.ok) throw new Error();
+        if (!res.ok) throw new Error("Backend muerto");
 
         document.getElementById("capas_estado").innerHTML =
             "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
@@ -42,10 +42,11 @@ window.generarDrone = async function() {
         monitorearProgreso();
 
     } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error con MAIA";
+        document.getElementById("error_box").innerText =
+            "❌ Error conectando con MAIA";
         ejecutando = false;
     }
-}
+};
 
 // =========================
 // 📊 PROGRESO
@@ -55,8 +56,12 @@ function monitorearProgreso() {
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
     intervaloGlobal = setInterval(async () => {
+
         try {
             let res = await fetch("/maia_progreso");
+
+            if (!res.ok) throw new Error();
+
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
@@ -74,9 +79,11 @@ function monitorearProgreso() {
 
         } catch (e) {
             clearInterval(intervaloGlobal);
-            document.getElementById("error_box").innerText = "❌ Error en progreso";
+            document.getElementById("error_box").innerText =
+                "❌ Error en progreso";
             ejecutando = false;
         }
+
     }, 700);
 }
 
@@ -84,12 +91,16 @@ function monitorearProgreso() {
 // 📦 RESULTADO
 // =========================
 async function cargarResultado() {
+
     try {
         let res = await fetch("/maia_resultado");
+
+        if (!res.ok) throw new Error();
+
         let data = await res.json();
 
         document.getElementById("nombre").innerText = "🚁 Drone generado";
-        document.getElementById("viabilidad").innerText = data.viabilidad;
+        document.getElementById("viabilidad").innerText = data.viabilidad || "";
 
         let sw = document.getElementById("software");
         sw.innerHTML = "";
@@ -99,13 +110,17 @@ async function cargarResultado() {
             sw.innerHTML += `<li>Tipo: ${data.analisis.tipo}</li>`;
         }
 
-        sw.innerHTML += `<li>Ruta: ${data.software_generado}</li>`;
-        document.getElementById("salida").innerText = data.salida;
+        if (data.software_generado) {
+            sw.innerHTML += `<li>Ruta: ${data.software_generado}</li>`;
+        }
+
+        document.getElementById("salida").innerText = data.salida || "";
 
         ejecutando = false;
 
     } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error cargando resultado";
+        document.getElementById("error_box").innerText =
+            "❌ Error cargando resultado";
         ejecutando = false;
     }
 }
@@ -126,6 +141,9 @@ window.togglePanel = async function() {
 
     try {
         let res = await fetch("/maia_capacidades");
+
+        if (!res.ok) throw new Error();
+
         let data = await res.json();
 
         document.getElementById("fase").innerText =
@@ -141,9 +159,10 @@ window.togglePanel = async function() {
         });
 
     } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error cargando capacidades";
+        document.getElementById("error_box").innerText =
+            "❌ Error cargando capacidades";
     }
-}
+};
 
 // =========================
 // 🧹 LIMPIAR
@@ -151,11 +170,13 @@ window.togglePanel = async function() {
 window.limpiar = function() {
 
     if (intervaloGlobal) clearInterval(intervaloGlobal);
+
     ejecutando = false;
 
     document.getElementById("idea").value = "";
+
     limpiarUI();
-}
+};
 
 function limpiarUI() {
     document.getElementById("progreso").style.width = "0%";
@@ -173,7 +194,7 @@ function limpiarUI() {
 // =========================
 window.descargarZIP = function() {
     window.open("/descargar_proyecto");
-}
+};
 
 // =========================
 // 💾 GUARDAR
@@ -197,7 +218,7 @@ window.guardar = async function() {
     });
 
     document.getElementById("estado_guardado").innerText = "✅ Guardado";
-}
+};
 
 });
 </script>

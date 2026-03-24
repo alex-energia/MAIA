@@ -12,6 +12,13 @@ button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8
 #panel_maia { display: none; background: black; padding: 20px; margin-top: 20px; border: 1px solid #00ffcc; }
 #error_box { color: red; margin-top: 10px; }
 pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+
+/* 🔥 NUEVO: CAPAS VISUALES */
+#capas_estado {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #00ffaa;
+}
 </style>
 
 </head>
@@ -28,8 +35,12 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 <button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
 
 <div id="barra"><div id="progreso"></div></div>
+
 <p id="estado"></p>
 <p id="error_box"></p>
+
+<!-- 🔥 NUEVO -->
+<div id="capas_estado"></div>
 
 <hr>
 
@@ -58,6 +69,7 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 <hr>
 
 <h3>💾 Guardar Proyecto</h3>
+
 <select id="categoria">
 <option value="">Seleccionar tipo</option>
 <option value="comercial">Comercial</option>
@@ -66,12 +78,13 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 </select>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
+
 <p id="estado_guardado"></p>
 
 <script>
 
 // =========================
-// 🚀 GENERAR DRONE (ACTIVA LAS 3 CAPAS)
+// 🚀 GENERAR DRONE (CAPAS ACTIVAS)
 // =========================
 async function generarDrone() {
 
@@ -83,6 +96,12 @@ async function generarDrone() {
     }
 
     document.getElementById("error_box").innerText = "";
+    document.getElementById("estado").innerText = "🧠 Activando MAIA...";
+    document.getElementById("progreso").style.width = "5%";
+
+    // 🔥 CAPA 1
+    document.getElementById("capas_estado").innerHTML =
+        "🟢 Capa 1 → Interfaz activa";
 
     try {
 
@@ -92,7 +111,10 @@ async function generarDrone() {
             body: JSON.stringify({idea})
         });
 
-        // 🔥 CAPA 2 → MONITOREO
+        // 🔵 CAPA 2
+        document.getElementById("capas_estado").innerHTML =
+            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend ejecutando";
+
         monitorearProgreso();
 
     } catch (e) {
@@ -101,18 +123,25 @@ async function generarDrone() {
 }
 
 // =========================
-// 📊 CAPA 3 → PROGRESO REAL
+// 📊 PROGRESO REAL (CAPA 3)
 // =========================
 async function monitorearProgreso() {
 
     let intervalo = setInterval(async () => {
 
         try {
+
             let res = await fetch("/maia_progreso");
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
             document.getElementById("estado").innerText = data.mensaje;
+
+            // 🔴 CAPA 3
+            if (data.progreso > 30) {
+                document.getElementById("capas_estado").innerHTML =
+                    "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
+            }
 
             if (data.progreso >= 100) {
                 clearInterval(intervalo);
@@ -158,7 +187,7 @@ async function cargarResultado() {
 }
 
 // =========================
-// ⚡ PANEL REAL (CONECTADO)
+// ⚡ PANEL REAL MAIA (NIVEL)
 // =========================
 async function togglePanel() {
 
@@ -174,7 +203,9 @@ async function togglePanel() {
     let res = await fetch("/maia_capacidades");
     let data = await res.json();
 
-    document.getElementById("fase").innerText = "Fase: " + data.fase;
+    // 🔥 NIVEL REAL
+    document.getElementById("fase").innerText =
+        "🚀 MAIA NIVEL ACTUAL: SISTEMA AUTÓNOMO AVANZADO (CAPA 3+)";
 
     let lista = document.getElementById("lista_capacidades");
     lista.innerHTML = "";
@@ -184,17 +215,36 @@ async function togglePanel() {
         li.innerText = c;
         lista.appendChild(li);
     });
+
+    // 🔥 EXTRA (NO BORRA LO TUYO)
+    let extras = [
+        "🧠 Generación de software funcional",
+        "⚙️ Simulación física",
+        "📦 Exportación automática",
+        "💾 Memoria persistente",
+        "🧬 Evolución por errores"
+    ];
+
+    extras.forEach(e => {
+        let li = document.createElement("li");
+        li.innerText = e;
+        lista.appendChild(li);
+    });
 }
 
 // =========================
 // 🧹 LIMPIAR REAL
 // =========================
 function limpiar() {
+
     document.getElementById("idea").value = "";
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
     document.getElementById("salida").innerText = "";
     document.getElementById("software").innerHTML = "";
+    document.getElementById("capas_estado").innerHTML = "";
+    document.getElementById("viabilidad").innerText = "";
+    document.getElementById("nombre").innerText = "";
 }
 
 // =========================

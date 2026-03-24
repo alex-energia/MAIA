@@ -1,94 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>MAIA INVENT</title>
-
-<style>
-body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
-textarea { width: 300px; height: 80px; background: black; color: #00ffcc; border: 1px solid #00ffcc; }
-button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8px; margin: 5px; cursor: pointer; }
-#barra { width: 100%; background: #111; border: 1px solid #00ffcc; }
-#progreso { width: 0%; height: 20px; background: #00ffcc; transition: width 0.3s; }
-#panel_maia { display: none; background: black; padding: 20px; margin-top: 20px; border: 1px solid #00ffcc; }
-#error_box { color: red; margin-top: 10px; }
-pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
-
-#capas_estado {
-    margin-top: 10px;
-    font-size: 14px;
-    color: #00ffaa;
-}
-</style>
-</head>
-
-<body>
-
-<h1>🧠 MAIA INVENT</h1>
-<p>Generador autónomo de drones disruptivos</p>
-
-<textarea id="idea"></textarea><br>
-
-<button onclick="generarDrone()">🚀 Generar Drone</button>
-<button onclick="limpiar()">🧹 Limpiar</button>
-<button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
-
-<div id="barra"><div id="progreso"></div></div>
-
-<p id="estado"></p>
-<p id="error_box"></p>
-
-<div id="capas_estado"></div>
-
-<hr>
-
-<h2 id="nombre"></h2>
-<p id="viabilidad"></p>
-
-<h3>🧠 Software</h3>
-<ul id="software"></ul>
-
-<h3>🖥️ Salida</h3>
-<pre id="salida"></pre>
-
-<h3>🐞 Errores</h3>
-<ul id="errores"></ul>
-
-<button onclick="descargarZIP()">⬇️ Descargar Proyecto</button>
-
-<hr>
-
-<div id="panel_maia">
-<h2>🔥 Capacidades MAIA</h2>
-<p id="fase"></p>
-<ul id="lista_capacidades"></ul>
-</div>
-
-<hr>
-
-<h3>💾 Guardar Proyecto</h3>
-
-<select id="categoria">
-<option value="">Seleccionar tipo</option>
-<option value="comercial">Comercial</option>
-<option value="industrial">Industrial</option>
-<option value="militar">Militar</option>
-</select>
-
-<button onclick="guardar()">💾 Guardar Drone</button>
-<p id="estado_guardado"></p>
-
 <script>
+window.addEventListener("load", () => {
 
-// 🔥 CONTROL GLOBAL (EVITA BUGS)
 let ejecutando = false;
 let intervaloGlobal = null;
 
 // =========================
 // 🚀 GENERAR DRONE
 // =========================
-async function generarDrone() {
+window.generarDrone = async function() {
 
-    if (ejecutando) return; // 🔥 evita doble click
+    if (ejecutando) return;
     ejecutando = true;
 
     let idea = document.getElementById("idea").value;
@@ -103,19 +24,17 @@ async function generarDrone() {
 
     document.getElementById("estado").innerText = "🧠 Activando MAIA...";
     document.getElementById("progreso").style.width = "5%";
-
     document.getElementById("capas_estado").innerHTML =
         "🟢 Capa 1 → Interfaz activa";
 
     try {
-
         let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({idea})
         });
 
-        if (!res.ok) throw new Error("Backend no responde");
+        if (!res.ok) throw new Error();
 
         document.getElementById("capas_estado").innerHTML =
             "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
@@ -123,7 +42,7 @@ async function generarDrone() {
         monitorearProgreso();
 
     } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error real con MAIA";
+        document.getElementById("error_box").innerText = "❌ Error con MAIA";
         ejecutando = false;
     }
 }
@@ -136,7 +55,6 @@ function monitorearProgreso() {
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
     intervaloGlobal = setInterval(async () => {
-
         try {
             let res = await fetch("/maia_progreso");
             let data = await res.json();
@@ -159,7 +77,6 @@ function monitorearProgreso() {
             document.getElementById("error_box").innerText = "❌ Error en progreso";
             ejecutando = false;
         }
-
     }, 700);
 }
 
@@ -167,9 +84,7 @@ function monitorearProgreso() {
 // 📦 RESULTADO
 // =========================
 async function cargarResultado() {
-
     try {
-
         let res = await fetch("/maia_resultado");
         let data = await res.json();
 
@@ -198,7 +113,7 @@ async function cargarResultado() {
 // =========================
 // ⚡ PANEL MAIA
 // =========================
-async function togglePanel() {
+window.togglePanel = async function() {
 
     let panel = document.getElementById("panel_maia");
 
@@ -210,7 +125,6 @@ async function togglePanel() {
     panel.style.display = "block";
 
     try {
-
         let res = await fetch("/maia_capacidades");
         let data = await res.json();
 
@@ -226,39 +140,23 @@ async function togglePanel() {
             lista.appendChild(li);
         });
 
-        let extras = [
-            "🧠 Generación de software real",
-            "⚙️ Simulación física",
-            "📦 Exportación automática",
-            "💾 Memoria persistente",
-            "🧬 Evolución por errores"
-        ];
-
-        extras.forEach(e => {
-            let li = document.createElement("li");
-            li.innerText = e;
-            lista.appendChild(li);
-        });
-
     } catch (e) {
         document.getElementById("error_box").innerText = "❌ Error cargando capacidades";
     }
 }
 
 // =========================
-// 🧹 LIMPIAR (FIX REAL)
+// 🧹 LIMPIAR
 // =========================
-function limpiar() {
+window.limpiar = function() {
 
     if (intervaloGlobal) clearInterval(intervaloGlobal);
-
     ejecutando = false;
 
     document.getElementById("idea").value = "";
     limpiarUI();
 }
 
-// 🔥 LIMPIEZA CENTRAL
 function limpiarUI() {
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
@@ -273,14 +171,14 @@ function limpiarUI() {
 // =========================
 // 📥 DESCARGAR
 // =========================
-function descargarZIP() {
+window.descargarZIP = function() {
     window.open("/descargar_proyecto");
 }
 
 // =========================
 // 💾 GUARDAR
 // =========================
-async function guardar() {
+window.guardar = async function() {
 
     let categoria = document.getElementById("categoria").value;
 
@@ -301,7 +199,5 @@ async function guardar() {
     document.getElementById("estado_guardado").innerText = "✅ Guardado";
 }
 
+});
 </script>
-
-</body>
-</html>

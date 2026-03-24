@@ -13,7 +13,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .hidden{display:none;}
 .drone-botones{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;}
 .drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
-
 .modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px;}
 .modulo-extra button{
   flex:1;
@@ -27,8 +26,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
   font-weight:bold;
 }
 .modulo-extra button:hover{ background:#059669;}
-
-/* 🔴 VOZ */
 .boton-voz{
   background:#ff0000;
   color:white;
@@ -45,8 +42,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
   box-shadow: 0 0 20px rgba(255,0,0,0.8);
 }
 .boton-voz:hover{ background:#b91c1c; }
-
-/* 💬 CHAT */
 .boton-plus{
   background:#2563eb;
   color:white;
@@ -71,7 +66,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
     <button onclick="abrirModuloGenerico('proyectos')">📁</button>
     <button onclick="activarDrone()">🚁</button>
     <button onclick="volverChat()">🏠</button>
-
     <button class="boton-voz" onclick="activarVozReal()">🎤</button>
     <button class="boton-plus" onclick="abrirChatMAIA()">💬</button>
   </div>
@@ -102,25 +96,11 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 
       <div id="contenidoDrone" style="margin-top:20px"></div>
 
-      <!-- 🔥 MÓDULOS EXTRA (AQUÍ ESTABA EL FALTANTE) -->
       <div class="modulo-extra">
-
-        <button onclick="cargarModuloExtra('simulador','🕹️ Simulador')">
-          🕹️ Simulador
-        </button>
-
-        <button onclick="cargarModuloExtra('invent','💡 Invent')">
-          💡 Invent
-        </button>
-
-        <button onclick="cargarModuloExtra('lab','🧪 Lab')">
-          🧪 Lab
-        </button>
-
-        <button onclick="cargarModuloExtra('architect','🏗️ Architect')">
-          🏗️ Architect
-        </button>
-
+        <button onclick="cargarModuloExtra('simulador','🕹️ Simulador')">🕹️ Simulador</button>
+        <button onclick="cargarModuloExtra('invent','💡 Invent')">💡 Invent</button>
+        <button onclick="cargarModuloExtra('lab','🧪 Lab')">🧪 Lab</button>
+        <button onclick="cargarModuloExtra('architect','🏗️ Architect')">🏗️ Architect</button>
       </div>
 
     </div>
@@ -129,6 +109,11 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 </div>
 
 <script>
+
+// 🔥 DEBUG GLOBAL (CLAVE)
+window.onerror = function(msg, url, line){
+  console.error("💥 JS ERROR:", msg, "en", url, "línea", line);
+};
 
 // navegación
 function ocultarTodo(){
@@ -148,14 +133,25 @@ function activarDrone(){
   dronesIndustriales();
 }
 
-// 🔥 DRONES
+// 🔥 DRONES (PROTEGIDO)
 async function cargarDronesPorCategoria(categoria, titulo){
   const cont = document.getElementById("contenidoDrone");
   cont.innerHTML = `Cargando ${titulo}...`;
 
   try{
     let r = await fetch(`/maia_drones_aprobados?categoria=${categoria}`);
+
+    if(!r.ok){
+      cont.innerHTML = "⚠️ No hay drones disponibles (endpoint no existe)";
+      return;
+    }
+
     let drones = await r.json();
+
+    if(!drones.length){
+      cont.innerHTML = "⚠️ Sin resultados";
+      return;
+    }
 
     let html = `<h3>${titulo}</h3>`;
 
@@ -171,7 +167,8 @@ async function cargarDronesPorCategoria(categoria, titulo){
     cont.innerHTML = html;
 
   }catch(e){
-    cont.innerHTML = "Error cargando drones";
+    console.error(e);
+    cont.innerHTML = "❌ Error cargando drones";
   }
 }
 
@@ -184,14 +181,20 @@ async function activarVozReal(){
   let pregunta = prompt("🎤 Habla con MAIA:");
   if(!pregunta) return;
 
-  let res = await fetch("/maia_voz", {
-    method:"POST",
-    headers:{ "Content-Type":"application/json"},
-    body: JSON.stringify({pregunta})
-  });
+  try{
+    let res = await fetch("/maia_voz", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json"},
+      body: JSON.stringify({pregunta})
+    });
 
-  let data = await res.json();
-  alert(data.respuesta);
+    let data = await res.json();
+    alert(data.respuesta || "Sin respuesta");
+
+  }catch(e){
+    alert("❌ Error en voz");
+    console.error(e);
+  }
 }
 
 // 💬 CHAT
@@ -204,20 +207,25 @@ function abrirModuloGenerico(modulo){
   window.location.href = `/maia_${modulo}`;
 }
 
-// 🔥 MÓDULOS INTERNOS (CLAVE)
+// 🔥 MÓDULOS INTERNOS (PROTEGIDO)
 async function cargarModuloExtra(modulo, titulo){
   const cont = document.getElementById("contenidoDrone");
-
   cont.innerHTML = `Cargando ${titulo}...`;
 
   try{
     let r = await fetch(`/maia_${modulo}`);
-    let html = await r.text();
 
+    if(!r.ok){
+      cont.innerHTML = `⚠️ Módulo ${titulo} no disponible`;
+      return;
+    }
+
+    let html = await r.text();
     cont.innerHTML = `<h3>${titulo}</h3>` + html;
 
   }catch(e){
-    cont.innerHTML = `Error cargando ${titulo}`;
+    console.error(e);
+    cont.innerHTML = `❌ Error cargando ${titulo}`;
   }
 }
 

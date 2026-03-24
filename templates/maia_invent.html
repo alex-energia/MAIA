@@ -1,35 +1,29 @@
-<!DOCTYPE html><html><head>
-<title>MAIA INVENT</title>
-<style>
-body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
-textarea { width: 300px; height: 80px; background: black; color: #00ffcc; border: 1px solid #00ffcc; }
-button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8px; margin: 5px; cursor: pointer; }
-#barra { width: 100%; background: #111; border: 1px solid #00ffcc; }
-#progreso { width: 0%; height: 20px; background: #00ffcc; transition: width 0.3s; }
-#panel_maia { display: none; background: black; padding: 20px; margin-top: 20px; border: 1px solid #00ffcc; }
-#error_box { color: red; margin-top: 10px; }
-pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
-</style>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MAIA INVENT</title>
+    <style>
+        body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
+        textarea { width: 300px; height: 80px; background: black; color: #00ffcc; border: 1px solid #00ffcc; }
+        button { background: #111; color: #00ffcc; border: 1px solid #00ffcc; padding: 8px; margin: 5px; cursor: pointer; }
+        #barra { width: 100%; background: #111; border: 1px solid #00ffcc; }
+        #progreso { width: 0%; height: 20px; background: #00ffcc; transition: width 0.3s; }
+        #panel_maia { display: none; background: black; padding: 20px; margin-top: 20px; border: 1px solid #00ffcc; }
+        #error_box { color: red; margin-top: 10px; }
+        pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+    </style>
 </head>
-
 <body>
-
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador autónomo de drones disruptivos</p>
-
 <textarea id="idea" placeholder="Ej: dron para incendios, vigilancia, mineria..."></textarea><br>
-
 <button onclick="generarDrone()">🚀 Generar Drone</button>
 <button onclick="limpiar()">🧹 Limpiar</button>
 <button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
 
-<div id="barra">
-<div id="progreso"></div>
-</div>
-
+<div id="barra"><div id="progreso"></div></div>
 <p id="estado"></p>
 <p id="error_box"></p>
-
 <hr>
 
 <h2 id="nombre"></h2>
@@ -39,159 +33,115 @@ pre { background: #111; border: 1px solid #00ffcc; padding: 10px; margin-top: 10
 
 <h3>🧠 Software</h3>
 <ul id="software"></ul>
-
 <h3>⚙️ Hardware</h3>
 <ul id="hardware"></ul>
-
 <h3>📊 Simulación</h3>
 <p id="simulacion"></p>
-
 <h3>🖥️ Salida del sistema</h3>
 <pre id="salida"></pre>
-
 <h3>🐞 Errores</h3>
 <ul id="errores"></ul>
 
 <button onclick="descargarZIP()">⬇️ Descargar Proyecto</button>
-
 <hr>
 
 <div id="panel_maia">
-<h2>🔥 Capacidades MAIA (Fase Actual)</h2>
-<p id="fase"></p>
-<ul id="lista_capacidades"></ul>
+    <h2>🔥 Capacidades MAIA (Fase Actual)</h2>
+    <p id="fase"></p>
+    <ul id="lista_capacidades"></ul>
 </div>
-
 <hr>
 
 <h3>💾 Guardar Proyecto</h3>
-
 <select id="categoria">
-<option value="">Seleccionar tipo</option>
-<option value="comercial">Comercial</option>
-<option value="industrial">Industrial</option>
-<option value="militar">Militar</option>
-</select>
-
-<br><br>
-
+    <option value="">Seleccionar tipo</option>
+    <option value="comercial">Comercial</option>
+    <option value="industrial">Industrial</option>
+    <option value="militar">Militar</option>
+</select><br><br>
 <button onclick="guardar()">💾 Guardar Drone</button>
 <p id="estado_guardado"></p>
 
 <script>
+    // =========================
+    // 🚀 GENERAR DRONE
+    // =========================
+    async function generarDrone() {
+        let idea = document.getElementById("idea").value;
+        if (!idea || idea.length < 3) { alert("Escribe una idea primero"); return; }
 
-// =========================
-// 🚀 GENERAR (MEJORADO REAL)
-// =========================
-async function generarDrone() {
-    let idea = document.getElementById("idea").value;
+        document.getElementById("progreso").style.width = "15%";
+        document.getElementById("estado").innerText = "🧠 Enviando a MAIA...";
+        document.getElementById("error_box").innerText = "";
 
-    if (!idea || idea.length < 3) {
-        alert("Escribe una idea primero");
-        return;
-    }
-
-    document.getElementById("progreso").style.width = "15%";
-    document.getElementById("estado").innerText = "🧠 Enviando a MAIA...";
-    document.getElementById("error_box").innerText = "";
-
-    try {
-        let res = await fetch("/evaluar_drone", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({idea: idea})
-        });
-
-        let data = await res.json();
-
-        if (data.error) {
-            document.getElementById("error_box").innerText = data.error;
-            return;
-        }
-
-        // 🔥 Simulación progreso real
-        document.getElementById("progreso").style.width = "50%";
-        document.getElementById("estado").innerText = "⚙️ Generando drone...";
-
-        setTimeout(() => {
-            document.getElementById("progreso").style.width = "80%";
-            document.getElementById("estado").innerText = "📊 Ejecutando simulación...";
-        }, 600);
-
-        setTimeout(cargarResultado, 1200);
-
-    } catch (e) {
-        document.getElementById("error_box").innerText = "❌ Error conectando con MAIA";
-    }
-}
-
-// =========================
-// 📦 RESULTADO
-// =========================
-async function cargarResultado() {
-    try {
-        let res = await fetch("/maia_resultado");
-        let data = await res.json();
-
-        document.getElementById("progreso").style.width = "100%";
-        document.getElementById("estado").innerText = "✅ Completado";
-
-        document.getElementById("nombre").innerText = "🚁 Drone generado por MAIA";
-        document.getElementById("viabilidad").innerText = data.viabilidad || "Sin datos";
-
-        let sw = document.getElementById("software");
-        let erroresUI = document.getElementById("errores");
-
-        if (data.viabilidad && data.viabilidad.includes("NO")) {
-            document.getElementById("analisis_negativo").innerText = data.error;
-            return;
-        }
-
-        if (data.analisis) {
-            sw.innerHTML += "<li>Peso: " + data.analisis.peso + "</li>";
-            sw.innerHTML += "<li>Tipo: " + data.analisis.tipo + "</li>";
-        }
-
-        if (data.software_generado) {
-            sw.innerHTML += "<li>Proyecto: " + data.software_generado + "</li>";
-        }
-
-        document.getElementById("salida").innerText =
-            data.salida || "Sin salida";
-
-        if (data.errores) {
-            data.errores.forEach(e => {
-                let li = document.createElement("li");
-                li.innerText = e;
-                erroresUI.appendChild(li);
+        try {
+            await fetch("/evaluar_drone", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({idea})
             });
+
+            document.getElementById("progreso").style.width = "50%";
+            document.getElementById("estado").innerText = "⚙️ Generando drone...";
+
+            setTimeout(cargarResultado, 1500);
+
+        } catch (e) {
+            document.getElementById("error_box").innerText = "❌ Error conectando con MAIA";
+            console.error(e);
         }
-
-    } catch {
-        document.getElementById("error_box").innerText = "❌ Error cargando resultado";
     }
-}
 
-// =========================
-// 📥 DESCARGAR
-// =========================
-function descargarZIP() {
-    window.open("/descargar_proyecto");
-}
+    // =========================
+    // 📦 CARGAR RESULTADO
+    // =========================
+    async function cargarResultado() {
+        try {
+            let res = await fetch("/maia_resultado");
+            let data = await res.json();
 
-// =========================
-// ⚡ PANEL MAIA (CON CAPAS)
-// =========================
-async function togglePanel() {
-    let panel = document.getElementById("panel_maia");
+            document.getElementById("progreso").style.width = "100%";
+            document.getElementById("estado").innerText = "✅ Completado";
 
-    if (panel.style.display === "none" || panel.style.display === "") {
+            document.getElementById("nombre").innerText = "🚁 Drone generado por MAIA";
+            document.getElementById("viabilidad").innerText = data.viabilidad || "Sin datos";
+
+            let sw = document.getElementById("software");
+            let erroresUI = document.getElementById("errores");
+            sw.innerHTML = ""; erroresUI.innerHTML = "";
+
+            if (data.analisis) {
+                sw.innerHTML += `<li>Peso: ${data.analisis.peso}</li>`;
+                sw.innerHTML += `<li>Tipo: ${data.analisis.tipo}</li>`;
+            }
+            if (data.software_generado) {
+                sw.innerHTML += `<li>Proyecto: ${data.software_generado}</li>`;
+            }
+            document.getElementById("salida").innerText = data.salida || "Sin salida";
+
+            if (data.errores) {
+                data.errores.forEach(e => {
+                    let li = document.createElement("li");
+                    li.innerText = e;
+                    erroresUI.appendChild(li);
+                });
+            }
+        } catch (e) {
+            document.getElementById("error_box").innerText = "❌ Error cargando resultado";
+            console.error(e);
+        }
+    }
+
+    // =========================
+    // ⚡ PANEL MAIA
+    // =========================
+    function togglePanel() {
+        let panel = document.getElementById("panel_maia");
+        if (panel.style.display === "block") { panel.style.display = "none"; return; }
+
         panel.style.display = "block";
-
         let lista = document.getElementById("lista_capacidades");
         lista.innerHTML = "";
-
-        // 🔥 CAPAS REALES (IMPORTANTE)
         let capas = [
             "🟢 Capa 1 → Interfaz (HTML + JS)",
             "🔵 Capa 2 → Backend Flask (API)",
@@ -201,52 +151,39 @@ async function togglePanel() {
             "📊 Simulación de vuelo",
             "⚠️ Detección de errores"
         ];
-
         document.getElementById("fase").innerText = "Arquitectura MAIA - Sistema Activo";
-
         capas.forEach(c => {
             let li = document.createElement("li");
             li.innerText = c;
             lista.appendChild(li);
         });
-
-    } else {
-        panel.style.display = "none";
-    }
-}
-
-// =========================
-// 🧹 LIMPIAR
-// =========================
-function limpiar() {
-    location.reload();
-}
-
-// =========================
-// 💾 GUARDAR
-// =========================
-async function guardar() {
-    let categoria = document.getElementById("categoria").value;
-
-    if (!categoria) {
-        alert("Selecciona categoría");
-        return;
     }
 
-    await fetch("/guardar_proyecto", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nombre: "Drone MAIA",
-            tecnologia: categoria
-        })
-    });
+    // =========================
+    // 🧹 LIMPIAR
+    // =========================
+    function limpiar() { location.reload(); }
 
-    document.getElementById("estado_guardado").innerText =
-        "✅ Guardado correctamente";
-}
+    // =========================
+    // 📥 DESCARGAR
+    // =========================
+    function descargarZIP() { window.open("/descargar_proyecto"); }
 
+    // =========================
+    // 💾 GUARDAR
+    // =========================
+    async function guardar() {
+        let categoria = document.getElementById("categoria").value;
+        if (!categoria) { alert("Selecciona categoría"); return; }
+
+        await fetch("/guardar_proyecto", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({nombre: "Drone MAIA", tecnologia: categoria})
+        });
+
+        document.getElementById("estado_guardado").innerText = "✅ Guardado correctamente";
+    }
 </script>
-
 </body>
 </html>

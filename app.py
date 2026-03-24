@@ -100,8 +100,7 @@ def crear_proyecto(nombre, peso):
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
 
-    generar_archivo(f"{base}/flight_controller.py", f"""
-class FlightController:
+    generar_archivo(f"{base}/flight_controller.py", f"""class FlightController:
     def __init__(self):
         self.altura = 0
         self.velocidad = 0
@@ -115,8 +114,7 @@ class FlightController:
         return self.altura
 """)
 
-    generar_archivo(f"{base}/failsafe.py", """
-class FailSafe:
+    generar_archivo(f"{base}/failsafe.py", """class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -125,8 +123,7 @@ class FailSafe:
         return "OK"
 """)
 
-    generar_archivo(f"{base}/main.py", f"""
-from flight_controller import FlightController
+    generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
 from failsafe import FailSafe
 
 fc = FlightController()
@@ -144,7 +141,7 @@ for i in range(50):
     return base
 
 # =========================
-# EJECUCIÓN SEGURA (ANTI RENDER CRASH)
+# EJECUCIÓN SEGURA
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -158,6 +155,18 @@ def ejecutar_main(ruta):
         return result.stdout if result.stdout else result.stderr
     except Exception as e:
         return str(e)
+
+# =========================
+# ZIP EXPORT
+# =========================
+def exportar_zip(ruta):
+    zip_path = ruta + ".zip"
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for root, dirs, files in os.walk(ruta):
+            for file in files:
+                full = os.path.join(root, file)
+                zipf.write(full, os.path.relpath(full, ruta))
+    return zip_path
 
 # =========================
 # CORE MAIA
@@ -181,11 +190,9 @@ class MaiaCore:
         if "incendio" in idea:
             peso += 6
             tipo = "emergencia"
-
         if "mineria" in idea:
             peso += 4
             tipo = "industrial"
-
         if "seguridad" in idea:
             peso += 2
             tipo = "vigilancia"
@@ -194,7 +201,6 @@ class MaiaCore:
 
     def ejecutar(self, idea):
         global resultado_global
-
         try:
             print("🔥 Ejecutando MAIA:", idea)
 
@@ -206,13 +212,17 @@ class MaiaCore:
             self.progreso(70, "Simulando...")
             salida = ejecutar_main(ruta)
 
+            # 🔥 FIX CLAVE
+            zip_path = exportar_zip(ruta)
+
             self.progreso(100, "Completado")
 
             resultado_global = {
                 "viabilidad": "VIABLE ✅",
                 "analisis": analisis,
                 "salida": salida,
-                "software_generado": ruta
+                "software_generado": ruta,
+                "zip": zip_path
             }
 
         except Exception as e:
@@ -223,7 +233,7 @@ class MaiaCore:
             }
 
 # =========================
-# PROCESO (THREAD SEGURO)
+# THREAD
 # =========================
 def proceso_maia(idea):
     core = MaiaCore()
@@ -243,9 +253,40 @@ def evaluar_drone():
     threading.Thread(target=proceso_maia, args=(idea,)).start()
     return jsonify({"status": "ok"})
 
+
 @app.route("/maia_resultado")
 def maia_resultado():
     return jsonify(resultado_global)
+
+
+@app.route("/maia_progreso")
+def maia_progreso():
+    return jsonify(estado_maia)
+
+
+@app.route("/descargar_proyecto")
+def descargar_proyecto():
+    zip_path = resultado_global.get("zip")
+    if zip_path and os.path.exists(zip_path):
+        return send_file(zip_path, as_attachment=True)
+    return "No disponible", 404
+
+
+@app.route("/guardar_proyecto", methods=["POST"])
+def guardar_proyecto():
+    try:
+        data = request.get_json(silent=True) or {}
+
+        registrar_proyecto({
+            "nombre": data.get("nombre", "Drone MAIA"),
+            "tipo": data.get("tecnologia", "general"),
+            "fecha": datetime.now().isoformat()
+        })
+
+        return jsonify({"status": "guardado"})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 
 @app.route("/maia_capacidades")
 def maia_capacidades():
@@ -260,17 +301,19 @@ def maia_capacidades():
         ]
     })
 
-# 🔥 ESTE ERA EL ERROR 404
+
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
 # =========================
-# RUN (RENDER OK)
+# RUN
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

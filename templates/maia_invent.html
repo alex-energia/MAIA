@@ -1,13 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MAIA INVENT</title>
+
+<style>
+body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
+
+textarea {
+    width: 300px;
+    height: 80px;
+    background: black;
+    color: #00ffcc;
+    border: 1px solid #00ffcc;
+}
+
+button {
+    background: #111;
+    color: #00ffcc;
+    border: 1px solid #00ffcc;
+    padding: 8px;
+    margin: 5px;
+    cursor: pointer;
+}
+
+#barra {
+    width: 100%;
+    background: #111;
+    border: 1px solid #00ffcc;
+}
+
+#progreso {
+    width: 0%;
+    height: 20px;
+    background: #00ffcc;
+    transition: width 0.3s;
+}
+
+#panel_maia {
+    display: none;
+    background: black;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #00ffcc;
+}
+
+#error_box { color: red; margin-top: 10px; }
+
+pre {
+    background: #111;
+    border: 1px solid #00ffcc;
+    padding: 10px;
+    margin-top: 10px;
+    white-space: pre-wrap;
+}
+
+#capas_estado {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #00ffaa;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🧠 MAIA INVENT</h1>
+<p>Generador autónomo de drones disruptivos</p>
+
+<textarea id="idea"></textarea><br>
+
+<button onclick="generarDrone()">🚀 Generar Drone</button>
+<button onclick="limpiar()">🧹 Limpiar</button>
+<button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
+
+<div id="barra"><div id="progreso"></div></div>
+
+<p id="estado"></p>
+<p id="error_box"></p>
+
+<div id="capas_estado"></div>
+
+<hr>
+
+<h2 id="nombre"></h2>
+<p id="viabilidad"></p>
+
+<h3>🧠 Software</h3>
+<ul id="software"></ul>
+
+<h3>🖥️ Salida</h3>
+<pre id="salida"></pre>
+
+<h3>🐞 Errores</h3>
+<ul id="errores"></ul>
+
+<button onclick="descargarZIP()">⬇️ Descargar Proyecto</button>
+
+<hr>
+
+<div id="panel_maia">
+<h2>🔥 Capacidades MAIA</h2>
+<p id="fase"></p>
+<ul id="lista_capacidades"></ul>
+</div>
+
+<hr>
+
+<h3>💾 Guardar Proyecto</h3>
+
+<select id="categoria">
+<option value="">Seleccionar tipo</option>
+<option value="comercial">Comercial</option>
+<option value="industrial">Industrial</option>
+<option value="militar">Militar</option>
+</select>
+
+<button onclick="guardar()">💾 Guardar Drone</button>
+<p id="estado_guardado"></p>
 <script>
 window.addEventListener("DOMContentLoaded", () => {
+
+console.log("🔥 MAIA OK");
 
 let ejecutando = false;
 let intervaloGlobal = null;
 
-// =========================
-// 🚀 GENERAR DRONE
-// =========================
 window.generarDrone = async function() {
+
+    console.log("CLICK GENERAR");
 
     if (ejecutando) return;
     ejecutando = true;
@@ -24,8 +144,6 @@ window.generarDrone = async function() {
 
     document.getElementById("estado").innerText = "🧠 Activando MAIA...";
     document.getElementById("progreso").style.width = "5%";
-    document.getElementById("capas_estado").innerHTML =
-        "🟢 Capa 1 → Interfaz activa";
 
     try {
         let res = await fetch("/evaluar_drone", {
@@ -34,43 +152,30 @@ window.generarDrone = async function() {
             body: JSON.stringify({idea})
         });
 
-        if (!res.ok) throw new Error("Backend muerto");
-
-        document.getElementById("capas_estado").innerHTML =
-            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
+        if (!res.ok) throw new Error();
 
         monitorearProgreso();
 
     } catch (e) {
-        document.getElementById("error_box").innerText =
-            "❌ Error conectando con MAIA";
+        document.getElementById("error_box").innerText = "❌ Error con MAIA";
         ejecutando = false;
     }
 };
 
-// =========================
-// 📊 PROGRESO
-// =========================
 function monitorearProgreso() {
 
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
     intervaloGlobal = setInterval(async () => {
-
         try {
-            let res = await fetch("/maia_progreso");
 
+            let res = await fetch("/maia_progreso");
             if (!res.ok) throw new Error();
 
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
             document.getElementById("estado").innerText = data.mensaje;
-
-            if (data.progreso > 30) {
-                document.getElementById("capas_estado").innerHTML =
-                    "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
-            }
 
             if (data.progreso >= 100) {
                 clearInterval(intervaloGlobal);
@@ -79,100 +184,45 @@ function monitorearProgreso() {
 
         } catch (e) {
             clearInterval(intervaloGlobal);
-            document.getElementById("error_box").innerText =
-                "❌ Error en progreso";
             ejecutando = false;
         }
-
     }, 700);
 }
 
-// =========================
-// 📦 RESULTADO
-// =========================
 async function cargarResultado() {
 
     try {
-        let res = await fetch("/maia_resultado");
 
+        let res = await fetch("/maia_resultado");
         if (!res.ok) throw new Error();
 
         let data = await res.json();
 
         document.getElementById("nombre").innerText = "🚁 Drone generado";
         document.getElementById("viabilidad").innerText = data.viabilidad || "";
-
-        let sw = document.getElementById("software");
-        sw.innerHTML = "";
-
-        if (data.analisis) {
-            sw.innerHTML += `<li>Peso: ${data.analisis.peso}</li>`;
-            sw.innerHTML += `<li>Tipo: ${data.analisis.tipo}</li>`;
-        }
-
-        if (data.software_generado) {
-            sw.innerHTML += `<li>Ruta: ${data.software_generado}</li>`;
-        }
-
         document.getElementById("salida").innerText = data.salida || "";
 
         ejecutando = false;
 
     } catch (e) {
-        document.getElementById("error_box").innerText =
-            "❌ Error cargando resultado";
+        document.getElementById("error_box").innerText = "❌ Error resultado";
         ejecutando = false;
     }
 }
 
-// =========================
-// ⚡ PANEL MAIA
-// =========================
-window.togglePanel = async function() {
+window.togglePanel = function() {
 
     let panel = document.getElementById("panel_maia");
 
-    if (panel.style.display === "block") {
-        panel.style.display = "none";
-        return;
-    }
-
-    panel.style.display = "block";
-
-    try {
-        let res = await fetch("/maia_capacidades");
-
-        if (!res.ok) throw new Error();
-
-        let data = await res.json();
-
-        document.getElementById("fase").innerText =
-            "🚀 MAIA NIVEL: CAPA 3+ (SISTEMA AUTÓNOMO AVANZADO)";
-
-        let lista = document.getElementById("lista_capacidades");
-        lista.innerHTML = "";
-
-        data.capacidades.forEach(c => {
-            let li = document.createElement("li");
-            li.innerText = c;
-            lista.appendChild(li);
-        });
-
-    } catch (e) {
-        document.getElementById("error_box").innerText =
-            "❌ Error cargando capacidades";
-    }
+    panel.style.display =
+        panel.style.display === "block" ? "none" : "block";
 };
 
-// =========================
-// 🧹 LIMPIAR
-// =========================
 window.limpiar = function() {
 
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
     ejecutando = false;
-
     document.getElementById("idea").value = "";
 
     limpiarUI();
@@ -182,23 +232,14 @@ function limpiarUI() {
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
     document.getElementById("salida").innerText = "";
-    document.getElementById("software").innerHTML = "";
-    document.getElementById("capas_estado").innerHTML = "";
-    document.getElementById("viabilidad").innerText = "";
     document.getElementById("nombre").innerText = "";
     document.getElementById("error_box").innerText = "";
 }
 
-// =========================
-// 📥 DESCARGAR
-// =========================
 window.descargarZIP = function() {
     window.open("/descargar_proyecto");
 };
 
-// =========================
-// 💾 GUARDAR
-// =========================
 window.guardar = async function() {
 
     let categoria = document.getElementById("categoria").value;
@@ -221,7 +262,6 @@ window.guardar = async function() {
 };
 
 });
-<script>
-   //TODO tu código que te di
 </script>
-</script>
+</body>
+</html>

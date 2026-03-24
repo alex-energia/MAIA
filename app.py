@@ -100,7 +100,8 @@ def crear_proyecto(nombre, peso):
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
 
-    generar_archivo(f"{base}/flight_controller.py", f"""class FlightController:
+    generar_archivo(f"{base}/flight_controller.py", f"""
+class FlightController:
     def __init__(self):
         self.altura = 0
         self.velocidad = 0
@@ -111,9 +112,11 @@ def crear_proyecto(nombre, peso):
         aceleracion = fuerza / peso
         self.velocidad += aceleracion * 0.1
         self.altura += self.velocidad * 0.1
-        return self.altura""")
+        return self.altura
+""")
 
-    generar_archivo(f"{base}/failsafe.py", """class FailSafe:
+    generar_archivo(f"{base}/failsafe.py", """
+class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -122,7 +125,8 @@ def crear_proyecto(nombre, peso):
         return "OK"
 """)
 
-    generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
+    generar_archivo(f"{base}/main.py", f"""
+from flight_controller import FlightController
 from failsafe import FailSafe
 
 fc = FlightController()
@@ -140,7 +144,7 @@ for i in range(50):
     return base
 
 # =========================
-# EJECUCIÓN SEGURA
+# EJECUCIÓN
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -241,20 +245,41 @@ def proceso_maia(idea):
     core.ejecutar(idea)
 
 # =========================
-# 🔥 ENDPOINTS CRÍTICOS (LO QUE FALTABA)
+# 🔥 ENDPOINT REAL DINÁMICO
 # =========================
-
 @app.route("/maia_drones_aprobados")
 def maia_drones_aprobados():
-    categoria = request.args.get("categoria", "general")
+    try:
+        carpeta = os.path.join("templates", "drones")
 
-    drones = [
-        {"nombre": f"Drone {categoria.upper()} X1", "ruta": "/maia_invent"},
-        {"nombre": f"Drone {categoria.upper()} PRO", "ruta": "/maia_invent"}
-    ]
+        if not os.path.exists(carpeta):
+            print("❌ Carpeta drones no existe")
+            return jsonify([])
 
-    return jsonify(drones)
+        archivos = os.listdir(carpeta)
 
+        drones = []
+
+        for archivo in archivos:
+            if archivo.endswith(".html"):
+                nombre = archivo.replace(".html", "").replace("_", " ").title()
+                ruta = f"/static/drones/{archivo}"
+
+                drones.append({
+                    "nombre": nombre,
+                    "ruta": ruta
+                })
+
+        print("✅ Drones encontrados:", len(drones))
+        return jsonify(drones)
+
+    except Exception as e:
+        print("💥 ERROR drones:", str(e))
+        return jsonify([])
+
+# =========================
+# VOZ
+# =========================
 @app.route("/maia_voz", methods=["POST"])
 def maia_voz():
     data = request.get_json(silent=True) or {}
@@ -266,9 +291,8 @@ def maia_chat():
     return "<h2>💬 Chat MAIA próximamente</h2>"
 
 # =========================
-# ENDPOINTS ORIGINALES
+# ENDPOINTS BASE
 # =========================
-
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
     data = request.get_json(silent=True) or {}
@@ -318,11 +342,11 @@ def maia_capacidades():
     return jsonify({
         "fase": 13,
         "capacidades": [
-            "Capa 1 → Interfaz (HTML + JS)",
-            "Capa 2 → Backend Flask",
-            "Capa 3 → Núcleo MAIA",
-            "Simulación de drones",
-            "Memoria persistente"
+            "Capa 1 → Interfaz",
+            "Capa 2 → Backend",
+            "Capa 3 → IA",
+            "Simulación",
+            "Memoria"
         ]
     })
 

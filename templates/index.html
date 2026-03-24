@@ -15,45 +15,47 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 .drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
 .modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px;}
 .modulo-extra button{
-  flex:1;
-  min-width:150px;
-  padding:15px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  background:#10b981;
-  color:white;
-  font-weight:bold;
+ flex:1;
+ min-width:150px;
+ padding:15px;
+ border-radius:10px;
+ border:none;
+ cursor:pointer;
+ background:#10b981;
+ color:white;
+ font-weight:bold;
 }
 .modulo-extra button:hover{ background:#059669;}
+
 .boton-voz{
-  background:#ff0000;
-  color:white;
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  border:none;
-  cursor:pointer;
-  font-size:22px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin-left:12px;
-  box-shadow: 0 0 20px rgba(255,0,0,0.8);
+ background:#ff0000;
+ color:white;
+ width:50px;
+ height:50px;
+ border-radius:50%;
+ border:none;
+ cursor:pointer;
+ font-size:22px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ margin-left:12px;
+ box-shadow: 0 0 20px rgba(255,0,0,0.8);
 }
 .boton-voz:hover{ background:#b91c1c; }
+
 .boton-plus{
-  background:#2563eb;
-  color:white;
-  width:45px;
-  height:45px;
-  border-radius:50%;
-  border:none;
-  cursor:pointer;
-  font-size:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+ background:#2563eb;
+ color:white;
+ width:45px;
+ height:45px;
+ border-radius:50%;
+ border:none;
+ cursor:pointer;
+ font-size:18px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
 }
 </style>
 
@@ -85,7 +87,6 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
   <!-- DRONE -->
   <div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
-
     <div class="chat-box">
 
       <div class="drone-botones">
@@ -110,46 +111,53 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 
 <script>
 
-// 🔥 DEBUG GLOBAL (CLAVE)
+// 🔥 DEBUG GLOBAL (ESTO EVITA QUE TODO MUERA)
 window.onerror = function(msg, url, line){
   console.error("💥 JS ERROR:", msg, "en", url, "línea", line);
 };
 
+// 🔥 SAFE GET (CLAVE)
+function get(id){
+  return document.getElementById(id);
+}
+
 // navegación
 function ocultarTodo(){
-  document.getElementById("chatNormal").classList.add("hidden");
-  document.getElementById("moduloDrone").classList.add("hidden");
+  if(get("chatNormal")) get("chatNormal").classList.add("hidden");
+  if(get("moduloDrone")) get("moduloDrone").classList.add("hidden");
 }
 
 function volverChat(){
   ocultarTodo();
-  document.getElementById("chatNormal").classList.remove("hidden");
+  if(get("chatNormal")) get("chatNormal").classList.remove("hidden");
 }
 
 // 🚁 DRONE
 function activarDrone(){
   ocultarTodo();
-  document.getElementById("moduloDrone").classList.remove("hidden");
+  if(get("moduloDrone")) get("moduloDrone").classList.remove("hidden");
   dronesIndustriales();
 }
 
-// 🔥 DRONES (PROTEGIDO)
+// 🔥 DRONES SEGURO
 async function cargarDronesPorCategoria(categoria, titulo){
-  const cont = document.getElementById("contenidoDrone");
+  const cont = get("contenidoDrone");
+  if(!cont) return;
+
   cont.innerHTML = `Cargando ${titulo}...`;
 
   try{
     let r = await fetch(`/maia_drones_aprobados?categoria=${categoria}`);
 
     if(!r.ok){
-      cont.innerHTML = "⚠️ No hay drones disponibles (endpoint no existe)";
+      cont.innerHTML = "⚠️ Endpoint no existe (NO rompe app)";
       return;
     }
 
     let drones = await r.json();
 
     if(!drones.length){
-      cont.innerHTML = "⚠️ Sin resultados";
+      cont.innerHTML = "⚠️ Sin drones";
       return;
     }
 
@@ -202,21 +210,23 @@ function abrirChatMAIA(){
   window.location.href = "/maia_chat";
 }
 
-// 🔥 MÓDULOS SUPERIORES
+// 🔥 MÓDULOS
 function abrirModuloGenerico(modulo){
   window.location.href = `/maia_${modulo}`;
 }
 
-// 🔥 MÓDULOS INTERNOS (PROTEGIDO)
+// 🔥 MÓDULOS INTERNOS
 async function cargarModuloExtra(modulo, titulo){
-  const cont = document.getElementById("contenidoDrone");
+  const cont = get("contenidoDrone");
+  if(!cont) return;
+
   cont.innerHTML = `Cargando ${titulo}...`;
 
   try{
     let r = await fetch(`/maia_${modulo}`);
 
     if(!r.ok){
-      cont.innerHTML = `⚠️ Módulo ${titulo} no disponible`;
+      cont.innerHTML = `⚠️ Módulo no disponible`;
       return;
     }
 

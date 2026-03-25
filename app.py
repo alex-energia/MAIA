@@ -34,11 +34,10 @@ estado_maia = {
 }
 
 resultado_global = {}
-
 RESULT_FILE = "maia_resultado.json"
 
 # =========================
-# GUARDAR RESULTADO (🔥 NUEVO)
+# GUARDAR RESULTADO
 # =========================
 def guardar_resultado(data):
     try:
@@ -105,13 +104,15 @@ def crear_proyecto(nombre, peso):
     def __init__(self):
         self.altura = 0
         self.velocidad = 0
+
     def update(self, thrust, peso):
         g = 9.81
         fuerza = thrust - peso * g
         aceleracion = fuerza / peso
         self.velocidad += aceleracion * 0.1
         self.altura += self.velocidad * 0.1
-        return self.altura""")
+        return self.altura
+""")
 
     generar_archivo(f"{base}/failsafe.py", """class FailSafe:
     def check(self, bateria, gps):
@@ -119,7 +120,8 @@ def crear_proyecto(nombre, peso):
             return "RETURN_HOME"
         if not gps:
             return "EMERGENCY_LAND"
-        return "OK\""")
+        return "OK"
+""")
 
     generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
 from failsafe import FailSafe
@@ -226,7 +228,7 @@ class MaiaCore:
                 "zip": zip_path
             }
 
-            guardar_resultado(resultado_global)  # 🔥 CLAVE
+            guardar_resultado(resultado_global)
 
             estado_maia["estado"] = "COMPLETADO"
 
@@ -287,7 +289,6 @@ def maia_resultado():
     if resultado_global:
         return jsonify(resultado_global)
 
-    # 🔥 SI SE PERDIÓ EN MEMORIA → LO RECUPERA
     return jsonify(cargar_resultado())
 
 @app.route("/descargar_proyecto")

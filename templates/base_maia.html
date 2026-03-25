@@ -55,58 +55,49 @@
     <!-- ========================= -->
     <!-- 🔥 MAIA GLOBAL UI -->
     <!-- ========================= -->
-
     <div id="maia-container">
 
-        <!-- 🔴 BOTÓN VOZ -->
         <button id="maia-voz-btn"
             style="background:red;color:white;padding:10px;border:none;border-radius:6px;width:100%;cursor:pointer;">
             Activar MAIA
         </button>
 
-        <!-- ➕ BOTÓN CHAT -->
         <span id="abrir-chat"
             style="cursor:pointer;font-size:26px;color:#22c55e;text-align:center;display:block;margin-top:8px;">
             ➕
         </span>
 
-        <!-- 💬 CHAT -->
         <div id="maia-chat">
 
-            <!-- HEADER -->
             <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
                 <b>MAIA</b>
                 <span id="cerrar-chat" style="cursor:pointer;">✖</span>
             </div>
 
-            <!-- MENSAJES -->
             <div id="chat-mensajes"
                 style="height:220px;overflow-y:auto;margin-bottom:8px;">
             </div>
 
-            <!-- INPUT -->
             <input type="text" id="chat-input"
                 placeholder="Escribe tu pregunta..."
                 style="width:100%;padding:6px;border-radius:6px;border:none;outline:none;">
 
-            <!-- ARCHIVOS -->
             <input type="file" id="subir-archivo" style="display:none;" multiple>
-
         </div>
     </div>
 
     <!-- ========================= -->
-    <!-- 🔥 SCRIPT MAIA (DESACTIVADO PARA EVITAR ERRORES) -->
+    <!-- 🔥 SCRIPT MAIA (ACTIVADO SIN BORRAR LO ANTERIOR) -->
     <!-- ========================= -->
 
+    <!-- 🔥 ANEXO NUEVO (ESTE ES EL FIX REAL) -->
+    <script src="{{ url_for('static', filename='js/maia.js') }}"></script>
+
+    <!-- 🔥 TU BLOQUE ORIGINAL (NO SE BORRA) -->
     <script>
         window.addEventListener("load", function(){
 
-            console.log("⚠️ maia.js DESACTIVADO temporalmente");
-
-            // 🔴 IMPORTANTE:
-            // Se deja el código comentado para no borrar nada,
-            // pero evita que rompa toda la aplicación
+            console.log("⚠️ maia.js DESACTIVADO temporalmente (IGNORADO)");
 
             /*
             if(!document.getElementById("maia-script")){
@@ -117,7 +108,6 @@
                 document.body.appendChild(script);
             }
             */
-
         });
     </script>
 

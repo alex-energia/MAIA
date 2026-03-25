@@ -13,7 +13,7 @@ import sys
 print("🔥 MAIA STARTING...")
 
 # =========================
-# APP (CRÍTICO: ANTES DE TODO)
+# APP
 # =========================
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_secret_ultra"
@@ -34,6 +34,27 @@ estado_maia = {
 }
 
 resultado_global = {}
+
+RESULT_FILE = "maia_resultado.json"
+
+# =========================
+# GUARDAR RESULTADO (🔥 NUEVO)
+# =========================
+def guardar_resultado(data):
+    try:
+        with open(RESULT_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print("❌ Error guardando resultado:", e)
+
+def cargar_resultado():
+    try:
+        if os.path.exists(RESULT_FILE):
+            with open(RESULT_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        print("❌ Error cargando resultado:", e)
+    return {}
 
 # =========================
 # MEMORIA
@@ -80,33 +101,27 @@ def crear_proyecto(nombre, peso):
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
 
-    generar_archivo(f"{base}/flight_controller.py", f"""
-class FlightController:
+    generar_archivo(f"{base}/flight_controller.py", """class FlightController:
     def __init__(self):
         self.altura = 0
         self.velocidad = 0
-
     def update(self, thrust, peso):
         g = 9.81
         fuerza = thrust - peso * g
         aceleracion = fuerza / peso
         self.velocidad += aceleracion * 0.1
         self.altura += self.velocidad * 0.1
-        return self.altura
-""")
+        return self.altura""")
 
-    generar_archivo(f"{base}/failsafe.py", """
-class FailSafe:
+    generar_archivo(f"{base}/failsafe.py", """class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
         if not gps:
             return "EMERGENCY_LAND"
-        return "OK"
-""")
+        return "OK\""")
 
-    generar_archivo(f"{base}/main.py", f"""
-from flight_controller import FlightController
+    generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
 from failsafe import FailSafe
 
 fc = FlightController()
@@ -152,7 +167,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# CORE MAIA (🔥 3 CAPAS ACTIVAS)
+# CORE MAIA
 # =========================
 class MaiaCore:
 
@@ -161,7 +176,7 @@ class MaiaCore:
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
         print(f"🧠 {val}% - {msg}")
-        time.sleep(1)  # 🔥 visible en frontend
+        time.sleep(1)
 
     def analizar(self, idea):
         self.progreso(10, "🟢 Capa 1 → Analizando idea...")
@@ -173,11 +188,9 @@ class MaiaCore:
         if "incendio" in idea:
             peso += 6
             tipo = "emergencia"
-
         if "mineria" in idea:
             peso += 4
             tipo = "industrial"
-
         if "seguridad" in idea:
             peso += 2
             tipo = "vigilancia"
@@ -213,6 +226,8 @@ class MaiaCore:
                 "zip": zip_path
             }
 
+            guardar_resultado(resultado_global)  # 🔥 CLAVE
+
             estado_maia["estado"] = "COMPLETADO"
 
         except Exception as e:
@@ -222,6 +237,8 @@ class MaiaCore:
                 "viabilidad": "ERROR ❌",
                 "error": str(e)
             }
+
+            guardar_resultado(resultado_global)
 
             estado_maia["estado"] = "ERROR"
 
@@ -245,10 +262,10 @@ def evaluar_drone():
     if len(idea.strip()) < 3:
         return jsonify({"error": "Idea muy corta"})
 
-    # 🔥 RESET TOTAL (CLAVE)
     estado_maia["progreso"] = 0
     estado_maia["mensaje"] = "Iniciando..."
     estado_maia["estado"] = "PROCESANDO"
+
     resultado_global = {}
 
     threading.Thread(
@@ -265,25 +282,37 @@ def maia_progreso():
 
 @app.route("/maia_resultado")
 def maia_resultado():
-    return jsonify(resultado_global)
+    global resultado_global
+
+    if resultado_global:
+        return jsonify(resultado_global)
+
+    # 🔥 SI SE PERDIÓ EN MEMORIA → LO RECUPERA
+    return jsonify(cargar_resultado())
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
-    zip_path = resultado_global.get("zip")
+    data = cargar_resultado()
+    zip_path = data.get("zip")
+
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
+
     return "No disponible", 404
 
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
     try:
         data = request.get_json(silent=True) or {}
+
         registrar_proyecto({
             "nombre": data.get("nombre", "Drone MAIA"),
             "tipo": data.get("tecnologia", "general"),
             "fecha": datetime.now().isoformat()
         })
+
         return jsonify({"status": "guardado"})
+
     except Exception as e:
         return jsonify({"error": str(e)})
 

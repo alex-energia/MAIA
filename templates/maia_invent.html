@@ -4,7 +4,11 @@
 <title>MAIA INVENT</title>
 
 <style>
-body { background: #0b0b0b; color: #00ffcc; font-family: Arial; }
+body {
+    background: #0b0b0b;
+    color: #00ffcc;
+    font-family: Arial;
+}
 
 textarea {
     width: 300px;
@@ -23,7 +27,11 @@ button {
     cursor: pointer;
 }
 
-#barra { width: 100%; background: #111; border: 1px solid #00ffcc; }
+#barra {
+    width: 100%;
+    background: #111;
+    border: 1px solid #00ffcc;
+}
 
 #progreso {
     width: 0%;
@@ -40,7 +48,10 @@ button {
     border: 1px solid #00ffcc;
 }
 
-#error_box { color: red; margin-top: 10px; }
+#error_box {
+    color: red;
+    margin-top: 10px;
+}
 
 pre {
     background: #111;
@@ -56,6 +67,7 @@ pre {
     color: #00ffaa;
 }
 </style>
+
 </head>
 
 <body>
@@ -104,6 +116,7 @@ pre {
 <hr>
 
 <h3>💾 Guardar Proyecto</h3>
+
 <select id="categoria">
 <option value="">Seleccionar tipo</option>
 <option value="comercial">Comercial</option>
@@ -112,9 +125,15 @@ pre {
 </select>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
+
 <p id="estado_guardado"></p>
 
 <script>
+
+// 🔥 PROTECCIÓN GLOBAL
+window.onerror = function(msg, url, line){
+    console.error("💥 JS ERROR:", msg, "Línea:", line);
+};
 
 // =========================
 // 🔥 VARIABLES
@@ -126,6 +145,8 @@ let intervaloGlobal = null;
 // 🚀 GENERAR DRONE
 // =========================
 async function generarDrone() {
+
+    console.log("🚀 generarDrone ejecutado");
 
     if (ejecutando) return;
     ejecutando = true;
@@ -157,6 +178,8 @@ async function generarDrone() {
 
         if (!res.ok) throw new Error();
 
+        console.log("✅ Backend OK");
+
         // 🔥 CAPA 2
         document.getElementById("capas_estado").innerHTML =
             "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
@@ -170,9 +193,11 @@ async function generarDrone() {
 }
 
 // =========================
-// 📊 PROGRESO
+// 📊 PROGRESO (FIX REAL)
 // =========================
 function monitorearProgreso() {
+
+    console.log("📊 Monitoreando...");
 
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
@@ -181,15 +206,18 @@ function monitorearProgreso() {
         try {
 
             let res = await fetch("/maia_progreso");
+
             if (!res.ok) throw new Error();
 
             let data = await res.json();
 
+            console.log("📡", data);
+
             document.getElementById("progreso").style.width = data.progreso + "%";
             document.getElementById("estado").innerText = data.mensaje;
 
-            // 🔥 CAPA 3 ACTIVADA
-            if (data.progreso > 30) {
+            // 🔴 CAPA 3
+            if (data.progreso >= 40) {
                 document.getElementById("capas_estado").innerHTML =
                     "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
             }
@@ -200,25 +228,28 @@ function monitorearProgreso() {
             }
 
         } catch (e) {
+            console.log("💥 Error progreso");
             clearInterval(intervaloGlobal);
-            document.getElementById("error_box").innerText = "❌ Error progreso";
             ejecutando = false;
         }
 
-    }, 700);
+    }, 1000);
 }
 
 // =========================
-// 📦 RESULTADO COMPLETO
+// 📦 RESULTADO
 // =========================
 async function cargarResultado() {
+
+    console.log("📦 Resultado...");
 
     try {
 
         let res = await fetch("/maia_resultado");
-        if (!res.ok) throw new Error();
 
         let data = await res.json();
+
+        console.log("📦", data);
 
         document.getElementById("nombre").innerText = "🚁 Drone generado";
         document.getElementById("viabilidad").innerText = data.viabilidad || "";
@@ -237,6 +268,9 @@ async function cargarResultado() {
 
         document.getElementById("salida").innerText = data.salida || "";
 
+        document.getElementById("capas_estado").innerHTML =
+            "✅ TODAS LAS CAPAS COMPLETADAS";
+
         ejecutando = false;
 
     } catch (e) {
@@ -246,21 +280,55 @@ async function cargarResultado() {
 }
 
 // =========================
-// ⚡ PANEL
+// ⚡ PANEL (FIX)
 // =========================
 function togglePanel() {
+
+    console.log("⚡ togglePanel ejecutado");
+
     let panel = document.getElementById("panel_maia");
+
+    if (!panel) return;
+
     panel.style.display =
         panel.style.display === "block" ? "none" : "block";
+
+    if (panel.style.display === "block") {
+
+        fetch("/maia_capacidades")
+        .then(r => r.json())
+        .then(data => {
+
+            document.getElementById("fase").innerText =
+                "Fase: " + data.fase;
+
+            let lista = document.getElementById("lista_capacidades");
+            lista.innerHTML = "";
+
+            data.capacidades.forEach(c => {
+                let li = document.createElement("li");
+                li.innerText = c;
+                lista.appendChild(li);
+            });
+
+        });
+
+    }
 }
 
 // =========================
 // 🧹 LIMPIAR
 // =========================
 function limpiar() {
+
+    console.log("🧹 limpiar");
+
     if (intervaloGlobal) clearInterval(intervaloGlobal);
+
     ejecutando = false;
+
     document.getElementById("idea").value = "";
+
     limpiarUI();
 }
 
@@ -268,6 +336,7 @@ function limpiar() {
 // 🔥 LIMPIEZA
 // =========================
 function limpiarUI() {
+
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
     document.getElementById("salida").innerText = "";

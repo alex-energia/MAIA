@@ -9,7 +9,6 @@ body {
     color: #00ffcc;
     font-family: Arial;
 }
-
 textarea {
     width: 300px;
     height: 80px;
@@ -17,7 +16,6 @@ textarea {
     color: #00ffcc;
     border: 1px solid #00ffcc;
 }
-
 button {
     background: #111;
     color: #00ffcc;
@@ -26,20 +24,17 @@ button {
     margin: 5px;
     cursor: pointer;
 }
-
 #barra {
     width: 100%;
     background: #111;
     border: 1px solid #00ffcc;
 }
-
 #progreso {
     width: 0%;
     height: 20px;
     background: #00ffcc;
-    transition: width 0.3s;
+    transition: width 0.5s;
 }
-
 #panel_maia {
     display: none;
     background: black;
@@ -47,12 +42,10 @@ button {
     margin-top: 20px;
     border: 1px solid #00ffcc;
 }
-
 #error_box {
     color: red;
     margin-top: 10px;
 }
-
 pre {
     background: #111;
     border: 1px solid #00ffcc;
@@ -60,14 +53,12 @@ pre {
     margin-top: 10px;
     white-space: pre-wrap;
 }
-
 #capas_estado {
     margin-top: 10px;
     font-size: 14px;
     color: #00ffaa;
 }
 </style>
-
 </head>
 
 <body>
@@ -116,7 +107,6 @@ pre {
 <hr>
 
 <h3>💾 Guardar Proyecto</h3>
-
 <select id="categoria">
 <option value="">Seleccionar tipo</option>
 <option value="comercial">Comercial</option>
@@ -125,7 +115,6 @@ pre {
 </select>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
-
 <p id="estado_guardado"></p>
 
 <script>
@@ -136,7 +125,7 @@ window.onerror = function(msg, url, line){
 };
 
 // =========================
-// 🔥 VARIABLES
+// VARIABLES
 // =========================
 let ejecutando = false;
 let intervaloGlobal = null;
@@ -161,12 +150,8 @@ async function generarDrone() {
 
     limpiarUI();
 
-    document.getElementById("estado").innerText = "🧠 Activando MAIA...";
-    document.getElementById("progreso").style.width = "5%";
-
-    // 🔥 CAPA 1
-    document.getElementById("capas_estado").innerHTML =
-        "🟢 Capa 1 → Interfaz activa";
+    setProgreso(5, "🧠 Activando MAIA...");
+    setCapas("🟢 Capa 1 → Interfaz activa");
 
     try {
 
@@ -180,9 +165,7 @@ async function generarDrone() {
 
         console.log("✅ Backend OK");
 
-        // 🔥 CAPA 2
-        document.getElementById("capas_estado").innerHTML =
-            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
+        setCapas("🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo");
 
         monitorearProgreso();
 
@@ -193,7 +176,7 @@ async function generarDrone() {
 }
 
 // =========================
-// 📊 PROGRESO (FIX REAL)
+// 🔥 PROGRESO (FIX REAL)
 // =========================
 function monitorearProgreso() {
 
@@ -206,25 +189,26 @@ function monitorearProgreso() {
         try {
 
             let res = await fetch("/maia_progreso");
-
-            if (!res.ok) throw new Error();
-
             let data = await res.json();
 
             console.log("📡", data);
 
-            document.getElementById("progreso").style.width = data.progreso + "%";
-            document.getElementById("estado").innerText = data.mensaje;
+            setProgreso(data.progreso, data.mensaje);
 
-            // 🔴 CAPA 3
             if (data.progreso >= 40) {
-                document.getElementById("capas_estado").innerHTML =
-                    "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
+                setCapas("🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando");
             }
 
             if (data.progreso >= 100) {
+
                 clearInterval(intervaloGlobal);
-                cargarResultado();
+
+                // 🔥 FORZAR ANIMACIÓN FINAL
+                setProgreso(100, "✅ Completado");
+
+                setTimeout(() => {
+                    cargarResultado();
+                }, 500);
             }
 
         } catch (e) {
@@ -233,7 +217,7 @@ function monitorearProgreso() {
             ejecutando = false;
         }
 
-    }, 1000);
+    }, 800);
 }
 
 // =========================
@@ -246,7 +230,6 @@ async function cargarResultado() {
     try {
 
         let res = await fetch("/maia_resultado");
-
         let data = await res.json();
 
         console.log("📦", data);
@@ -268,8 +251,7 @@ async function cargarResultado() {
 
         document.getElementById("salida").innerText = data.salida || "";
 
-        document.getElementById("capas_estado").innerHTML =
-            "✅ TODAS LAS CAPAS COMPLETADAS";
+        setCapas("✅ TODAS LAS CAPAS COMPLETADAS");
 
         ejecutando = false;
 
@@ -287,8 +269,6 @@ function togglePanel() {
     console.log("⚡ togglePanel ejecutado");
 
     let panel = document.getElementById("panel_maia");
-
-    if (!panel) return;
 
     panel.style.display =
         panel.style.display === "block" ? "none" : "block";
@@ -311,8 +291,10 @@ function togglePanel() {
                 lista.appendChild(li);
             });
 
+        })
+        .catch(() => {
+            document.getElementById("fase").innerText = "Error cargando capacidades";
         });
-
     }
 }
 
@@ -320,25 +302,34 @@ function togglePanel() {
 // 🧹 LIMPIAR
 // =========================
 function limpiar() {
-
-    console.log("🧹 limpiar");
-
     if (intervaloGlobal) clearInterval(intervaloGlobal);
-
     ejecutando = false;
-
     document.getElementById("idea").value = "";
-
     limpiarUI();
+}
+
+// =========================
+// 🔥 UTILIDADES CLAVE
+// =========================
+function setProgreso(valor, mensaje) {
+    let barra = document.getElementById("progreso");
+    barra.style.width = valor + "%";
+
+    // 🔥 FORZAR REPAINT (CLAVE)
+    barra.offsetHeight;
+
+    document.getElementById("estado").innerText = mensaje;
+}
+
+function setCapas(texto) {
+    document.getElementById("capas_estado").innerHTML = texto;
 }
 
 // =========================
 // 🔥 LIMPIEZA
 // =========================
 function limpiarUI() {
-
-    document.getElementById("progreso").style.width = "0%";
-    document.getElementById("estado").innerText = "";
+    setProgreso(0, "");
     document.getElementById("salida").innerText = "";
     document.getElementById("software").innerHTML = "";
     document.getElementById("capas_estado").innerHTML = "";
@@ -358,7 +349,6 @@ function descargarZIP() {
 // 💾 GUARDAR
 // =========================
 async function guardar() {
-
     let categoria = document.getElementById("categoria").value;
 
     if (!categoria) {

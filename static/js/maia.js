@@ -1,4 +1,85 @@
 // ==============================
+// 💥 ANEXO CRÍTICO (FUNCIONES GLOBALES PARA BOTONES)
+// ==============================
+
+window.generarDrone = async function() {
+    console.log("🚀 generarDrone ejecutado");
+
+    let idea = document.getElementById("idea")?.value;
+
+    if (!idea || idea.length < 3) {
+        alert("Escribe una idea");
+        return;
+    }
+
+    document.getElementById("estado") && (document.getElementById("estado").innerText = "🧠 Activando MAIA...");
+
+    try {
+        let res = await fetch("/evaluar_drone", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({idea})
+        });
+
+        if (!res.ok) throw new Error();
+
+        console.log("✅ Backend OK");
+
+    } catch (e) {
+        console.error("❌ Error MAIA");
+        document.getElementById("error_box") && (document.getElementById("error_box").innerText = "❌ Error con MAIA");
+    }
+};
+
+window.limpiar = function() {
+    console.log("🧹 limpiar ejecutado");
+
+    if (document.getElementById("idea")) document.getElementById("idea").value = "";
+    if (document.getElementById("salida")) document.getElementById("salida").innerText = "";
+    if (document.getElementById("estado")) document.getElementById("estado").innerText = "";
+    if (document.getElementById("progreso")) document.getElementById("progreso").style.width = "0%";
+};
+
+window.togglePanel = function() {
+    console.log("⚡ togglePanel ejecutado");
+
+    let panel = document.getElementById("panel_maia");
+    if (!panel) return;
+
+    panel.style.display = panel.style.display === "block" ? "none" : "block";
+};
+
+window.descargarZIP = function() {
+    window.open("/descargar_proyecto");
+};
+
+window.guardar = async function() {
+    let categoria = document.getElementById("categoria")?.value;
+
+    if (!categoria) {
+        alert("Selecciona categoría");
+        return;
+    }
+
+    await fetch("/guardar_proyecto", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nombre: "Drone MAIA",
+            tecnologia: categoria
+        })
+    });
+
+    let estado = document.getElementById("estado_guardado");
+    if (estado) estado.innerText = "✅ Guardado";
+};
+
+
+// ==============================
+// 🔥 TU CÓDIGO ORIGINAL (NO SE BORRA)
+// ==============================
+
+// ==============================
 // 🔥 PROTECCIÓN GLOBAL (NO ROMPER OTRAS PÁGINAS)
 // ==============================
 window.onerror = function(msg, url, line) {
@@ -27,7 +108,6 @@ speechSynthesis.onvoiceschanged = cargarVoces;
 // ==============================
 window.addEventListener("DOMContentLoaded", () => {
 
-    // 🔍 BUSCAR ELEMENTOS (SIN ROMPER)
     const vozBtn = document.getElementById("maia-voz-btn");
     const chatToggle = document.getElementById("abrir-chat");
     const chatContainer = document.getElementById("maia-chat");
@@ -35,26 +115,17 @@ window.addEventListener("DOMContentLoaded", () => {
     const mensajes = document.getElementById("chat-mensajes");
     const uploadInput = document.getElementById("subir-archivo");
 
-    // ==============================
-    // 🧠 FUNCIONES SEGURAS (NO FALLAN)
-    // ==============================
     function existe(el) {
         return el !== null && el !== undefined;
     }
 
-    // ==============================
-    // 🔊 VOZ
-    // ==============================
     function hablar(texto) {
         if (!vozActiva) return;
 
         const utter = new SpeechSynthesisUtterance(texto);
         utter.lang = "es-ES";
 
-        let voz = vocesDisponibles.find(v =>
-            v.lang.includes("es")
-        );
-
+        let voz = vocesDisponibles.find(v => v.lang.includes("es"));
         if (voz) utter.voice = voz;
 
         speechSynthesis.cancel();
@@ -65,9 +136,6 @@ window.addEventListener("DOMContentLoaded", () => {
         }, 100);
     }
 
-    // ==============================
-    // 💬 MENSAJES
-    // ==============================
     function agregarMensaje(texto) {
         if (!existe(mensajes)) return;
 
@@ -76,15 +144,10 @@ window.addEventListener("DOMContentLoaded", () => {
         mensajes.appendChild(div);
 
         mensajes.scrollTop = mensajes.scrollHeight;
-
         historialConversacion.push(texto);
     }
 
-    // ==============================
-    // 🔗 BACKEND
-    // ==============================
     function enviar(pregunta) {
-
         fetch("/maia_voz", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -104,9 +167,6 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ==============================
-    // 🎤 BOTÓN VOZ (SI EXISTE)
-    // ==============================
     if (existe(vozBtn)) {
         vozBtn.onclick = () => {
 
@@ -144,9 +204,6 @@ window.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // ==============================
-    // 💬 CHAT
-    // ==============================
     if (existe(chatToggle) && existe(chatContainer)) {
         chatToggle.onclick = () => {
             chatContainer.style.display =
@@ -154,9 +211,6 @@ window.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // ==============================
-    // ⌨️ INPUT
-    // ==============================
     if (existe(input)) {
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
@@ -170,9 +224,6 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ==============================
-    // 📎 SUBIR ARCHIVOS
-    // ==============================
     if (existe(uploadInput)) {
         uploadInput.addEventListener("change", () => {
 
@@ -186,8 +237,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 body: form
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(() => {
                 agregarMensaje("MAIA: Archivos recibidos");
             })
             .catch(() => {

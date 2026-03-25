@@ -69,7 +69,9 @@ pre {
 <button onclick="limpiar()">🧹 Limpiar</button>
 <button onclick="togglePanel()">⚡ ¿Qué puede hacer MAIA?</button>
 
-<div id="barra"><div id="progreso"></div></div>
+<div id="barra">
+    <div id="progreso"></div>
+</div>
 
 <p id="estado"></p>
 <p id="error_box"></p>
@@ -102,7 +104,6 @@ pre {
 <hr>
 
 <h3>💾 Guardar Proyecto</h3>
-
 <select id="categoria">
 <option value="">Seleccionar tipo</option>
 <option value="comercial">Comercial</option>
@@ -111,12 +112,13 @@ pre {
 </select>
 
 <button onclick="guardar()">💾 Guardar Drone</button>
-
 <p id="estado_guardado"></p>
 
 <script>
 
-// 🔥 VARIABLES GLOBALES
+// =========================
+// 🔥 VARIABLES
+// =========================
 let ejecutando = false;
 let intervaloGlobal = null;
 
@@ -124,8 +126,6 @@ let intervaloGlobal = null;
 // 🚀 GENERAR DRONE
 // =========================
 async function generarDrone() {
-
-    console.log("CLICK GENERAR");
 
     if (ejecutando) return;
     ejecutando = true;
@@ -143,7 +143,12 @@ async function generarDrone() {
     document.getElementById("estado").innerText = "🧠 Activando MAIA...";
     document.getElementById("progreso").style.width = "5%";
 
+    // 🔥 CAPA 1
+    document.getElementById("capas_estado").innerHTML =
+        "🟢 Capa 1 → Interfaz activa";
+
     try {
+
         let res = await fetch("/evaluar_drone", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -151,6 +156,10 @@ async function generarDrone() {
         });
 
         if (!res.ok) throw new Error();
+
+        // 🔥 CAPA 2
+        document.getElementById("capas_estado").innerHTML =
+            "🟢 Capa 1 ✔️ | 🔵 Capa 2 → Backend activo";
 
         monitorearProgreso();
 
@@ -168,15 +177,22 @@ function monitorearProgreso() {
     if (intervaloGlobal) clearInterval(intervaloGlobal);
 
     intervaloGlobal = setInterval(async () => {
-        try {
-            let res = await fetch("/maia_progreso");
 
+        try {
+
+            let res = await fetch("/maia_progreso");
             if (!res.ok) throw new Error();
 
             let data = await res.json();
 
             document.getElementById("progreso").style.width = data.progreso + "%";
             document.getElementById("estado").innerText = data.mensaje;
+
+            // 🔥 CAPA 3 ACTIVADA
+            if (data.progreso > 30) {
+                document.getElementById("capas_estado").innerHTML =
+                    "🟢 Capa 1 ✔️ | 🔵 Capa 2 ✔️ | 🔴 Capa 3 → IA ejecutando";
+            }
 
             if (data.progreso >= 100) {
                 clearInterval(intervaloGlobal);
@@ -185,25 +201,40 @@ function monitorearProgreso() {
 
         } catch (e) {
             clearInterval(intervaloGlobal);
+            document.getElementById("error_box").innerText = "❌ Error progreso";
             ejecutando = false;
         }
+
     }, 700);
 }
 
 // =========================
-// 📦 RESULTADO
+// 📦 RESULTADO COMPLETO
 // =========================
 async function cargarResultado() {
 
     try {
-        let res = await fetch("/maia_resultado");
 
+        let res = await fetch("/maia_resultado");
         if (!res.ok) throw new Error();
 
         let data = await res.json();
 
         document.getElementById("nombre").innerText = "🚁 Drone generado";
         document.getElementById("viabilidad").innerText = data.viabilidad || "";
+
+        let sw = document.getElementById("software");
+        sw.innerHTML = "";
+
+        if (data.analisis) {
+            sw.innerHTML += `<li>Peso: ${data.analisis.peso}</li>`;
+            sw.innerHTML += `<li>Tipo: ${data.analisis.tipo}</li>`;
+        }
+
+        if (data.software_generado) {
+            sw.innerHTML += `<li>Ruta: ${data.software_generado}</li>`;
+        }
+
         document.getElementById("salida").innerText = data.salida || "";
 
         ejecutando = false;
@@ -233,11 +264,16 @@ function limpiar() {
     limpiarUI();
 }
 
+// =========================
 // 🔥 LIMPIEZA
+// =========================
 function limpiarUI() {
     document.getElementById("progreso").style.width = "0%";
     document.getElementById("estado").innerText = "";
     document.getElementById("salida").innerText = "";
+    document.getElementById("software").innerHTML = "";
+    document.getElementById("capas_estado").innerHTML = "";
+    document.getElementById("viabilidad").innerText = "";
     document.getElementById("nombre").innerText = "";
     document.getElementById("error_box").innerText = "";
 }
@@ -277,4 +313,3 @@ async function guardar() {
 
 </body>
 </html>
-

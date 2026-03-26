@@ -3,20 +3,92 @@
 
 <style>
 /* TODO TU CSS ORIGINAL SIN CAMBIOS */
-body{ margin:0; font-family:Arial; background:#1e1e1e; color:white;}
-.topbar{ display:flex; justify-content:space-between; align-items:center; padding:15px 25px; background:#111;}
-.topbar-buttons button{ margin-left:10px; padding:8px 15px; border-radius:8px; border:none; cursor:pointer; background:#2563eb; color:white;}
-.container{ padding:20px;}
-.chat-box{ height:60vh; overflow-y:auto; background:#2a2a2a; padding:15px; border-radius:12px;}
-.input-area{ margin-top:15px; display:flex; gap:10px;}
-input[type="text"]{ flex:1; padding:12px; border-radius:10px; border:none;}
-button.send{ padding:12px 20px; border-radius:10px; border:none; background:#2563eb; color:white; cursor:pointer;}
+body{
+ margin:0;
+ font-family:Arial;
+ background:#1e1e1e;
+ color:white;
+}
+.topbar{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:15px 25px;
+ background:#111;
+}
+.topbar-buttons button{
+ margin-left:10px;
+ padding:8px 15px;
+ border-radius:8px;
+ border:none;
+ cursor:pointer;
+ background:#2563eb;
+ color:white;
+}
+.container{
+ padding:20px;
+}
+.chat-box{
+ height:60vh;
+ overflow-y:auto;
+ background:#2a2a2a;
+ padding:15px;
+ border-radius:12px;
+}
+.input-area{
+ margin-top:15px;
+ display:flex;
+ gap:10px;
+}
+input[type="text"]{
+ flex:1;
+ padding:12px;
+ border-radius:10px;
+ border:none;
+}
+button.send{
+ padding:12px 20px;
+ border-radius:10px;
+ border:none;
+ background:#2563eb;
+ color:white;
+ cursor:pointer;
+}
 .hidden{display:none;}
-.drone-botones{ display:flex; gap:20px; flex-wrap:wrap; margin-top:20px;}
-.drone-botones button{ padding:15px; border-radius:10px; border:none; cursor:pointer; color:white; font-size:15px;}
-.modulo-extra{ margin-top:30px; display:flex; flex-wrap:wrap; gap:15px;}
-.modulo-extra button{flex:1;min-width:150px;padding:15px;border-radius:10px;border:none;cursor:pointer;background:#10b981;color:white;font-weight:bold;}
-.modulo-extra button:hover{ background:#059669;}
+.drone-botones{
+ display:flex;
+ gap:20px;
+ flex-wrap:wrap;
+ margin-top:20px;
+}
+.drone-botones button{
+ padding:15px;
+ border-radius:10px;
+ border:none;
+ cursor:pointer;
+ color:white;
+ font-size:15px;
+}
+.modulo-extra{
+ margin-top:30px;
+ display:flex;
+ flex-wrap:wrap;
+ gap:15px;
+}
+.modulo-extra button{
+ flex:1;
+ min-width:150px;
+ padding:15px;
+ border-radius:10px;
+ border:none;
+ cursor:pointer;
+ background:#10b981;
+ color:white;
+ font-weight:bold;
+}
+.modulo-extra button:hover{
+ background:#059669;
+}
 </style>
 
 <div class="topbar">
@@ -33,6 +105,7 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
   <h3>🚁 MAIA DRONE</h3>
 
   <textarea id="idea" placeholder="Escribe idea..."></textarea><br>
+
   <button onclick="generarDroneUI()">🚀 Generar</button>
 
   <!-- 🔥 BARRA -->
@@ -42,8 +115,10 @@ button.send{ padding:12px 20px; border-radius:10px; border:none; background:#256
 
   <p id="estadoTexto"></p>
 
-</div>
+  <!-- 🔥 RESULTADO (NUEVO, NO ROMPE NADA) -->
+  <div id="resultadoMAIA"></div>
 
+</div>
 </div>
 
 <script>
@@ -54,7 +129,7 @@ window.onerror = function(msg, url, line){
 };
 
 // =========================
-// 🚀 GENERAR DRONE (FIX REAL)
+// 🚀 GENERAR DRONE
 // =========================
 async function generarDroneUI(){
 
@@ -67,24 +142,21 @@ async function generarDroneUI(){
 
   console.log("🚀 Lanzando proceso");
 
-  // 🔥 RESET VISUAL
   document.getElementById("barraProgreso").style.width = "5%";
   document.getElementById("estadoTexto").innerText = "Iniciando...";
+  document.getElementById("resultadoMAIA").innerHTML = ""; // 🔥 limpia anterior
 
-  // 🔥 LLAMADA BACKEND
   await fetch("/evaluar_drone", {
     method:"POST",
     headers:{ "Content-Type":"application/json"},
     body: JSON.stringify({ idea })
   });
 
-  // 🔥 FORZAR MONITOREO (CLAVE)
   iniciarMonitoreo();
-
 }
 
 // =========================
-// 📊 MONITOREO REAL (SOLUCIÓN)
+// 📊 MONITOREO
 // =========================
 function iniciarMonitoreo(){
 
@@ -93,19 +165,22 @@ function iniciarMonitoreo(){
   let intervalo = setInterval(async ()=>{
 
     try{
+
       let res = await fetch("/maia_progreso");
       let data = await res.json();
 
       console.log("📊 PROGRESO:", data);
 
-      // 🔥 ACTUALIZA UI
       document.getElementById("barraProgreso").style.width = data.progreso + "%";
       document.getElementById("estadoTexto").innerText = data.mensaje;
 
-      // 🔥 SI TERMINA
       if(data.progreso >= 100){
+
         clearInterval(intervalo);
         console.log("✅ TERMINADO");
+
+        // 🔥 CLAVE: CARGAR RESULTADO REAL
+        cargarResultadoMAIA();
       }
 
     }catch(e){
@@ -114,6 +189,49 @@ function iniciarMonitoreo(){
     }
 
   }, 800);
+}
+
+// =========================
+// 🧠 RESULTADO MAIA (NUEVO)
+// =========================
+async function cargarResultadoMAIA(){
+
+  try{
+
+    let r = await fetch("/maia_resultado");
+    let data = await r.json();
+
+    console.log("🧠 RESULTADO:", data);
+
+    if(!data || !data.viabilidad){
+      document.getElementById("resultadoMAIA").innerHTML =
+        "<p>⚠️ Sin resultado aún</p>";
+      return;
+    }
+
+    document.getElementById("resultadoMAIA").innerHTML = `
+      <div style="margin-top:20px; padding:15px; background:#111; border-radius:10px;">
+        <h3>🧠 Resultado MAIA</h3>
+
+        <p><b>Viabilidad:</b> ${data.viabilidad}</p>
+        <p><b>Tipo:</b> ${data.analisis?.tipo}</p>
+        <p><b>Peso:</b> ${data.analisis?.peso} kg</p>
+
+        <h4>💻 Software</h4>
+        <pre style="max-height:200px; overflow:auto;">
+${data.salida}
+        </pre>
+
+        <br>
+        <button onclick="window.location.href='/descargar_proyecto'">
+          ⬇️ Descargar Proyecto
+        </button>
+      </div>
+    `;
+
+  }catch(e){
+    console.error("❌ Error cargando resultado:", e);
+  }
 }
 
 // =========================

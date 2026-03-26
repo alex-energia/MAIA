@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from proyectos import proyectos_bp, init_db
+from maia_core_fisico import analizar_drone  # 🔥 NUEVO
+
 import os
 import json
 from datetime import datetime
@@ -96,6 +98,7 @@ def generar_archivo(ruta, contenido):
 # CREAR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso):
+
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
@@ -180,42 +183,32 @@ class MaiaCore:
         print(f"🧠 {val}% - {msg}")
         time.sleep(1)
 
-    def analizar(self, idea):
-        self.progreso(10, "🟢 Capa 1 → Analizando idea...")
-        idea = idea.lower()
-
-        peso = 5
-        tipo = "general"
-
-        if "incendio" in idea:
-            peso += 6
-            tipo = "emergencia"
-        if "mineria" in idea:
-            peso += 4
-            tipo = "industrial"
-        if "seguridad" in idea:
-            peso += 2
-            tipo = "vigilancia"
-
-        return {"peso": peso, "tipo": tipo}
-
     def ejecutar(self, idea):
+
         global resultado_global
 
         try:
             print("🔥 Ejecutando MAIA:", idea)
 
-            analisis = self.analizar(idea)
+            self.progreso(10, "🟢 Capa 1 → Analizando idea...")
+
+            # 🔥 NUEVO CORE INTELIGENTE
+            core_data = analizar_drone(idea)
+
+            analisis = core_data.get("analisis", {})
+            fisica = core_data.get("fisica", {})
+            software = core_data.get("software", {})
 
             self.progreso(40, "🔵 Capa 2 → Generando proyecto...")
+
             ruta = crear_proyecto(
                 f"drone_{int(time.time())}",
-                analisis["peso"]
+                analisis.get("peso", 5)
             )
 
             self.progreso(70, "🔴 Capa 3 → IA simulando...")
-            salida = ejecutar_main(ruta)
 
+            salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
             self.progreso(100, "✅ Completado")
@@ -223,25 +216,23 @@ class MaiaCore:
             resultado_global = {
                 "viabilidad": "VIABLE ✅",
                 "analisis": analisis,
+                "fisica": fisica,
+                "software": software,
                 "salida": salida,
                 "software_generado": ruta,
                 "zip": zip_path
             }
 
             guardar_resultado(resultado_global)
-
             estado_maia["estado"] = "COMPLETADO"
 
         except Exception as e:
             print("💥 ERROR:", str(e))
-
             resultado_global = {
                 "viabilidad": "ERROR ❌",
                 "error": str(e)
             }
-
             guardar_resultado(resultado_global)
-
             estado_maia["estado"] = "ERROR"
 
 # =========================
@@ -256,6 +247,7 @@ def proceso_maia(idea):
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
+
     global estado_maia, resultado_global
 
     data = request.get_json(silent=True) or {}
@@ -285,48 +277,44 @@ def maia_progreso():
 @app.route("/maia_resultado")
 def maia_resultado():
     global resultado_global
-
     if resultado_global:
         return jsonify(resultado_global)
-
     return jsonify(cargar_resultado())
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     data = cargar_resultado()
     zip_path = data.get("zip")
-
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-
     return "No disponible", 404
 
 @app.route("/guardar_proyecto", methods=["POST"])
 def guardar_proyecto():
     try:
         data = request.get_json(silent=True) or {}
-
         registrar_proyecto({
             "nombre": data.get("nombre", "Drone MAIA"),
             "tipo": data.get("tecnologia", "general"),
             "fecha": datetime.now().isoformat()
         })
-
         return jsonify({"status": "guardado"})
-
     except Exception as e:
         return jsonify({"error": str(e)})
 
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 13,
+        "fase": 14,
         "capacidades": [
             "Capa 1 → Interfaz",
             "Capa 2 → Backend",
             "Capa 3 → IA",
             "Simulación",
-            "Memoria"
+            "Memoria",
+            "Cálculo físico real",
+            "Arquitectura de software de drones",
+            "Adaptación por tipo de misión"
         ]
     })
 

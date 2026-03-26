@@ -7,44 +7,27 @@ body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 .topbar-buttons button{margin-left:10px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;background:#2563eb;color:white;}
 .container{padding:20px;}
 .hidden{display:none;}
-
 .chat-box{height:60vh;overflow-y:auto;background:#2a2a2a;padding:15px;border-radius:12px;}
 .input-area{margin-top:15px;display:flex;gap:10px;}
 input[type="text"]{flex:1;padding:12px;border-radius:10px;border:none;}
 button.send{padding:12px 20px;border-radius:10px;border:none;background:#2563eb;color:white;cursor:pointer;}
-
 .modulo-extra{margin-top:30px;display:flex;flex-wrap:wrap;gap:15px;}
-.modulo-extra button{
-flex:1;min-width:150px;padding:15px;border-radius:10px;border:none;
-cursor:pointer;background:#10b981;color:white;font-weight:bold;
-}
+.modulo-extra button{flex:1;min-width:150px;padding:15px;border-radius:10px;border:none;cursor:pointer;background:#10b981;color:white;font-weight:bold;}
 .modulo-extra button:hover{background:#059669;}
-
-.boton-voz{
-background:#ff0000;color:white;width:45px;height:45px;border-radius:50%;
-border:none;cursor:pointer;font-size:18px;
-box-shadow:0 0 15px red;
-}
-
-.boton-plus{
-background:#2563eb;color:white;width:45px;height:45px;border-radius:50%;
-border:none;cursor:pointer;font-size:18px;
-}
+.boton-voz{background:#ff0000;color:white;width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;font-size:18px;box-shadow:0 0 15px red;}
+.boton-plus{background:#2563eb;color:white;width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;font-size:18px;}
 </style>
 
-<!-- 🔝 TOPBAR COMPLETA -->
+<!-- 🔝 TOPBAR -->
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
-
   <div class="topbar-buttons">
     <button onclick="abrirModulo('ganado')">🐄</button>
     <button onclick="abrirModulo('plantas')">🌿</button>
     <button onclick="abrirModulo('traductor')">🌍</button>
     <button onclick="abrirModulo('proyectos')">📁</button>
-
     <button onclick="activarDrone()">🚁</button>
     <button onclick="volverHome()">🏠</button>
-
     <button class="boton-voz" onclick="activarVoz()">🎤</button>
     <button class="boton-plus" onclick="abrirChat()">💬</button>
   </div>
@@ -55,7 +38,6 @@ border:none;cursor:pointer;font-size:18px;
   <!-- 🔹 HOME -->
   <div id="home">
     <h3>🚀 Módulos MAIA</h3>
-
     <div class="modulo-extra">
       <button onclick="activarDrone()">🚁 Drone</button>
       <button onclick="abrirModulo('invent')">💡 Invent</button>
@@ -80,6 +62,7 @@ border:none;cursor:pointer;font-size:18px;
 
     <!-- 🔥 RESULTADO -->
     <div id="resultadoMAIA"></div>
+
   </div>
 
 </div>
@@ -118,7 +101,7 @@ function abrirChat(){
 }
 
 function activarVoz(){
-  alert("🎤 Voz MAIA activa (conectar backend después)");
+  alert("🎤 Voz MAIA activa (pendiente backend IA voz)");
 }
 
 // =========================
@@ -174,11 +157,12 @@ function iniciarMonitoreo(){
 }
 
 // =========================
-// 🧠 RESULTADO FINAL
+// 🧠 RESULTADO PRO (Capa 3 ready)
 // =========================
 async function cargarResultadoFinal(){
 
   try{
+
     let res = await fetch("/maia_resultado");
     let data = await res.json();
 
@@ -187,27 +171,48 @@ async function cargarResultadoFinal(){
       return;
     }
 
+    let fisica = data.fisica || {};
+
     let html = `
-    <div style="margin-top:20px;background:#111;padding:15px;border-radius:10px;">
-      <h3>🧠 Resultado MAIA</h3>
+    <div style="margin-top:20px;background:#111;padding:20px;border-radius:12px;">
+
+      <h2>🧠 MAIA INVENT</h2>
 
       <p><b>Viabilidad:</b> ${data.viabilidad}</p>
       <p><b>Tipo:</b> ${data.analisis?.tipo}</p>
-      <p><b>Peso estimado:</b> ${data.analisis?.peso}</p>
+      <p><b>Peso:</b> ${data.analisis?.peso} kg</p>
 
-      <h4>⚙️ Simulación:</h4>
+      <hr>
+
+      <h3>⚙️ Física del Drone</h3>
+      <p>Empuje: ${fisica.empuje || "N/A"} N</p>
+      <p>Potencia: ${fisica.potencia || "N/A"} W</p>
+      <p>Consumo: ${fisica.consumo || "N/A"} W</p>
+      <p>Autonomía: ${fisica.autonomia || "N/A"} min</p>
+
+      <hr>
+
+      <h3>💻 Software Generado</h3>
+      <p>✔ Flight Controller</p>
+      <p>✔ Sistema FailSafe</p>
+      <p>✔ Simulación básica</p>
+      <p>Ruta: ${data.software_generado}</p>
+
+      <hr>
+
+      <h3>📊 Simulación</h3>
       <pre style="max-height:200px;overflow:auto;background:#000;padding:10px;">
 ${data.salida}
       </pre>
 
-      <h4>📁 Software generado:</h4>
-      <p>${data.software_generado}</p>
+      <br>
 
       <a href="/descargar_proyecto" target="_blank">
-        <button style="padding:10px;background:#10b981;border:none;color:white;border-radius:8px;">
+        <button style="padding:12px;background:#10b981;border:none;color:white;border-radius:8px;">
           ⬇ Descargar Proyecto
         </button>
       </a>
+
     </div>
     `;
 

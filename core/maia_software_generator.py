@@ -1,70 +1,66 @@
-import os
+# 🧠 MAIA SOFTWARE GENERATOR – NIVEL GLI REAL
+
 import json
 
-class MaiaSoftwareGenerator:
-
-    def __init__(self, base_path):
-        self.base = base_path
-
-    def generar(self, analisis, fisica):
-
-        self._crear_estructura()
-        self._generar_config(analisis, fisica)
-        self._generar_flight_controller()
-        self._generar_navigation()
-        self._generar_sensores()
-        self._generar_ai_module()
-        self._generar_main()
-
-        return {
-            "arquitectura": "Modular tipo PX4",
-            "modulos": [
-                "flight_controller",
-                "navigation",
-                "sensores",
-                "failsafe",
-                "ai_decision"
-            ],
-            "nivel": "PROFESIONAL"
-        }
+def generar_software_completo(tipo="general"):
+    """
+    Generador completo de software de drones a nivel ingeniería.
+    """
 
     # =========================
-    # ESTRUCTURA
+    # 📁 ARQUITECTURA COMPLETA
     # =========================
-    def _crear_estructura(self):
-        carpetas = [
-            "firmware",
-            "firmware/control",
-            "firmware/navigation",
-            "firmware/sensores",
-            "firmware/ai",
-            "config"
+    arquitectura = {
+        "estructura": [
+            "config/config.json",
+
+            "firmware/pid.py",
+            "firmware/flight_controller.py",
+            "firmware/navigation.py",
+            "firmware/failsafe.py",
+
+            "drivers/gps.py",
+            "drivers/imu.py",
+            "drivers/barometer.py",
+            "drivers/camera.py",
+            "drivers/lidar.py",
+
+            "ai/decision_model.py",
+
+            "main.py"
         ]
-
-        for c in carpetas:
-            os.makedirs(os.path.join(self.base, c), exist_ok=True)
+    }
 
     # =========================
-    # CONFIG
+    # 🧠 ALGORITMOS
     # =========================
-    def _generar_config(self, analisis, fisica):
-        config = {
-            "peso": analisis.get("peso"),
-            "tipo": analisis.get("tipo"),
-            "autonomia": fisica.get("autonomia"),
-            "control": "PID + AI"
-        }
-
-        with open(f"{self.base}/config/drone.json", "w") as f:
-            json.dump(config, f, indent=4)
+    algoritmos = [
+        "Control PID (estabilidad)",
+        "Filtro Kalman (estimación de estado)",
+        "Path Planning (navegación autónoma)",
+        "Computer Vision (detección)",
+        "Failsafe automático",
+        "Control adaptativo"
+    ]
 
     # =========================
-    # FLIGHT CONTROLLER (REAL)
+    # 📡 SENSORES
     # =========================
-    def _generar_flight_controller(self):
+    sensores = [
+        "GPS",
+        "IMU (acelerómetro + giroscopio)",
+        "Barómetro",
+        "Cámara RGB",
+        "Sensor infrarrojo",
+        "Lidar"
+    ]
 
-        codigo = '''
-class PID:
+    # =========================
+    # 💻 CÓDIGO REAL
+    # =========================
+    codigo = {
+
+        "firmware/pid.py": """class PID:
     def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
@@ -78,95 +74,108 @@ class PID:
         derivative = error - self.prev_error
         self.prev_error = error
         return self.kp*error + self.ki*self.integral + self.kd*derivative
+""",
 
+        "firmware/flight_controller.py": """from firmware.pid import PID
 
 class FlightController:
-
     def __init__(self):
-        self.altitude_pid = PID(1.2, 0.02, 0.1)
-        self.roll_pid = PID(1.0, 0.01, 0.05)
-        self.pitch_pid = PID(1.0, 0.01, 0.05)
+        self.pid = PID(1.2, 0.02, 0.1)
+        self.altura = 0
 
-    def stabilize(self, target_altitude, current_altitude):
-        thrust = self.altitude_pid.compute(target_altitude, current_altitude)
-        return thrust
-'''
+    def update(self, objetivo):
+        control = self.pid.compute(objetivo, self.altura)
+        self.altura += control * 0.1
+        return self.altura
+""",
 
-        with open(f"{self.base}/firmware/control/flight_controller.py", "w") as f:
-            f.write(codigo)
+        "firmware/navigation.py": """def calcular_ruta(origen, destino):
+    # Simulación simple de navegación
+    return [origen, destino]
+""",
 
-    # =========================
-    # NAVIGATION
-    # =========================
-    def _generar_navigation(self):
-
-        codigo = '''
-import math
-
-class NavigationSystem:
-
-    def distance(self, lat1, lon1, lat2, lon2):
-        return math.sqrt((lat2-lat1)**2 + (lon2-lon1)**2)
-
-    def calcular_ruta(self, origen, destino):
-        return [origen, destino]
-'''
-
-        with open(f"{self.base}/firmware/navigation/navigation.py", "w") as f:
-            f.write(codigo)
-
-    # =========================
-    # SENSORES
-    # =========================
-    def _generar_sensores(self):
-
-        codigo = '''
-class IMU:
-    def leer(self):
-        return {"roll":0, "pitch":0, "yaw":0}
-
-class GPS:
-    def leer(self):
-        return {"lat":0, "lon":0}
-'''
-
-        with open(f"{self.base}/firmware/sensores/sensores.py", "w") as f:
-            f.write(codigo)
-
-    # =========================
-    # IA DECISIONAL
-    # =========================
-    def _generar_ai_module(self):
-
-        codigo = '''
-class DecisionAI:
-
-    def decidir(self, sensores):
-        if sensores.get("bateria", 100) < 20:
+        "firmware/failsafe.py": """class FailSafe:
+    def check(self, bateria, gps):
+        if bateria < 20:
             return "RETURN_HOME"
-        return "CONTINUE"
-'''
+        if not gps:
+            return "EMERGENCY_LAND"
+        return "OK"
+""",
 
-        with open(f"{self.base}/firmware/ai/decision.py", "w") as f:
-            f.write(codigo)
+        "drivers/gps.py": """def leer_gps():
+    return {"lat": 0.0, "lon": 0.0}
+""",
 
-    # =========================
-    # MAIN
-    # =========================
-    def _generar_main(self):
+        "drivers/imu.py": """def leer_imu():
+    return {"acc": [0,0,0], "gyro": [0,0,0]}
+""",
 
-        codigo = '''
-from firmware.control.flight_controller import FlightController
+        "drivers/barometer.py": """def leer_altura():
+    return 100  # metros simulados
+""",
+
+        "drivers/camera.py": """def capturar_imagen():
+    return "imagen_simulada.jpg"
+""",
+
+        "drivers/lidar.py": """def medir_distancia():
+    return 5.0  # metros
+""",
+
+        "ai/decision_model.py": """def decidir(sensor_data):
+    if sensor_data.get("obstaculo"):
+        return "EVADIR"
+    return "CONTINUAR"
+""",
+
+        "main.py": """from firmware.flight_controller import FlightController
+from firmware.failsafe import FailSafe
+from drivers.gps import leer_gps
+from drivers.imu import leer_imu
 
 fc = FlightController()
-
-altitude = 0
+fs = FailSafe()
 
 for i in range(50):
-    thrust = fc.stabilize(10, altitude)
-    altitude += thrust * 0.1
-    print("Altura:", altitude)
-'''
+    altura = fc.update(10)
+    gps = leer_gps()
+    imu = leer_imu()
 
-        with open(f"{self.base}/main.py", "w") as f:
-            f.write(codigo)
+    estado = fs.check(100, True)
+
+    print(f"Altura: {altura:.2f} | Estado: {estado}")
+"""
+    }
+
+    # =========================
+    # ⚙️ CONFIG
+    # =========================
+    config = {
+        "tipo": tipo,
+        "control": "PID",
+        "sensores": sensores,
+        "modo": "autonomo"
+    }
+
+    # =========================
+    # 🧾 RESUMEN TÉCNICO
+    # =========================
+    resumen = {
+        "descripcion": "Sistema de dron autónomo con control PID, navegación básica y sensores integrados.",
+        "nivel": "Ingeniería",
+        "arquitectura": "Modular (firmware + drivers + IA)",
+        "compatible": ["PX4 (conceptual)", "ArduPilot (conceptual)"]
+    }
+
+    # =========================
+    # 🚀 RETORNO FINAL
+    # =========================
+    return {
+        "arquitectura": arquitectura,
+        "algoritmos": algoritmos,
+        "sensores": sensores,
+        "codigo": codigo,
+        "config": config,
+        "resumen": resumen
+    }

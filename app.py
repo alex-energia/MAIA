@@ -64,7 +64,7 @@ endsolid drone
     generar_archivo(f"{model_path}/drone.stl", stl)
 
 # =========================
-# 🧠 GENERADOR PROYECTO PRO
+# 🧠 GENERADOR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
@@ -118,7 +118,7 @@ class FailSafe:
         return "OK"
 """)
 
-    generar_archivo(f"{base}/main.py", f"""
+    generar_archivo(f"{base}/main.py", """
 from firmware.flight import FlightController
 from firmware.failsafe import FailSafe
 
@@ -128,7 +128,7 @@ fs = FailSafe()
 for i in range(50):
     altura = fc.update(10)
     estado = fs.check(100, True)
-    print(f"Altura: {{altura:.2f}} | Estado: {{estado}}")
+    print(f"Altura: {altura:.2f} | Estado: {estado}")
 """)
 
     generar_modelo_3d(base, peso)
@@ -161,7 +161,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# 🧠 CORE MAIA
+# 🧠 CORE
 # =========================
 class MaiaCore:
 
@@ -185,28 +185,58 @@ class MaiaCore:
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            # 🔥 EXPLICACIÓN PRO
+            # 🔥 HARDWARE REAL
+            hardware = [
+                "Motores brushless",
+                "ESC 30A",
+                "Batería LiPo",
+                "Controlador de vuelo (Pixhawk)",
+                "GPS + IMU"
+            ]
+
+            # 🔥 SOFTWARE REAL
+            software = {
+                "arquitectura": [
+                    "firmware/pid.py",
+                    "firmware/flight.py",
+                    "firmware/failsafe.py",
+                    "config/config.json",
+                    "main.py"
+                ],
+                "algoritmos": [
+                    "Control PID",
+                    "Simulación discreta",
+                    "Failsafe automático"
+                ]
+            }
+
+            # 🔥 DIAGNÓSTICO PRO
             if validacion["viabilidad"] == "VIABLE ✅":
                 explicacion = f"""
-El sistema es viable porque el empuje ({fisica.get("empuje")}) supera el requerido,
-la autonomía es adecuada ({fisica.get("autonomia")} min) y el consumo es eficiente.
-El diseño cumple condiciones físicas de vuelo estable.
+Sistema viable:
+
+- Empuje suficiente ({fisica.get("empuje")})
+- Autonomía: {fisica.get("autonomia")} min
+- Consumo optimizado
+
+Diseño apto para prototipo real.
 """
             else:
                 explicacion = f"""
-El sistema NO es viable debido a:
-{", ".join(validacion["errores"])}
+Sistema NO viable:
 
-Se recomienda:
-{", ".join(validacion["soluciones"])}
+Errores:
+{chr(10).join(validacion["errores"])}
+
+Soluciones:
+{chr(10).join(validacion["soluciones"])}
 """
 
             self.progreso(75, "Generando sistema...")
 
             ruta = crear_proyecto(
                 f"drone_{int(time.time())}",
-                analisis.get("peso", 5),
-                analisis.get("tipo", "general")
+                analisis.get("peso", 5)
             )
 
             salida = ejecutar_main(ruta)
@@ -221,6 +251,9 @@ Se recomienda:
                 "fisica": fisica,
                 "errores": validacion["errores"],
                 "soluciones": validacion["soluciones"],
+                "software": software,
+                "hardware": hardware,
+                "modelo_3d": f"{ruta}/models/drone.obj",
                 "salida": salida,
                 "software_generado": ruta,
                 "zip": zip_path
@@ -260,6 +293,20 @@ def maia_progreso():
 def maia_resultado():
     return jsonify(resultado_global)
 
+@app.route("/maia_capacidades")
+def maia_capacidades():
+    return jsonify({
+        "fase": 16,
+        "capacidades": [
+            "Diseño de drones",
+            "Software embebido",
+            "Simulación",
+            "Modelo 3D",
+            "Hardware real",
+            "Validación técnica"
+        ]
+    })
+
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
@@ -267,7 +314,6 @@ def descargar_proyecto():
         return send_file(zip_path, as_attachment=True)
     return "No disponible", 404
 
-# 🔥 FIX CRÍTICO (tu error 404)
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")

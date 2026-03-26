@@ -4,35 +4,65 @@
 <style>
 body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 .topbar{display:flex;justify-content:space-between;align-items:center;padding:15px 25px;background:#111;}
+.topbar-buttons button{margin-left:10px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;background:#2563eb;color:white;}
 .container{padding:20px;}
 .hidden{display:none;}
+.chat-box{height:60vh;overflow-y:auto;background:#2a2a2a;padding:15px;border-radius:12px;}
+.input-area{margin-top:15px;display:flex;gap:10px;}
+input[type="text"]{flex:1;padding:12px;border-radius:10px;border:none;}
+button.send{padding:12px 20px;border-radius:10px;border:none;background:#2563eb;color:white;cursor:pointer;}
+.drone-botones{display:flex;gap:20px;flex-wrap:wrap;margin-top:20px;}
+.drone-botones button{padding:15px;border-radius:10px;border:none;cursor:pointer;color:white;font-size:15px;}
+.modulo-extra{margin-top:30px;display:flex;flex-wrap:wrap;gap:15px;}
+.modulo-extra button{flex:1;min-width:150px;padding:15px;border-radius:10px;border:none;cursor:pointer;background:#10b981;color:white;font-weight:bold;}
+.modulo-extra button:hover{background:#059669;}
 </style>
 
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
-  <button onclick="activarDrone()">🚁</button>
+  <div class="topbar-buttons">
+    <button onclick="activarDrone()">🚁 Drone</button>
+    <button onclick="abrirModulo('invent')">💡 Invent</button>
+    <button onclick="abrirModulo('lab')">🧪 Lab</button>
+    <button onclick="abrirModulo('architect')">🏗️ Architect</button>
+    <button onclick="volverHome()">🏠</button>
+  </div>
 </div>
 
 <div class="container">
 
-<div id="moduloDrone">
-  <h3>🚁 MAIA DRONE</h3>
+  <!-- 🔹 HOME -->
+  <div id="home">
+    <h3>🚀 Módulos MAIA</h3>
 
-  <textarea id="idea" placeholder="Escribe idea..."></textarea><br><br>
-
-  <button onclick="generarDroneUI()">🚀 Generar</button>
-
-  <!-- 🔥 BARRA -->
-  <div style="width:100%;background:#111;margin-top:10px;">
-    <div id="barraProgreso" style="height:20px;width:0%;background:#00ffcc;"></div>
+    <div class="modulo-extra">
+      <button onclick="activarDrone()">🚁 Drone</button>
+      <button onclick="abrirModulo('invent')">💡 Invent</button>
+      <button onclick="abrirModulo('lab')">🧪 Lab</button>
+      <button onclick="abrirModulo('architect')">🏗️ Architect</button>
+    </div>
   </div>
 
-  <p id="estadoTexto"></p>
+  <!-- 🔹 DRONE -->
+  <div id="moduloDrone" class="hidden">
 
-  <!-- 🔥 CONTENEDOR RESULTADO (CLAVE) -->
-  <div id="resultadoMAIA"></div>
+    <h3>🚁 MAIA DRONE</h3>
 
-</div>
+    <textarea id="idea" placeholder="Escribe idea..." style="width:100%;height:80px;"></textarea><br><br>
+
+    <button onclick="generarDroneUI()">🚀 Generar</button>
+
+    <!-- 🔥 BARRA -->
+    <div style="width:100%;background:#111;margin-top:10px;">
+      <div id="barraProgreso" style="height:20px;width:0%;background:#00ffcc;"></div>
+    </div>
+
+    <p id="estadoTexto"></p>
+
+    <!-- 🔥 RESULTADO -->
+    <div id="resultadoMAIA"></div>
+
+  </div>
 
 </div>
 
@@ -42,6 +72,28 @@ body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 window.onerror = function(msg, url, line){
   console.error("💥 JS ERROR:", msg, line);
 };
+
+// =========================
+// 🔹 NAVEGACIÓN
+// =========================
+function ocultarTodo(){
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("moduloDrone").classList.add("hidden");
+}
+
+function volverHome(){
+  ocultarTodo();
+  document.getElementById("home").classList.remove("hidden");
+}
+
+function activarDrone(){
+  ocultarTodo();
+  document.getElementById("moduloDrone").classList.remove("hidden");
+}
+
+function abrirModulo(nombre){
+  window.location.href = "/maia_" + nombre;
+}
 
 // =========================
 // 🚀 GENERAR DRONE
@@ -54,8 +106,6 @@ async function generarDroneUI(){
     alert("Escribe algo");
     return;
   }
-
-  console.log("🚀 Lanzando proceso");
 
   document.getElementById("barraProgreso").style.width = "5%";
   document.getElementById("estadoTexto").innerText = "Iniciando...";
@@ -75,25 +125,17 @@ async function generarDroneUI(){
 // =========================
 function iniciarMonitoreo(){
 
-  console.log("📡 MONITOREO ACTIVO");
-
   let intervalo = setInterval(async ()=>{
 
     try{
       let res = await fetch("/maia_progreso");
       let data = await res.json();
 
-      console.log("📊 PROGRESO:", data);
-
       document.getElementById("barraProgreso").style.width = data.progreso + "%";
       document.getElementById("estadoTexto").innerText = data.mensaje;
 
       if(data.progreso >= 100){
-
         clearInterval(intervalo);
-        console.log("✅ TERMINADO");
-
-        // 🔥 AQUÍ VA TU FUNCIÓN
         cargarResultadoFinal();
       }
 
@@ -106,7 +148,7 @@ function iniciarMonitoreo(){
 }
 
 // =========================
-// 🧠 RESULTADO FINAL (FIX REAL)
+// 🧠 RESULTADO FINAL
 // =========================
 async function cargarResultadoFinal(){
 
@@ -114,8 +156,6 @@ async function cargarResultadoFinal(){
 
     let res = await fetch("/maia_resultado");
     let data = await res.json();
-
-    console.log("🧠 RESULTADO FINAL:", data);
 
     if(!data || Object.keys(data).length === 0){
       document.getElementById("estadoTexto").innerText = "⚠️ No hay resultado";
@@ -128,7 +168,6 @@ async function cargarResultadoFinal(){
       <h3>🧠 Resultado MAIA</h3>
 
       <p><b>Viabilidad:</b> ${data.viabilidad}</p>
-
       <p><b>Tipo:</b> ${data.analisis?.tipo}</p>
       <p><b>Peso estimado:</b> ${data.analisis?.peso}</p>
 
@@ -149,19 +188,11 @@ ${data.salida}
     </div>
     `;
 
-    // 🔥 CLAVE: YA NO ROMPE EL FRONTEND
     document.getElementById("resultadoMAIA").innerHTML = html;
 
   }catch(e){
     console.error("❌ Error cargando resultado", e);
   }
-}
-
-// =========================
-// 🚁 DRONE
-// =========================
-function activarDrone(){
-  console.log("🚁 Drone activo");
 }
 
 </script>

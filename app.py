@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
-from maia_validator import MaiaValidator  # 🔥 NUEVO
+from maia_validator import MaiaValidator
 
 import os
 import json
@@ -30,59 +30,9 @@ app.register_blueprint(proyectos_bp)
 # =========================
 # ESTADO GLOBAL
 # =========================
-estado_maia = {
-    "progreso": 0,
-    "estado": "IDLE",
-    "mensaje": ""
-}
-
+estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
 resultado_global = {}
 RESULT_FILE = "maia_resultado.json"
-
-# =========================
-# GUARDAR RESULTADO
-# =========================
-def guardar_resultado(data):
-    try:
-        with open(RESULT_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-    except Exception as e:
-        print("❌ Error guardando resultado:", e)
-
-def cargar_resultado():
-    try:
-        if os.path.exists(RESULT_FILE):
-            with open(RESULT_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-    except Exception as e:
-        print("❌ Error cargando resultado:", e)
-    return {}
-
-# =========================
-# MEMORIA
-# =========================
-MEMORY_FILE = "maia_memory.json"
-
-def cargar_memoria():
-    try:
-        if not os.path.exists(MEMORY_FILE):
-            return {"proyectos": []}
-        with open(MEMORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
-        return {"proyectos": []}
-
-def guardar_memoria(memoria):
-    try:
-        with open(MEMORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(memoria, f, indent=4)
-    except:
-        pass
-
-def registrar_proyecto(data):
-    memoria = cargar_memoria()
-    memoria["proyectos"].append(data)
-    guardar_memoria(memoria)
 
 # =========================
 # UTILIDADES
@@ -96,28 +46,94 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# CREAR PROYECTO
+# 🔥 GENERADOR 3D REAL
 # =========================
-def crear_proyecto(nombre, peso):
+def generar_modelo_3d(base, peso, tipo):
+    model_path = os.path.join(base, "models")
+    os.makedirs(model_path, exist_ok=True)
+
+    escala = max(1, peso / 5)
+
+    obj = f"""
+o Drone
+v 0 0 0
+v {escala} 0 0
+v {escala} {escala} 0
+v 0 {escala} 0
+v 0 0 {escala}
+v {escala} 0 {escala}
+v {escala} {escala} {escala}
+v 0 {escala} {escala}
+f 1 2 3 4
+f 5 6 7 8
+"""
+    stl = f"""
+solid drone
+facet normal 0 0 0
+outer loop
+vertex 0 0 0
+vertex {escala} 0 0
+vertex {escala} {escala} 0
+endloop
+endfacet
+endsolid drone
+"""
+
+    generar_archivo(f"{model_path}/drone.obj", obj)
+    generar_archivo(f"{model_path}/drone.stl", stl)
+
+# =========================
+# 🔥 CREAR PROYECTO PRO
+# =========================
+def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
 
-    generar_archivo(f"{base}/flight_controller.py", """class FlightController:
-    def __init__(self):
-        self.altura = 0
-        self.velocidad = 0
+    # CONFIG
+    generar_archivo(f"{base}/config/drone_config.json", json.dumps({
+        "peso": peso,
+        "tipo": tipo,
+        "motores": 4,
+        "control": "PID"
+    }, indent=4))
 
-    def update(self, thrust, peso):
-        g = 9.81
-        fuerza = thrust - peso * g
-        aceleracion = fuerza / peso
-        self.velocidad += aceleracion * 0.1
-        self.altura += self.velocidad * 0.1
+    # PID
+    generar_archivo(f"{base}/firmware/pid_controller.py", """
+class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.prev_error = 0
+        self.integral = 0
+
+    def compute(self, setpoint, measured):
+        error = setpoint - measured
+        self.integral += error
+        derivative = error - self.prev_error
+        self.prev_error = error
+        return self.kp*error + self.ki*self.integral + self.kd*derivative
+""")
+
+    # FLIGHT CONTROLLER
+    generar_archivo(f"{base}/firmware/flight_controller.py", """
+from pid_controller import PID
+
+class FlightController:
+    def __init__(self):
+        self.pid = PID(1.0, 0.01, 0.1)
+        self.altura = 0
+
+    def update(self, objetivo, actual):
+        control = self.pid.compute(objetivo, actual)
+        self.altura += control * 0.1
         return self.altura
 """)
 
-    generar_archivo(f"{base}/failsafe.py", """class FailSafe:
+    # FAILSAFE
+    generar_archivo(f"{base}/firmware/failsafe.py", """
+class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -126,20 +142,24 @@ def crear_proyecto(nombre, peso):
         return "OK"
 """)
 
-    generar_archivo(f"{base}/main.py", f"""from flight_controller import FlightController
-from failsafe import FailSafe
+    # MAIN
+    generar_archivo(f"{base}/main.py", f"""
+from firmware.flight_controller import FlightController
+from firmware.failsafe import FailSafe
 
 fc = FlightController()
 fs = FailSafe()
 
-peso = {peso}
-thrust = peso * 2
+altura = 0
 
 for i in range(50):
-    altura = fc.update(thrust, peso)
+    altura = fc.update(10, altura)
     estado = fs.check(100, True)
     print(f"Altura: {{altura:.2f}} | Estado: {{estado}}")
 """)
+
+    # MODELO 3D
+    generar_modelo_3d(base, peso, tipo)
 
     return base
 
@@ -159,13 +179,10 @@ def ejecutar_main(ruta):
     except Exception as e:
         return str(e)
 
-# =========================
-# ZIP
-# =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(ruta):
+        for root, _, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
@@ -189,24 +206,24 @@ class MaiaCore:
         try:
             print("🔥 Ejecutando MAIA:", idea)
 
-            # 🔹 CAPA 1
+            # CAPA 1
             self.progreso(20, "🧠 Analizando idea...")
             core_data = analizar_drone(idea)
 
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
-            software = core_data.get("software", {})
 
-            # 🔹 CAPA 2 (🔥 VALIDATOR)
-            self.progreso(50, "⚖️ Validando viabilidad...")
+            # CAPA 2
+            self.progreso(50, "⚖️ Validando...")
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            # 🔹 CAPA 3
-            self.progreso(75, "💻 Generando software...")
+            # CAPA 3
+            self.progreso(75, "💻 Generando sistema...")
             ruta = crear_proyecto(
                 f"drone_{int(time.time())}",
-                analisis.get("peso", 5)
+                analisis.get("peso", 5),
+                analisis.get("tipo", "general")
             )
 
             salida = ejecutar_main(ruta)
@@ -215,60 +232,38 @@ class MaiaCore:
             self.progreso(100, "✅ Completado")
 
             resultado_global = {
-                "viabilidad": validacion.get("viabilidad"),
+                "viabilidad": validacion["viabilidad"],
                 "analisis": analisis,
                 "fisica": fisica,
-                "software": software,
-                "errores": validacion.get("errores", []),
-                "soluciones": validacion.get("soluciones", []),
+                "errores": validacion["errores"],
+                "soluciones": validacion["soluciones"],
                 "salida": salida,
                 "software_generado": ruta,
                 "zip": zip_path
             }
 
-            guardar_resultado(resultado_global)
-            estado_maia["estado"] = "COMPLETADO"
-
         except Exception as e:
-            print("💥 ERROR:", str(e))
-            resultado_global = {
-                "viabilidad": "ERROR ❌",
-                "error": str(e)
-            }
-            guardar_resultado(resultado_global)
-            estado_maia["estado"] = "ERROR"
+            resultado_global = {"viabilidad": "ERROR ❌", "error": str(e)}
 
 # =========================
 # THREAD
 # =========================
 def proceso_maia(idea):
-    core = MaiaCore()
-    core.ejecutar(idea)
+    MaiaCore().ejecutar(idea)
 
 # =========================
 # ENDPOINTS
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-    global estado_maia, resultado_global
-
     data = request.get_json(silent=True) or {}
     idea = data.get("idea", "")
-
-    if len(idea.strip()) < 3:
-        return jsonify({"error": "Idea muy corta"})
 
     estado_maia["progreso"] = 0
     estado_maia["mensaje"] = "Iniciando..."
     estado_maia["estado"] = "PROCESANDO"
-    resultado_global = {}
 
-    threading.Thread(
-        target=proceso_maia,
-        args=(idea,),
-        daemon=True
-    ).start()
-
+    threading.Thread(target=proceso_maia, args=(idea,), daemon=True).start()
     return jsonify({"status": "ok"})
 
 @app.route("/maia_progreso")
@@ -277,51 +272,14 @@ def maia_progreso():
 
 @app.route("/maia_resultado")
 def maia_resultado():
-    global resultado_global
-    if resultado_global:
-        return jsonify(resultado_global)
-    return jsonify(cargar_resultado())
+    return jsonify(resultado_global)
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
-    data = cargar_resultado()
-    zip_path = data.get("zip")
+    zip_path = resultado_global.get("zip")
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
     return "No disponible", 404
-
-@app.route("/guardar_proyecto", methods=["POST"])
-def guardar_proyecto():
-    try:
-        data = request.get_json(silent=True) or {}
-        registrar_proyecto({
-            "nombre": data.get("nombre", "Drone MAIA"),
-            "tipo": data.get("tecnologia", "general"),
-            "fecha": datetime.now().isoformat()
-        })
-        return jsonify({"status": "guardado"})
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route("/maia_capacidades")
-def maia_capacidades():
-    return jsonify({
-        "fase": 15,
-        "capacidades": [
-            "Capa 1 → Interfaz",
-            "Capa 2 → Backend",
-            "Capa 3 → IA Física",
-            "Validator inteligente",
-            "Simulación",
-            "Memoria",
-            "Detección de inviabilidad",
-            "Recomendaciones automáticas"
-        ]
-    })
-
-@app.route("/maia_invent")
-def maia_invent():
-    return render_template("maia_invent.html")
 
 @app.route("/")
 def home():
@@ -332,5 +290,4 @@ def home():
 # =========================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 MAIA corriendo en puerto {port}")
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

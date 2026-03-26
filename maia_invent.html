@@ -6,6 +6,25 @@
     <style>
         body {
             font-family: Arial;
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
         }
 
         #panel_maia {
@@ -19,7 +38,7 @@
 
         #barra_container {
             width: 100%;
-            background: #ddd;
+            background: #111;
             margin-top: 20px;
             border-radius: 10px;
             overflow: hidden;
@@ -29,10 +48,27 @@
         #barra {
             width: 0%;
             height: 25px;
-            background: green;
+            background: #22c55e;
             text-align: center;
             color: white;
             font-weight: bold;
+        }
+
+        .panel {
+            background: #020617;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .ok { color: #22c55e; }
+        .bad { color: #ef4444; }
+
+        pre {
+            background: black;
+            padding: 10px;
+            border-radius: 8px;
+            overflow: auto;
         }
     </style>
 </head>
@@ -40,26 +76,25 @@
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
-<p>Generador de ideas disruptivas de drones</p>
+<p>Generador de ingeniería de drones</p>
 
-<textarea id="idea" placeholder="Ej: inseguridad urbana"></textarea><br><br>
+<textarea id="idea" placeholder="Ej: Drone autónomo para incendios con sensores térmicos"></textarea>
+<br><br>
 
-<button onclick="evaluar()">Generar Idea</button>
-
-<!-- 🔥 NUEVO BOTÓN CAPACIDADES -->
+<button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="verCapacidades()">🚀 ¿Qué puede hacer MAIA?</button>
 
-<h2 id="resultado"></h2>
+<div id="resultado"></div>
 
-<!-- 🔥 BARRA DE PROGRESO -->
+<!-- 🔥 BARRA -->
 <div id="barra_container">
     <div id="barra">0%</div>
 </div>
 
-<!-- 🔥 PANEL CAPACIDADES -->
+<!-- 🔥 PANEL -->
 <div id="panel_maia"></div>
 
-<!-- 🔥 BOTÓN GUARDAR -->
+<!-- 🔥 GUARDAR -->
 <button onclick="guardarProyectoInvent()">
     💾 Guardar proyecto en memoria MAIA
 </button>
@@ -67,9 +102,10 @@
 <script>
 
 // =========================
-// 🔥 GENERAR IDEA (MEJORADO)
+// 🚀 GENERAR (FIX REAL)
 // =========================
-function evaluar() {
+async function evaluar(){
+
     const idea = document.getElementById("idea").value;
 
     if(!idea || idea.length < 3){
@@ -77,90 +113,109 @@ function evaluar() {
         return;
     }
 
-    // 🔥 activar barra
     document.getElementById("barra_container").style.display = "block";
-    iniciarProgreso();
+    document.getElementById("resultado").innerHTML = "🧠 MAIA procesando...";
 
-    fetch("/evaluar_drone", {
+    await fetch("/evaluar_drone", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({idea: idea})
-    })
-    .then(res => res.json())
-    .then(data => {
-
-        // 🔥 MOSTRAR RESULTADO
-        let html = `
-            Impacto: ${data.impacto || "N/A"}<br>
-            Innovación: ${data.innovacion || "N/A"}<br>
-            Viabilidad: ${data.viabilidad || "N/A"}<br><br>
-            ${data.mensaje || ""}
-        `;
-
-        if(data.analisis){
-            html += `<br><br>
-            <b>🔬 Análisis Técnico:</b> ${data.analisis.tecnico || ""}<br>
-            <b>💰 Análisis Económico:</b> ${data.analisis.economico || ""}<br>
-            <b>👨‍🔧 Análisis Profesional:</b> ${data.analisis.profesional || ""}<br>`;
-        }
-
-        if(data.software){
-            html += `<br><br><b>🧠 Software:</b><br>`;
-            if(Array.isArray(data.software)){
-                html += data.software.join("<br>");
-            } else if(data.software.modulos){
-                html += data.software.modulos.join("<br>");
-            } else {
-                html += JSON.stringify(data.software);
-            }
-        }
-
-        if(data.hardware){
-            html += `<br><br><b>⚙️ Hardware:</b><br>`;
-            html += data.hardware.join("<br>");
-        }
-
-        if(data.modelo_3d){
-            html += `<br><br><b>🧊 Modelo 3D:</b><br>${data.modelo_3d}`;
-        }
-
-        document.getElementById("resultado").innerHTML = html;
-
-        window.ultimoProyecto = data;
-    })
-    .catch(err => {
-        alert("❌ Error al generar idea");
-        console.error(err);
+        body: JSON.stringify({idea})
     });
+
+    monitorearResultado();
 }
 
 // =========================
-// 🔥 PROGRESO EN VIVO
+// 📊 PROGRESO + RESULTADO
 // =========================
-function iniciarProgreso(){
+function monitorearResultado(){
+
     let barra = document.getElementById("barra");
 
-    let intervalo = setInterval(() => {
-        fetch("/maia_progreso")
-        .then(r => r.json())
-        .then(data => {
+    let intervalo = setInterval(async () => {
+
+        try{
+            let r = await fetch("/maia_progreso");
+            let data = await r.json();
 
             barra.style.width = data.progreso + "%";
             barra.innerText = data.progreso + "%";
 
-            if(data.estado === "COMPLETADO"){
+            if(data.progreso >= 100){
                 clearInterval(intervalo);
+                cargarResultadoFinal();
             }
 
-        })
-        .catch(() => {
+        }catch(e){
             clearInterval(intervalo);
-        });
-    }, 500);
+        }
+
+    }, 700);
 }
 
 // =========================
-// 🚀 CAPACIDADES MAIA
+// 🧠 RESULTADO REAL (PRO)
+// =========================
+async function cargarResultadoFinal(){
+
+    let res = await fetch("/maia_resultado");
+    let data = await res.json();
+
+    if(!data || Object.keys(data).length === 0){
+        document.getElementById("resultado").innerHTML = "⚠️ Sin resultado";
+        return;
+    }
+
+    let estado = data.viabilidad || "N/A";
+    let clase = estado.includes("VIABLE") ? "ok" : "bad";
+
+    let html = `
+    <div class="panel">
+
+        <h2 class="${clase}">${estado}</h2>
+
+        <h3>📦 Análisis</h3>
+        Tipo: ${data.analisis?.tipo}<br>
+        Peso: ${data.analisis?.peso} kg
+
+        <h3>⚡ Física</h3>
+        Autonomía: ${data.fisica?.autonomia} min<br>
+        Consumo: ${data.fisica?.consumo} W<br>
+        Empuje: ${data.fisica?.empuje}
+
+        <h3>📊 Métricas</h3>
+        Empuje mínimo: ${data.metricas?.empuje_minimo_requerido}<br>
+        Eficiencia: ${data.metricas?.eficiencia_energetica}
+
+        <h3>🧠 Diagnóstico</h3>
+        <pre>${data.explicacion}</pre>
+
+        <h3>❌ Errores</h3>
+        <pre>${(data.errores || []).join("\n")}</pre>
+
+        <h3>🔧 Soluciones</h3>
+        <pre>${(data.soluciones || []).join("\n")}</pre>
+
+        <h3>💻 Simulación</h3>
+        <pre>${data.salida}</pre>
+
+        <h3>📁 Proyecto</h3>
+        ${data.software_generado}<br><br>
+
+        <a href="/descargar_proyecto" target="_blank">
+            <button>⬇ Descargar</button>
+        </a>
+
+    </div>
+    `;
+
+    document.getElementById("resultado").innerHTML = html;
+
+    window.ultimoProyecto = data;
+}
+
+// =========================
+// 🚀 CAPACIDADES
 // =========================
 function verCapacidades() {
 
@@ -173,7 +228,6 @@ function verCapacidades() {
 
         panel.innerHTML = `
             <h2>🚀 MAIA FASE ${data.fase}</h2>
-            <p>Sistema de ingeniería autónoma avanzada</p>
             <ul>
                 ${data.capacidades.map(c => `<li>${c}</li>`).join("")}
             </ul>
@@ -182,7 +236,7 @@ function verCapacidades() {
 }
 
 // =========================
-// 💾 GUARDAR PROYECTO
+// 💾 GUARDAR
 // =========================
 async function guardarProyectoInvent(){
 
@@ -192,29 +246,18 @@ async function guardarProyectoInvent(){
     }
 
     let idea = document.getElementById("idea").value;
-    let p = window.ultimoProyecto;
 
     let res = await fetch("/maia_guardar_proyecto", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            modulo: "maia_invent",
             nombre: idea,
-            descripcion: p.mensaje || idea,
-            analisis: p.analisis || {
-                impacto: p.impacto,
-                innovacion: p.innovacion,
-                viabilidad: p.viabilidad
-            },
-            software: p.software || [],
-            hardware: p.hardware || [],
-            modelo_3d: p.modelo_3d || "No generado",
-            extra: p
+            tecnologia: "drone"
         })
     });
 
     let data = await res.json();
-    alert(data.mensaje);
+    alert("✅ Proyecto guardado");
 }
 
 </script>

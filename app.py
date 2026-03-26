@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from proyectos import proyectos_bp, init_db
-from maia_core_fisico import analizar_drone  # 🔥 NUEVO
+from maia_core_fisico import analizar_drone
+from maia_validator import MaiaValidator  # 🔥 NUEVO
 
 import os
 import json
@@ -98,7 +99,6 @@ def generar_archivo(ruta, contenido):
 # CREAR PROYECTO
 # =========================
 def crear_proyecto(nombre, peso):
-
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
     os.makedirs(base, exist_ok=True)
@@ -184,29 +184,30 @@ class MaiaCore:
         time.sleep(1)
 
     def ejecutar(self, idea):
-
         global resultado_global
 
         try:
             print("🔥 Ejecutando MAIA:", idea)
 
-            self.progreso(10, "🟢 Capa 1 → Analizando idea...")
-
-            # 🔥 NUEVO CORE INTELIGENTE
+            # 🔹 CAPA 1
+            self.progreso(20, "🧠 Analizando idea...")
             core_data = analizar_drone(idea)
 
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
             software = core_data.get("software", {})
 
-            self.progreso(40, "🔵 Capa 2 → Generando proyecto...")
+            # 🔹 CAPA 2 (🔥 VALIDATOR)
+            self.progreso(50, "⚖️ Validando viabilidad...")
+            validator = MaiaValidator()
+            validacion = validator.validar(core_data)
 
+            # 🔹 CAPA 3
+            self.progreso(75, "💻 Generando software...")
             ruta = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 5)
             )
-
-            self.progreso(70, "🔴 Capa 3 → IA simulando...")
 
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
@@ -214,10 +215,12 @@ class MaiaCore:
             self.progreso(100, "✅ Completado")
 
             resultado_global = {
-                "viabilidad": "VIABLE ✅",
+                "viabilidad": validacion.get("viabilidad"),
                 "analisis": analisis,
                 "fisica": fisica,
                 "software": software,
+                "errores": validacion.get("errores", []),
+                "soluciones": validacion.get("soluciones", []),
                 "salida": salida,
                 "software_generado": ruta,
                 "zip": zip_path
@@ -247,7 +250,6 @@ def proceso_maia(idea):
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-
     global estado_maia, resultado_global
 
     data = request.get_json(silent=True) or {}
@@ -259,7 +261,6 @@ def evaluar_drone():
     estado_maia["progreso"] = 0
     estado_maia["mensaje"] = "Iniciando..."
     estado_maia["estado"] = "PROCESANDO"
-
     resultado_global = {}
 
     threading.Thread(
@@ -305,16 +306,16 @@ def guardar_proyecto():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 14,
+        "fase": 15,
         "capacidades": [
             "Capa 1 → Interfaz",
             "Capa 2 → Backend",
-            "Capa 3 → IA",
+            "Capa 3 → IA Física",
+            "Validator inteligente",
             "Simulación",
             "Memoria",
-            "Cálculo físico real",
-            "Arquitectura de software de drones",
-            "Adaptación por tipo de misión"
+            "Detección de inviabilidad",
+            "Recomendaciones automáticas"
         ]
     })
 

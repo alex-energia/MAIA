@@ -2,11 +2,22 @@ from flask import Flask, render_template, request, jsonify, send_file
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
+from core.maia_software_generator import MaiaSoftwareGenerator
 
-import os, json, time, threading, subprocess, zipfile, re, sys
+import os
+import json
+import time
+import threading
+import subprocess
+import zipfile
+import re
+import sys
 
 print("🔥 MAIA STARTING...")
 
+# =========================
+# APP
+# =========================
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_secret_ultra"
 
@@ -36,7 +47,8 @@ def generar_modelo_3d(base, peso):
 
     escala = max(1, peso / 5)
 
-    obj = f"""o Drone
+    obj = f"""
+o Drone
 v 0 0 0
 v {escala} 0 0
 v {escala} {escala} 0
@@ -49,7 +61,8 @@ f 1 2 3 4
 f 5 6 7 8
 """
 
-    stl = f"""solid drone
+    stl = f"""
+solid drone
 facet normal 0 0 0
 outer loop
 vertex 0 0 0
@@ -64,72 +77,13 @@ endsolid drone
     generar_archivo(f"{model_path}/drone.stl", stl)
 
 # =========================
-# 🧠 GENERADOR PROYECTO
+# CREAR PROYECTO BASE
 # =========================
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
+
     os.makedirs(base, exist_ok=True)
-
-    generar_archivo(f"{base}/config/config.json", json.dumps({
-        "peso": peso,
-        "tipo": tipo,
-        "control": "PID"
-    }, indent=4))
-
-    generar_archivo(f"{base}/firmware/pid.py", """
-class PID:
-    def __init__(self, kp, ki, kd):
-        self.kp = kp
-        self.ki = ki
-        self.kd = kd
-        self.prev_error = 0
-        self.integral = 0
-
-    def compute(self, target, current):
-        error = target - current
-        self.integral += error
-        derivative = error - self.prev_error
-        self.prev_error = error
-        return self.kp*error + self.ki*self.integral + self.kd*derivative
-""")
-
-    generar_archivo(f"{base}/firmware/flight.py", """
-from pid import PID
-
-class FlightController:
-    def __init__(self):
-        self.pid = PID(1.2, 0.02, 0.1)
-        self.altura = 0
-
-    def update(self, objetivo):
-        control = self.pid.compute(objetivo, self.altura)
-        self.altura += control * 0.1
-        return self.altura
-""")
-
-    generar_archivo(f"{base}/firmware/failsafe.py", """
-class FailSafe:
-    def check(self, bateria, gps):
-        if bateria < 20:
-            return "RETURN_HOME"
-        if not gps:
-            return "EMERGENCY_LAND"
-        return "OK"
-""")
-
-    generar_archivo(f"{base}/main.py", """
-from firmware.flight import FlightController
-from firmware.failsafe import FailSafe
-
-fc = FlightController()
-fs = FailSafe()
-
-for i in range(50):
-    altura = fc.update(10)
-    estado = fs.check(100, True)
-    print(f"Altura: {altura:.2f} | Estado: {estado}")
-""")
 
     generar_modelo_3d(base, peso)
 
@@ -161,7 +115,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# 🧠 CORE
+# 🧠 CORE MAIA
 # =========================
 class MaiaCore:
 
@@ -175,69 +129,54 @@ class MaiaCore:
         global resultado_global
 
         try:
+            # 🔹 CAPA 1
             self.progreso(20, "Analizando idea...")
             core_data = analizar_drone(idea)
 
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
 
+            # 🔹 CAPA 2 VALIDACIÓN
             self.progreso(50, "Validando...")
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            # 🔥 HARDWARE REAL
-            hardware = [
-                "Motores brushless",
-                "ESC 30A",
-                "Batería LiPo",
-                "Controlador de vuelo (Pixhawk)",
-                "GPS + IMU"
-            ]
-
-            # 🔥 SOFTWARE REAL
-            software = {
-                "arquitectura": [
-                    "firmware/pid.py",
-                    "firmware/flight.py",
-                    "firmware/failsafe.py",
-                    "config/config.json",
-                    "main.py"
-                ],
-                "algoritmos": [
-                    "Control PID",
-                    "Simulación discreta",
-                    "Failsafe automático"
-                ]
-            }
-
-            # 🔥 DIAGNÓSTICO PRO
+            # 🔹 DIAGNÓSTICO PROFESIONAL
             if validacion["viabilidad"] == "VIABLE ✅":
-                explicacion = f"""
-Sistema viable:
-
-- Empuje suficiente ({fisica.get("empuje")})
-- Autonomía: {fisica.get("autonomia")} min
-- Consumo optimizado
-
-Diseño apto para prototipo real.
-"""
+                explicacion = (
+                    f"El sistema es viable. Empuje: {fisica.get('empuje')} N, "
+                    f"Autonomía: {fisica.get('autonomia')} min. "
+                    f"Relación empuje/peso adecuada para vuelo estable."
+                )
             else:
-                explicacion = f"""
-Sistema NO viable:
+                explicacion = (
+                    "Sistema NO viable por:\n"
+                    + "\n".join(validacion["errores"])
+                    + "\nSoluciones:\n"
+                    + "\n".join(validacion["soluciones"])
+                )
 
-Errores:
-{chr(10).join(validacion["errores"])}
-
-Soluciones:
-{chr(10).join(validacion["soluciones"])}
-"""
-
-            self.progreso(75, "Generando sistema...")
+            # 🔹 CAPA 3 SOFTWARE PRO
+            self.progreso(75, "Generando arquitectura de software...")
 
             ruta = crear_proyecto(
                 f"drone_{int(time.time())}",
-                analisis.get("peso", 5)
+                analisis.get("peso", 5),
+                analisis.get("tipo", "general")
             )
+
+            generator = MaiaSoftwareGenerator(ruta)
+            software_pro = generator.generar(analisis, fisica)
+
+            # 🔹 HARDWARE REAL
+            hardware = [
+                "Motores brushless KV adecuados",
+                "ESC 30A–60A",
+                "Batería LiPo 3S/4S",
+                "Controlador Pixhawk",
+                "GPS + IMU",
+                "Frame de fibra de carbono"
+            ]
 
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
@@ -251,7 +190,7 @@ Soluciones:
                 "fisica": fisica,
                 "errores": validacion["errores"],
                 "soluciones": validacion["soluciones"],
-                "software": software,
+                "software": software_pro,
                 "hardware": hardware,
                 "modelo_3d": f"{ruta}/models/drone.obj",
                 "salida": salida,
@@ -263,6 +202,7 @@ Soluciones:
 
         except Exception as e:
             resultado_global = {"error": str(e)}
+            estado_maia["estado"] = "ERROR"
 
 # =========================
 # THREAD
@@ -280,6 +220,7 @@ def evaluar_drone():
 
     estado_maia["progreso"] = 0
     estado_maia["mensaje"] = "Iniciando..."
+    estado_maia["estado"] = "PROCESANDO"
 
     threading.Thread(target=proceso_maia, args=(idea,), daemon=True).start()
 
@@ -296,14 +237,15 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 16,
+        "fase": 17,
         "capacidades": [
-            "Diseño de drones",
-            "Software embebido",
-            "Simulación",
-            "Modelo 3D",
-            "Hardware real",
-            "Validación técnica"
+            "Arquitectura tipo PX4",
+            "Generación de firmware",
+            "Control PID",
+            "IA de decisión",
+            "Modelo 3D automático",
+            "Validación física",
+            "Generación de proyecto real"
         ]
     })
 

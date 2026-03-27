@@ -3,6 +3,7 @@ from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
+from core.maia_hardware_generator import generar_hardware  # 🔥 NUEVO
 
 import os, json, time, threading, subprocess, zipfile, re, sys
 
@@ -106,7 +107,6 @@ def ejecutar_main(ruta):
             timeout=5
         )
         return result.stdout or result.stderr
-
     except Exception as e:
         return str(e)
 
@@ -183,15 +183,15 @@ Sistema viable desde el punto de vista aerodinámico.
 
 - Relación empuje/peso adecuada
 - Autonomía suficiente
-- Consumo dentro de parámetros eficientes
+- Consumo eficiente
 
-El sistema puede operar en condiciones reales con estabilidad moderada-alta.
+El sistema puede operar en condiciones reales con estabilidad alta.
 """
             else:
                 diagnostico = f"""
 Sistema NO viable.
 
-Problemas detectados:
+Problemas:
 {chr(10).join(validacion["errores"])}
 
 Requiere rediseño estructural y optimización energética.
@@ -209,6 +209,7 @@ Requiere rediseño estructural y optimización energética.
             # CAPA 3
             # =========================
             self.progreso(75, "Generando sistema completo...")
+
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 5),
@@ -218,17 +219,8 @@ Requiere rediseño estructural y optimización energética.
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
-            # 🔥 HARDWARE
-            hardware = [
-                "Motores brushless KV",
-                "ESC 30A–60A",
-                "Batería LiPo",
-                "Pixhawk",
-                "GPS",
-                "IMU",
-                "Barómetro",
-                "Sensor ultrasonido"
-            ]
+            # 🔥 HARDWARE PRO REAL
+            hardware = generar_hardware(analisis, fisica)
 
             self.progreso(100, "Completado")
 
@@ -293,7 +285,7 @@ def maia_capacidades():
             "Diagnóstico profesional",
             "Simulación ejecutable",
             "Modelo 3D",
-            "Arquitectura modular avanzada"
+            "Hardware inteligente dinámico"
         ]
     })
 

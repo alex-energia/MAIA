@@ -3,7 +3,8 @@ from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
-from core.maia_hardware_generator import generar_hardware  # 🔥 NUEVO
+from core.maia_hardware_generator import generar_hardware
+from core.maia_mission_planner import analizar_mision  # 🔥 NUEVO
 
 import os, json, time, threading, subprocess, zipfile, re, sys
 
@@ -74,6 +75,7 @@ endsolid drone
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
+
     os.makedirs(base, exist_ok=True)
 
     software = generar_software_completo(tipo)
@@ -96,6 +98,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
+
         if not os.path.exists(main_path):
             return "⚠️ main.py no encontrado"
 
@@ -106,17 +109,21 @@ def ejecutar_main(ruta):
             text=True,
             timeout=5
         )
+
         return result.stdout or result.stderr
+
     except Exception as e:
         return str(e)
 
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
+
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, _, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
+
     return zip_path
 
 # =========================
@@ -138,16 +145,19 @@ class MaiaCore:
             # CAPA 1
             # =========================
             self.progreso(20, "Analizando idea...")
-            core_data = analizar_drone(idea)
 
+            core_data = analizar_drone(idea)
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
+
+            # 🔥 NUEVO: INTELIGENCIA DE MISIÓN
+            mision = analizar_mision(idea)
 
             # 🔥 ANALISIS PRO
             analisis_pro = {
                 "tipo": analisis.get("tipo"),
                 "peso": analisis.get("peso"),
-                "mision": "Operación autónoma en entorno real",
+                "mision": mision.get("tipo"),
                 "complejidad": "Media-Alta",
                 "riesgos": [
                     "Fallo de batería",
@@ -160,10 +170,10 @@ class MaiaCore:
             # CAPA 2
             # =========================
             self.progreso(50, "Validando...")
+
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            # 🔥 FISICA PRO
             empuje = fisica.get("empuje", 0)
             peso = analisis.get("peso", 1)
 
@@ -176,28 +186,22 @@ class MaiaCore:
                 "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
             }
 
-            # 🔥 DIAGNOSTICO PRO
+            # 🔥 DIAGNOSTICO PRO (FIX STRING)
             if validacion["viabilidad"] == "VIABLE ✅":
-                diagnostico = f"""
-Sistema viable desde el punto de vista aerodinámico.
-
-- Relación empuje/peso adecuada
-- Autonomía suficiente
-- Consumo eficiente
-
-El sistema puede operar en condiciones reales con estabilidad alta.
-"""
+                diagnostico = (
+                    "Sistema viable desde el punto de vista aerodinámico.\n"
+                    "- Relación empuje/peso adecuada\n"
+                    "- Autonomía suficiente\n"
+                    "- Consumo eficiente\n"
+                    "El sistema puede operar en condiciones reales con estabilidad alta."
+                )
             else:
-                diagnostico = f"""
-Sistema NO viable.
+                errores_txt = "\n".join(validacion["errores"])
+                diagnostico = (
+                    f"Sistema NO viable.\nProblemas:\n{errores_txt}\n"
+                    "Requiere rediseño estructural y optimización energética."
+                )
 
-Problemas:
-{chr(10).join(validacion["errores"])}
-
-Requiere rediseño estructural y optimización energética.
-"""
-
-            # 🔥 SOLUCIONES PRO
             soluciones_pro = validacion["soluciones"] + [
                 "Optimizar relación peso/empuje",
                 "Usar baterías de mayor densidad energética",
@@ -219,8 +223,13 @@ Requiere rediseño estructural y optimización energética.
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
-            # 🔥 HARDWARE PRO REAL
+            # 🔥 HARDWARE PRO + MISIÓN
             hardware = generar_hardware(analisis, fisica)
+
+            # 🔥 añadir sensores según misión
+            if isinstance(hardware, dict):
+                if "sensores" in hardware and isinstance(hardware["sensores"], list):
+                    hardware["sensores"].extend(mision.get("sensores_extra", []))
 
             self.progreso(100, "Completado")
 
@@ -233,6 +242,7 @@ Requiere rediseño estructural y optimización energética.
                 "soluciones": soluciones_pro,
                 "software": software,
                 "hardware": hardware,
+                "mision": mision,  # 🔥 NUEVO
                 "modelo_3d": f"{ruta}/models/drone.obj",
                 "salida": salida,
                 "software_generado": ruta,
@@ -278,22 +288,24 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 18,
+        "fase": 19,
         "capacidades": [
             "Ingeniería autónoma completa",
-            "Generación de software real",
+            "Hardware inteligente dinámico",
+            "Software modular real",
             "Diagnóstico profesional",
-            "Simulación ejecutable",
-            "Modelo 3D",
-            "Hardware inteligente dinámico"
+            "Adaptación por misión",
+            "Diseño orientado a propósito"
         ]
     })
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
+
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
+
     return "No disponible", 404
 
 @app.route("/maia_invent")

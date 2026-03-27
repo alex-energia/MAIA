@@ -1,4 +1,5 @@
 # 🧠 MAIA SOFTWARE GENERATOR – NIVEL GLI REAL
+
 import json
 
 def generar_software_completo(tipo="general"):
@@ -41,10 +42,9 @@ def generar_software_completo(tipo="general"):
     codigo = {
 
         # =========================
-        # PID FIX
+        # PID (FIX REAL)
         # =========================
-        "firmware/pid.py": """
-class PID:
+        "firmware/pid.py": """class PID:
     def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
@@ -61,25 +61,20 @@ class PID:
 """,
 
         # =========================
-        # 🚀 FLIGHT CONTROLLER 3D (FASE 21)
+        # FLIGHT CONTROLLER 3D
         # =========================
-        "firmware/flight_controller.py": """
-from firmware.pid import PID
+        "firmware/flight_controller.py": """from firmware.pid import PID
 
 class FlightController:
-
     def __init__(self):
 
-        # Posición y velocidad 3D
         self.pos = [0.0, 0.0, 0.0]
         self.vel = [0.0, 0.0, 0.0]
 
-        # Física
         self.masa = 1.5
         self.g = 9.81
         self.drag = 0.1
 
-        # PID por eje
         self.pid_x = PID(1.0, 0.01, 0.1)
         self.pid_y = PID(1.0, 0.01, 0.1)
         self.pid_z = PID(1.2, 0.02, 0.1)
@@ -90,20 +85,16 @@ class FlightController:
         fy = self.pid_y.compute(objetivo[1], self.pos[1], dt)
         fz = self.pid_z.compute(objetivo[2], self.pos[2], dt)
 
-        # gravedad
         fz -= self.masa * self.g
 
-        # drag
         fx -= self.drag * self.vel[0]
         fy -= self.drag * self.vel[1]
         fz -= self.drag * self.vel[2]
 
-        # aceleración
         ax = fx / self.masa
         ay = fy / self.masa
         az = fz / self.masa
 
-        # integración
         self.vel[0] += ax * dt
         self.vel[1] += ay * dt
         self.vel[2] += az * dt
@@ -113,19 +104,17 @@ class FlightController:
         self.pos[2] += self.vel[2] * dt
 
         return {
-            "pos": self.pos,
-            "vel": self.vel,
+            "pos": self.pos.copy(),
+            "vel": self.vel.copy(),
             "fuerza": [fx, fy, fz]
         }
 """,
 
-        "firmware/navigation.py": """
-def calcular_ruta(origen, destino):
+        "firmware/navigation.py": """def calcular_ruta(origen, destino):
     return [origen, destino]
 """,
 
-        "firmware/failsafe.py": """
-class FailSafe:
+        "firmware/failsafe.py": """class FailSafe:
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -134,14 +123,14 @@ class FailSafe:
         return "OK"
 """,
 
-        "drivers/gps.py": """
-import random
+        "drivers/gps.py": """import random
+
 def leer_gps():
     return {"lat": random.uniform(-1,1), "lon": random.uniform(-1,1)}
 """,
 
-        "drivers/imu.py": """
-import random
+        "drivers/imu.py": """import random
+
 def leer_imu():
     return {
         "acc": [random.uniform(-1,1) for _ in range(3)],
@@ -149,34 +138,31 @@ def leer_imu():
     }
 """,
 
-        "drivers/barometer.py": """
-import random
+        "drivers/barometer.py": """import random
+
 def leer_altura(real):
     return real + random.uniform(-0.2, 0.2)
 """,
 
-        "drivers/camera.py": """
-def capturar_imagen():
+        "drivers/camera.py": """def capturar_imagen():
     return "imagen_simulada.jpg"
 """,
 
-        "drivers/lidar.py": """
-def medir_distancia():
+        "drivers/lidar.py": """def medir_distancia():
     return 5.0
 """,
 
-        "ai/decision_model.py": """
-def decidir(sensor_data):
+        "ai/decision_model.py": """def decidir(sensor_data):
     if sensor_data.get("obstaculo"):
         return "EVADIR"
     return "CONTINUAR"
 """,
 
         # =========================
-        # 🚀 MAIN 3D (FASE 21)
+        # MAIN 3D + DATA EXPORT 🔥
         # =========================
-        "main.py": """
-import time
+        "main.py": """import time
+import json
 from firmware.flight_controller import FlightController
 from firmware.failsafe import FailSafe
 from drivers.gps import leer_gps
@@ -186,11 +172,13 @@ fc = FlightController()
 fs = FailSafe()
 
 dt = 0.1
-
-# Objetivo 3D
 objetivo = [5, 5, 10]
 
+datos = []
+
 for i in range(100):
+
+    t = i * dt
 
     estado_dron = fc.update(objetivo, dt)
 
@@ -199,12 +187,23 @@ for i in range(100):
 
     gps = leer_gps()
     imu = leer_imu()
-
     estado = fs.check(100, True)
 
-    print(f"t={i*dt:.1f}s | pos={pos} | vel={vel} | estado={estado}")
+    datos.append({
+        "t": t,
+        "x": pos[0],
+        "y": pos[1],
+        "z": pos[2],
+        "vx": vel[0],
+        "vy": vel[1],
+        "vz": vel[2]
+    })
 
-    time.sleep(0.05)
+    time.sleep(0.01)
+
+print("###DATA_START###")
+print(json.dumps(datos))
+print("###DATA_END###")
 
 print("✅ Simulación 3D completa")
 """

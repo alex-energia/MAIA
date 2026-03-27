@@ -2,13 +2,7 @@
 import json
 
 def generar_software_completo(tipo="general"):
-    """
-    Generador completo de software de drones a nivel ingeniería.
-    """
 
-    # =========================
-    # 📁 ARQUITECTURA COMPLETA
-    # =========================
     arquitectura = {
         "estructura": [
             "config/config.json",
@@ -26,9 +20,6 @@ def generar_software_completo(tipo="general"):
         ]
     }
 
-    # =========================
-    # 🧠 ALGORITMOS
-    # =========================
     algoritmos = [
         "Control PID (estabilidad)",
         "Filtro Kalman (estimación de estado)",
@@ -38,9 +29,6 @@ def generar_software_completo(tipo="general"):
         "Control adaptativo"
     ]
 
-    # =========================
-    # 📡 SENSORES
-    # =========================
     sensores = [
         "GPS",
         "IMU (acelerómetro + giroscopio)",
@@ -50,11 +38,11 @@ def generar_software_completo(tipo="general"):
         "Lidar"
     ]
 
-    # =========================
-    # 💻 CÓDIGO REAL
-    # =========================
     codigo = {
 
+        # =========================
+        # PID FIX
+        # =========================
         "firmware/pid.py": """
 class PID:
     def __init__(self, kp, ki, kd):
@@ -72,28 +60,63 @@ class PID:
         return (self.kp * error) + (self.ki * self.integral) + (self.kd * derivative)
 """,
 
+        # =========================
+        # 🚀 FLIGHT CONTROLLER 3D (FASE 21)
+        # =========================
         "firmware/flight_controller.py": """
 from firmware.pid import PID
 
 class FlightController:
+
     def __init__(self):
-        self.pid = PID(1.2, 0.02, 0.1)
-        self.altura = 0
-        self.velocidad = 0
+
+        # Posición y velocidad 3D
+        self.pos = [0.0, 0.0, 0.0]
+        self.vel = [0.0, 0.0, 0.0]
+
+        # Física
         self.masa = 1.5
         self.g = 9.81
+        self.drag = 0.1
+
+        # PID por eje
+        self.pid_x = PID(1.0, 0.01, 0.1)
+        self.pid_y = PID(1.0, 0.01, 0.1)
+        self.pid_z = PID(1.2, 0.02, 0.1)
 
     def update(self, objetivo, dt):
-        empuje = self.pid.compute(objetivo, self.altura, dt)
 
-        # Física real básica
-        fuerza = empuje - (self.masa * self.g)
-        aceleracion = fuerza / self.masa
+        fx = self.pid_x.compute(objetivo[0], self.pos[0], dt)
+        fy = self.pid_y.compute(objetivo[1], self.pos[1], dt)
+        fz = self.pid_z.compute(objetivo[2], self.pos[2], dt)
 
-        self.velocidad += aceleracion * dt
-        self.altura += self.velocidad * dt
+        # gravedad
+        fz -= self.masa * self.g
 
-        return self.altura, empuje
+        # drag
+        fx -= self.drag * self.vel[0]
+        fy -= self.drag * self.vel[1]
+        fz -= self.drag * self.vel[2]
+
+        # aceleración
+        ax = fx / self.masa
+        ay = fy / self.masa
+        az = fz / self.masa
+
+        # integración
+        self.vel[0] += ax * dt
+        self.vel[1] += ay * dt
+        self.vel[2] += az * dt
+
+        self.pos[0] += self.vel[0] * dt
+        self.pos[1] += self.vel[1] * dt
+        self.pos[2] += self.vel[2] * dt
+
+        return {
+            "pos": self.pos,
+            "vel": self.vel,
+            "fuerza": [fx, fy, fz]
+        }
 """,
 
         "firmware/navigation.py": """
@@ -149,41 +172,44 @@ def decidir(sensor_data):
     return "CONTINUAR"
 """,
 
+        # =========================
+        # 🚀 MAIN 3D (FASE 21)
+        # =========================
         "main.py": """
 import time
 from firmware.flight_controller import FlightController
 from firmware.failsafe import FailSafe
 from drivers.gps import leer_gps
 from drivers.imu import leer_imu
-from drivers.barometer import leer_altura
 
 fc = FlightController()
 fs = FailSafe()
 
 dt = 0.1
-objetivo = 10
+
+# Objetivo 3D
+objetivo = [5, 5, 10]
 
 for i in range(100):
 
-    altura_real, empuje = fc.update(objetivo, dt)
-    altura_sensor = leer_altura(altura_real)
+    estado_dron = fc.update(objetivo, dt)
+
+    pos = estado_dron["pos"]
+    vel = estado_dron["vel"]
 
     gps = leer_gps()
     imu = leer_imu()
 
     estado = fs.check(100, True)
 
-    print(f"t={i*dt:.1f}s | altura={altura_sensor:.2f} | empuje={empuje:.2f} | estado={estado}")
+    print(f"t={i*dt:.1f}s | pos={pos} | vel={vel} | estado={estado}")
 
     time.sleep(0.05)
 
-print("✅ Simulación completa")
+print("✅ Simulación 3D completa")
 """
     }
 
-    # =========================
-    # ⚙️ CONFIG
-    # =========================
     config = {
         "tipo": tipo,
         "control": "PID",
@@ -192,19 +218,13 @@ print("✅ Simulación completa")
         "dt": 0.1
     }
 
-    # =========================
-    # 🧾 RESUMEN TÉCNICO
-    # =========================
     resumen = {
-        "descripcion": "Sistema de dron autónomo con simulación física, control PID y sensores con ruido.",
+        "descripcion": "Sistema de dron autónomo con simulación física 3D y control PID multieje.",
         "nivel": "Ingeniería avanzada",
         "arquitectura": "Modular (firmware + drivers + IA)",
         "compatible": ["PX4 (conceptual)", "ArduPilot (conceptual)"]
     }
 
-    # =========================
-    # 🚀 RETORNO FINAL
-    # =========================
     return {
         "arquitectura": arquitectura,
         "algoritmos": algoritmos,

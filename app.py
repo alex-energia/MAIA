@@ -42,7 +42,8 @@ def generar_modelo_3d(base, peso):
 
     escala = max(1, peso / 5)
 
-    obj = f"""o Drone
+    obj = f"""
+o Drone
 v 0 0 0
 v {escala} 0 0
 v {escala} {escala} 0
@@ -52,9 +53,11 @@ v {escala} 0 {escala}
 v {escala} {escala} {escala}
 v 0 {escala} {escala}
 f 1 2 3 4
-f 5 6 7 8"""
+f 5 6 7 8
+"""
 
-    stl = f"""solid drone
+    stl = f"""
+solid drone
 facet normal 0 0 0
 outer loop
 vertex 0 0 0
@@ -62,7 +65,8 @@ vertex {escala} 0 0
 vertex {escala} {escala} 0
 endloop
 endfacet
-endsolid drone"""
+endsolid drone
+"""
 
     generar_archivo(f"{model_path}/drone.obj", obj)
     generar_archivo(f"{model_path}/drone.stl", stl)
@@ -91,11 +95,12 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# EJECUCIÓN
+# 🚀 EJECUCIÓN MEJORADA
 # =========================
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
+
         if not os.path.exists(main_path):
             return "⚠️ main.py no encontrado"
 
@@ -104,14 +109,32 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=10
         )
 
-        return result.stdout or result.stderr
+        salida = result.stdout.strip()
+        error = result.stderr.strip()
+
+        if error:
+            return f"⚠️ ERROR EN SIMULACIÓN:\n{error}"
+
+        if not salida:
+            return "⚠️ Simulación sin salida"
+
+        if len(salida) > 5000:
+            salida = salida[:5000] + "\n...\n[Salida truncada]"
+
+        return salida
+
+    except subprocess.TimeoutExpired:
+        return "⏱️ Simulación detenida por tiempo límite"
 
     except Exception as e:
-        return str(e)
+        return f"❌ Error ejecutando simulación: {str(e)}"
 
+# =========================
+# ZIP
+# =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
 
@@ -142,12 +165,11 @@ class MaiaCore:
             # CAPA 1
             # =========================
             self.progreso(20, "Analizando idea...")
-            core_data = analizar_drone(idea)
 
+            core_data = analizar_drone(idea)
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
 
-            # 🔥 MISIÓN
             mision = analizar_mision(idea)
 
             analisis_pro = {
@@ -182,7 +204,6 @@ class MaiaCore:
                 "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
             }
 
-            # DIAGNÓSTICO
             if validacion["viabilidad"] == "VIABLE ✅":
                 diagnostico = (
                     "Sistema viable.\n"
@@ -216,21 +237,18 @@ class MaiaCore:
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
-            # 🔥 HARDWARE
             hardware = generar_hardware(analisis, fisica)
 
-            # 🔥 SENSORES SIN DUPLICADOS
             if isinstance(hardware, dict):
                 sensores_base = set(hardware.get("sensores", []))
                 sensores_extra = set(mision.get("sensores_extra", []))
                 hardware["sensores"] = list(sensores_base.union(sensores_extra))
 
             # =========================
-            # 🔥 NUEVO NIVEL: CONSTRUCCIÓN REAL
+            # NIVEL CONSTRUCCIÓN REAL
             # =========================
-
-            # BOM (lista de compra)
             bom = []
+
             if isinstance(hardware, dict):
                 for k, v in hardware.items():
                     if isinstance(v, dict):
@@ -238,7 +256,6 @@ class MaiaCore:
                     elif isinstance(v, list):
                         bom.extend(v)
 
-            # Plan de ensamblaje
             ensamblaje = [
                 "1. Montar frame",
                 "2. Instalar motores",
@@ -308,11 +325,11 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 20,
+        "fase": 21,
         "capacidades": [
             "Diseño completo listo para construir",
-            "Hardware inteligente dinámico",
-            "Software ejecutable",
+            "Simulación física 3D",
+            "Software ejecutable real",
             "Lista de materiales (BOM)",
             "Plan de ensamblaje",
             "Adaptación por misión"
@@ -322,8 +339,10 @@ def maia_capacidades():
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
+
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
+
     return "No disponible", 404
 
 @app.route("/maia_invent")

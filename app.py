@@ -4,7 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 from core.maia_hardware_generator import generar_hardware
-from core.maia_mission_planner import analizar_mision  # 🔥 NUEVO
+from core.maia_mission_planner import analizar_mision
 
 import os, json, time, threading, subprocess, zipfile, re, sys
 
@@ -52,8 +52,7 @@ v {escala} 0 {escala}
 v {escala} {escala} {escala}
 v 0 {escala} {escala}
 f 1 2 3 4
-f 5 6 7 8
-"""
+f 5 6 7 8"""
 
     stl = f"""solid drone
 facet normal 0 0 0
@@ -63,14 +62,13 @@ vertex {escala} 0 0
 vertex {escala} {escala} 0
 endloop
 endfacet
-endsolid drone
-"""
+endsolid drone"""
 
     generar_archivo(f"{model_path}/drone.obj", obj)
     generar_archivo(f"{model_path}/drone.stl", stl)
 
 # =========================
-# 🧠 CREAR PROYECTO REAL
+# 🧠 PROYECTO
 # =========================
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
@@ -98,7 +96,6 @@ def crear_proyecto(nombre, peso, tipo="general"):
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
-
         if not os.path.exists(main_path):
             return "⚠️ main.py no encontrado"
 
@@ -145,15 +142,14 @@ class MaiaCore:
             # CAPA 1
             # =========================
             self.progreso(20, "Analizando idea...")
-
             core_data = analizar_drone(idea)
+
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
 
-            # 🔥 NUEVO: INTELIGENCIA DE MISIÓN
+            # 🔥 MISIÓN
             mision = analizar_mision(idea)
 
-            # 🔥 ANALISIS PRO
             analisis_pro = {
                 "tipo": analisis.get("tipo"),
                 "peso": analisis.get("peso"),
@@ -186,27 +182,24 @@ class MaiaCore:
                 "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
             }
 
-            # 🔥 DIAGNOSTICO PRO (FIX STRING)
+            # DIAGNÓSTICO
             if validacion["viabilidad"] == "VIABLE ✅":
                 diagnostico = (
-                    "Sistema viable desde el punto de vista aerodinámico.\n"
-                    "- Relación empuje/peso adecuada\n"
+                    "Sistema viable.\n"
+                    "- Empuje correcto\n"
                     "- Autonomía suficiente\n"
-                    "- Consumo eficiente\n"
-                    "El sistema puede operar en condiciones reales con estabilidad alta."
+                    "- Estabilidad adecuada"
                 )
             else:
-                errores_txt = "\n".join(validacion["errores"])
                 diagnostico = (
-                    f"Sistema NO viable.\nProblemas:\n{errores_txt}\n"
-                    "Requiere rediseño estructural y optimización energética."
+                    "Sistema NO viable.\n"
+                    + "\n".join(validacion["errores"])
                 )
 
             soluciones_pro = validacion["soluciones"] + [
-                "Optimizar relación peso/empuje",
-                "Usar baterías de mayor densidad energética",
-                "Mejorar control PID",
-                "Incorporar sensores redundantes"
+                "Optimizar consumo energético",
+                "Revisar dimensionamiento de motores",
+                "Ajustar control PID"
             ]
 
             # =========================
@@ -216,20 +209,46 @@ class MaiaCore:
 
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
-                analisis.get("peso", 5),
+                peso,
                 analisis.get("tipo", "general")
             )
 
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
-            # 🔥 HARDWARE PRO + MISIÓN
+            # 🔥 HARDWARE
             hardware = generar_hardware(analisis, fisica)
 
-            # 🔥 añadir sensores según misión
+            # 🔥 SENSORES SIN DUPLICADOS
             if isinstance(hardware, dict):
-                if "sensores" in hardware and isinstance(hardware["sensores"], list):
-                    hardware["sensores"].extend(mision.get("sensores_extra", []))
+                sensores_base = set(hardware.get("sensores", []))
+                sensores_extra = set(mision.get("sensores_extra", []))
+                hardware["sensores"] = list(sensores_base.union(sensores_extra))
+
+            # =========================
+            # 🔥 NUEVO NIVEL: CONSTRUCCIÓN REAL
+            # =========================
+
+            # BOM (lista de compra)
+            bom = []
+            if isinstance(hardware, dict):
+                for k, v in hardware.items():
+                    if isinstance(v, dict):
+                        bom.append(f"{k}: {json.dumps(v)}")
+                    elif isinstance(v, list):
+                        bom.extend(v)
+
+            # Plan de ensamblaje
+            ensamblaje = [
+                "1. Montar frame",
+                "2. Instalar motores",
+                "3. Conectar ESC",
+                "4. Instalar controlador",
+                "5. Integrar sensores",
+                "6. Configurar software",
+                "7. Calibración",
+                "8. Prueba de vuelo"
+            ]
 
             self.progreso(100, "Completado")
 
@@ -242,7 +261,9 @@ class MaiaCore:
                 "soluciones": soluciones_pro,
                 "software": software,
                 "hardware": hardware,
-                "mision": mision,  # 🔥 NUEVO
+                "mision": mision,
+                "bom": bom,
+                "ensamblaje": ensamblaje,
                 "modelo_3d": f"{ruta}/models/drone.obj",
                 "salida": salida,
                 "software_generado": ruta,
@@ -270,7 +291,6 @@ def evaluar_drone():
     idea = data.get("idea", "")
 
     estado_maia["progreso"] = 0
-    estado_maia["mensaje"] = "Iniciando..."
     estado_maia["estado"] = "PROCESANDO"
 
     threading.Thread(target=proceso_maia, args=(idea,), daemon=True).start()
@@ -288,24 +308,22 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 19,
+        "fase": 20,
         "capacidades": [
-            "Ingeniería autónoma completa",
+            "Diseño completo listo para construir",
             "Hardware inteligente dinámico",
-            "Software modular real",
-            "Diagnóstico profesional",
-            "Adaptación por misión",
-            "Diseño orientado a propósito"
+            "Software ejecutable",
+            "Lista de materiales (BOM)",
+            "Plan de ensamblaje",
+            "Adaptación por misión"
         ]
     })
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
-
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-
     return "No disponible", 404
 
 @app.route("/maia_invent")

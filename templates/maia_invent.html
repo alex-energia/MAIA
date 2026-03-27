@@ -1,82 +1,92 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MAIA INVENT</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #0f172a;
-            color: #e5e7eb;
-        }
-        textarea {
-            width: 100%;
-            height: 80px;
-            border-radius: 8px;
-            padding: 10px;
-        }
-        button {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            background: #2563eb;
-            color: white;
-        }
-        #panel_maia {
-            display: none;
-            background: black;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-        #barra_container {
-            width: 100%;
-            background: #111;
-            margin-top: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            display: none;
-        }
-        #barra {
-            width: 0%;
-            height: 25px;
-            background: #22c55e;
-            text-align: center;
-            color: white;
-            font-weight: bold;
-        }
-        .panel {
-            background: #020617;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        .ok { color: #22c55e; }
-        .bad { color: #ef4444; }
-        pre {
-            background: black;
-            padding: 10px;
-            border-radius: 8px;
-            overflow: auto;
-            font-size: 12px;
-            max-height: 300px;
-        }
-        .bloque {
-            margin-top: 20px;
-            padding: 10px;
-            background: #020617;
-            border-radius: 10px;
-        }
-    </style>
+<title>MAIA INVENT</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: #e5e7eb;
+}
+
+textarea {
+    width: 100%;
+    height: 80px;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+button {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: #2563eb;
+    color: white;
+}
+
+#panel_maia {
+    display: none;
+    background: black;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 10px;
+}
+
+#barra_container {
+    width: 100%;
+    background: #111;
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+}
+
+#barra {
+    width: 0%;
+    height: 25px;
+    background: #22c55e;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+}
+
+.panel {
+    background: #020617;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.ok { color: #22c55e; }
+.bad { color: #ef4444; }
+
+pre {
+    background: black;
+    padding: 10px;
+    border-radius: 8px;
+    overflow: auto;
+    font-size: 12px;
+    max-height: 300px;
+}
+
+.bloque {
+    margin-top: 20px;
+    padding: 10px;
+    background: #020617;
+    border-radius: 10px;
+}
+</style>
 </head>
+
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador de ingeniería de drones (FASE 18)</p>
 
 <textarea id="idea" placeholder="Ej: Drone autónomo con visión artificial"></textarea>
-
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -135,7 +145,6 @@ function monitorearResultado(){
                 clearInterval(intervalo);
                 cargarResultadoFinal();
             }
-
         }catch(e){
             clearInterval(intervalo);
         }
@@ -143,7 +152,7 @@ function monitorearResultado(){
 }
 
 // =========================
-// 🧠 RESULTADO
+// 🧠 RESULTADO PRO
 // =========================
 async function cargarResultadoFinal(){
 
@@ -162,7 +171,6 @@ async function cargarResultadoFinal(){
 
     let html = `
     <div class="panel">
-
         <h2 class="${clase}">${estado}</h2>
 
         <div class="bloque">
@@ -176,18 +184,18 @@ async function cargarResultadoFinal(){
         </div>
 
         <div class="bloque">
-            <h3>🧠 Diagnóstico profesional</h3>
+            <h3>🧠 Diagnóstico</h3>
             <pre>${data.diagnostico || "N/A"}</pre>
         </div>
 
         <div class="bloque">
             <h3>❌ Errores</h3>
-            <pre>${(data.errores || []).join("\n")}</pre>
+            <pre>${Array.isArray(data.errores) ? data.errores.join("\n") : JSON.stringify(data.errores, null, 2)}</pre>
         </div>
 
         <div class="bloque">
             <h3>🔧 Soluciones</h3>
-            <pre>${(data.soluciones || []).join("\n")}</pre>
+            <pre>${Array.isArray(data.soluciones) ? data.soluciones.join("\n") : JSON.stringify(data.soluciones, null, 2)}</pre>
         </div>
 
         <div class="bloque">
@@ -201,36 +209,45 @@ async function cargarResultadoFinal(){
     // =========================
     if(data.hardware){
 
-        html += `<div class="bloque"><h3>⚙️ Hardware</h3>`;
+        html += `<div class="bloque"><h3>⚙️ Hardware profesional</h3>`;
 
-        // Si es array (fallback)
         if(Array.isArray(data.hardware)){
             html += `<pre>${data.hardware.join("\n")}</pre>`;
         } else {
 
             if(data.hardware.motores){
-                html += `<b>🔩 Motores</b>`;
+                html += `<h4>🔩 Propulsión</h4>`;
                 html += `<pre>${JSON.stringify(data.hardware.motores, null, 2)}</pre>`;
             }
 
+            if(data.hardware.esc){
+                html += `<h4>⚡ ESC</h4>`;
+                html += `<pre>${JSON.stringify(data.hardware.esc, null, 2)}</pre>`;
+            }
+
             if(data.hardware.bateria){
-                html += `<b>🔋 Batería</b>`;
+                html += `<h4>🔋 Energía</h4>`;
                 html += `<pre>${JSON.stringify(data.hardware.bateria, null, 2)}</pre>`;
             }
 
             if(data.hardware.controlador){
-                html += `<b>🧠 Controlador</b>`;
+                html += `<h4>🧠 Controlador</h4>`;
                 html += `<pre>${JSON.stringify(data.hardware.controlador, null, 2)}</pre>`;
             }
 
             if(data.hardware.sensores){
-                html += `<b>📡 Sensores</b>`;
-                html += `<pre>${data.hardware.sensores.join("\n")}</pre>`;
+                html += `<h4>📡 Sensores</h4>`;
+                html += `<pre>${Array.isArray(data.hardware.sensores) ? data.hardware.sensores.join("\n") : JSON.stringify(data.hardware.sensores, null, 2)}</pre>`;
             }
 
             if(data.hardware.conexiones){
-                html += `<b>🔌 Conexiones</b>`;
-                html += `<pre>${data.hardware.conexiones.join("\n")}</pre>`;
+                html += `<h4>🔌 Conexiones</h4>`;
+                html += `<pre>${Array.isArray(data.hardware.conexiones) ? data.hardware.conexiones.join("\n") : JSON.stringify(data.hardware.conexiones, null, 2)}</pre>`;
+            }
+
+            if(data.hardware.conectividad){
+                html += `<h4>📡 Comunicaciones</h4>`;
+                html += `<pre>${JSON.stringify(data.hardware.conectividad, null, 2)}</pre>`;
             }
         }
 
@@ -245,31 +262,14 @@ async function cargarResultadoFinal(){
         html += `<div class="bloque"><h2>🧠 SOFTWARE GENERADO</h2>`;
 
         if(data.software.arquitectura){
-            html += `<h3>📁 Arquitectura</h3>`;
             html += `<pre>${JSON.stringify(data.software.arquitectura, null, 2)}</pre>`;
         }
 
-        if(data.software.algoritmos){
-            html += `<h3>⚙️ Algoritmos</h3>`;
-            html += `<pre>${data.software.algoritmos.join("\n")}</pre>`;
-        }
-
-        if(data.software.sensores){
-            html += `<h3>📡 Sensores</h3>`;
-            html += `<pre>${data.software.sensores.join("\n")}</pre>`;
-        }
-
         if(data.software.codigo){
-            html += `<h3>💻 Código fuente completo</h3>`;
             for(const archivo in data.software.codigo){
                 html += `<b>📄 ${archivo}</b>`;
                 html += `<pre>${data.software.codigo[archivo]}</pre>`;
             }
-        }
-
-        if(data.software.config){
-            html += `<h3>⚙️ Configuración</h3>`;
-            html += `<pre>${JSON.stringify(data.software.config, null, 2)}</pre>`;
         }
 
         html += `</div>`;

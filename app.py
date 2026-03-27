@@ -4,14 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 
-import os
-import json
-import time
-import threading
-import subprocess
-import zipfile
-import re
-import sys
+import os, json, time, threading, subprocess, zipfile, re, sys
 
 print("🔥 MAIA STARTING...")
 
@@ -80,24 +73,18 @@ endsolid drone
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
-
     os.makedirs(base, exist_ok=True)
 
-    # 🔥 GENERAR SOFTWARE COMPLETO
     software = generar_software_completo(tipo)
 
-    # 🔥 CREAR ARCHIVOS REALES
     for ruta_relativa, contenido in software["codigo"].items():
-        ruta_completa = os.path.join(base, ruta_relativa)
-        generar_archivo(ruta_completa, contenido)
+        generar_archivo(os.path.join(base, ruta_relativa), contenido)
 
-    # 🔥 CONFIG
     generar_archivo(
         os.path.join(base, "config/config.json"),
         json.dumps(software["config"], indent=4)
     )
 
-    # 🔥 MODELO 3D
     generar_modelo_3d(base, peso)
 
     return base, software
@@ -108,7 +95,6 @@ def crear_proyecto(nombre, peso, tipo="general"):
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
-
         if not os.path.exists(main_path):
             return "⚠️ main.py no encontrado"
 
@@ -119,7 +105,6 @@ def ejecutar_main(ruta):
             text=True,
             timeout=5
         )
-
         return result.stdout or result.stderr
 
     except Exception as e:
@@ -127,13 +112,11 @@ def ejecutar_main(ruta):
 
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
-
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, _, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
-
     return zip_path
 
 # =========================
@@ -151,36 +134,81 @@ class MaiaCore:
         global resultado_global
 
         try:
+            # =========================
             # CAPA 1
+            # =========================
             self.progreso(20, "Analizando idea...")
             core_data = analizar_drone(idea)
 
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
 
+            # 🔥 ANALISIS PRO
+            analisis_pro = {
+                "tipo": analisis.get("tipo"),
+                "peso": analisis.get("peso"),
+                "mision": "Operación autónoma en entorno real",
+                "complejidad": "Media-Alta",
+                "riesgos": [
+                    "Fallo de batería",
+                    "Pérdida de señal",
+                    "Condiciones climáticas"
+                ]
+            }
+
+            # =========================
             # CAPA 2
+            # =========================
             self.progreso(50, "Validando...")
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            # 🔥 EXPLICACIÓN PROFESIONAL
+            # 🔥 FISICA PRO
+            empuje = fisica.get("empuje", 0)
+            peso = analisis.get("peso", 1)
+
+            fisica_pro = {
+                "autonomia": fisica.get("autonomia"),
+                "consumo": fisica.get("consumo"),
+                "empuje": empuje,
+                "empuje_minimo": peso * 9.81 * 2,
+                "relacion_empuje_peso": round(empuje / (peso * 9.81 + 1), 2),
+                "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
+            }
+
+            # 🔥 DIAGNOSTICO PRO
             if validacion["viabilidad"] == "VIABLE ✅":
-                explicacion = (
-                    f"El sistema es viable. Empuje: {fisica.get('empuje')} N, "
-                    f"Autonomía: {fisica.get('autonomia')} min. "
-                    f"La relación empuje/peso es adecuada para vuelo estable."
-                )
+                diagnostico = f"""
+Sistema viable desde el punto de vista aerodinámico.
+
+- Relación empuje/peso adecuada
+- Autonomía suficiente
+- Consumo dentro de parámetros eficientes
+
+El sistema puede operar en condiciones reales con estabilidad moderada-alta.
+"""
             else:
-                explicacion = (
-                    "Sistema NO viable por:\n"
-                    + "\n".join(validacion["errores"])
-                    + "\nSoluciones:\n"
-                    + "\n".join(validacion["soluciones"])
-                )
+                diagnostico = f"""
+Sistema NO viable.
 
+Problemas detectados:
+{chr(10).join(validacion["errores"])}
+
+Requiere rediseño estructural y optimización energética.
+"""
+
+            # 🔥 SOLUCIONES PRO
+            soluciones_pro = validacion["soluciones"] + [
+                "Optimizar relación peso/empuje",
+                "Usar baterías de mayor densidad energética",
+                "Mejorar control PID",
+                "Incorporar sensores redundantes"
+            ]
+
+            # =========================
             # CAPA 3
+            # =========================
             self.progreso(75, "Generando sistema completo...")
-
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 5),
@@ -190,25 +218,27 @@ class MaiaCore:
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
 
-            # 🔥 HARDWARE REAL
+            # 🔥 HARDWARE
             hardware = [
-                "Motores brushless KV adecuados",
+                "Motores brushless KV",
                 "ESC 30A–60A",
-                "Batería LiPo 3S/4S",
-                "Controlador Pixhawk",
-                "GPS + IMU",
-                "Frame de fibra de carbono"
+                "Batería LiPo",
+                "Pixhawk",
+                "GPS",
+                "IMU",
+                "Barómetro",
+                "Sensor ultrasonido"
             ]
 
             self.progreso(100, "Completado")
 
             resultado_global = {
                 "viabilidad": validacion["viabilidad"],
-                "explicacion": explicacion,
-                "analisis": analisis,
-                "fisica": fisica,
+                "analisis": analisis_pro,
+                "fisica": fisica_pro,
+                "diagnostico": diagnostico,
                 "errores": validacion["errores"],
-                "soluciones": validacion["soluciones"],
+                "soluciones": soluciones_pro,
                 "software": software,
                 "hardware": hardware,
                 "modelo_3d": f"{ruta}/models/drone.obj",
@@ -256,25 +286,22 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 17,
+        "fase": 18,
         "capacidades": [
+            "Ingeniería autónoma completa",
             "Generación de software real",
-            "Arquitectura modular tipo PX4",
-            "Drivers de sensores",
-            "IA de decisión",
-            "Modelo 3D automático",
-            "Validación física",
-            "Proyecto descargable"
+            "Diagnóstico profesional",
+            "Simulación ejecutable",
+            "Modelo 3D",
+            "Arquitectura modular avanzada"
         ]
     })
 
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
-
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-
     return "No disponible", 404
 
 @app.route("/maia_invent")

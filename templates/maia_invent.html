@@ -2,18 +2,21 @@
 <html>
 <head>
     <title>MAIA INVENT</title>
+
     <style>
         body {
             font-family: Arial;
             background: #0f172a;
             color: #e5e7eb;
         }
+
         textarea {
             width: 100%;
             height: 80px;
             border-radius: 8px;
             padding: 10px;
         }
+
         button {
             padding: 10px;
             margin: 5px;
@@ -23,14 +26,15 @@
             background: #2563eb;
             color: white;
         }
+
         #panel_maia {
             display: none;
             background: black;
-            color: white;
             padding: 20px;
             margin-top: 20px;
             border-radius: 10px;
         }
+
         #barra_container {
             width: 100%;
             background: #111;
@@ -39,6 +43,7 @@
             overflow: hidden;
             display: none;
         }
+
         #barra {
             width: 0%;
             height: 25px;
@@ -47,12 +52,14 @@
             color: white;
             font-weight: bold;
         }
+
         .panel {
             background: #020617;
             padding: 15px;
             border-radius: 10px;
             margin-top: 20px;
         }
+
         .ok { color: #22c55e; }
         .bad { color: #ef4444; }
 
@@ -62,6 +69,14 @@
             border-radius: 8px;
             overflow: auto;
             font-size: 12px;
+            max-height: 300px;
+        }
+
+        .bloque {
+            margin-top: 20px;
+            padding: 10px;
+            background: #020617;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -69,9 +84,9 @@
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
-<p>Generador de ingeniería de drones (nivel GLI)</p>
+<p>Generador de ingeniería de drones (FASE 18)</p>
 
-<textarea id="idea" placeholder="Ej: Drone autónomo para incendios con sensores térmicos"></textarea>
+<textarea id="idea" placeholder="Ej: Drone autónomo con visión artificial y navegación inteligente"></textarea>
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -137,12 +152,14 @@ function monitorearResultado(){
 }
 
 // =========================
-// 🧠 RESULTADO COMPLETO
+// 🧠 RESULTADO PRO FASE 18
 // =========================
 async function cargarResultadoFinal(){
 
     let res = await fetch("/maia_resultado");
     let data = await res.json();
+
+    console.log("🔥 DATA COMPLETA:", data); // DEBUG
 
     if(!data || Object.keys(data).length === 0){
         document.getElementById("resultado").innerHTML = "⚠️ Sin resultado";
@@ -156,71 +173,66 @@ async function cargarResultadoFinal(){
     <div class="panel">
         <h2 class="${clase}">${estado}</h2>
 
-        <h3>📦 Análisis</h3>
-        Tipo: ${data.analisis?.tipo}<br>
-        Peso: ${data.analisis?.peso} kg
+        <div class="bloque">
+            <h3>📦 Análisis técnico</h3>
+            <pre>${JSON.stringify(data.analisis || {}, null, 2)}</pre>
+        </div>
 
-        <h3>⚡ Física</h3>
-        Autonomía: ${data.fisica?.autonomia} min<br>
-        Consumo: ${data.fisica?.consumo} W<br>
-        Empuje: ${data.fisica?.empuje}
+        <div class="bloque">
+            <h3>⚡ Física del sistema</h3>
+            <pre>${JSON.stringify(data.fisica || {}, null, 2)}</pre>
+        </div>
 
-        <h3>🧠 Diagnóstico</h3>
-        <pre>${data.explicacion}</pre>
+        <div class="bloque">
+            <h3>🧠 Diagnóstico profesional</h3>
+            <pre>${data.explicacion || "N/A"}</pre>
+        </div>
 
-        <h3>❌ Errores</h3>
-        <pre>${(data.errores || []).join("\n")}</pre>
+        <div class="bloque">
+            <h3>❌ Errores</h3>
+            <pre>${(data.errores || []).join("\n")}</pre>
+        </div>
 
-        <h3>🔧 Soluciones</h3>
-        <pre>${(data.soluciones || []).join("\n")}</pre>
+        <div class="bloque">
+            <h3>🔧 Soluciones</h3>
+            <pre>${(data.soluciones || []).join("\n")}</pre>
+        </div>
 
-        <h3>💻 Simulación</h3>
-        <pre>${data.salida}</pre>
+        <div class="bloque">
+            <h3>💻 Simulación</h3>
+            <pre>${data.salida || ""}</pre>
+        </div>
 
-        <h3>⚙️ Hardware</h3>
-        <pre>${(data.hardware || []).join("\n")}</pre>
-
-        <h3>🧊 Modelo 3D</h3>
-        <pre>${data.modelo_3d}</pre>
-
-        <h3>📁 Proyecto</h3>
-        ${data.software_generado}
-        <br><br>
-
-        <a href="/descargar_proyecto" target="_blank">
-            <button>⬇ Descargar</button>
-        </a>
+        <div class="bloque">
+            <h3>⚙️ Hardware</h3>
+            <pre>${(data.hardware || []).join("\n")}</pre>
+        </div>
     `;
 
     // =========================
-    // 💻 SOFTWARE COMPLETO 🔥
+    // 💻 SOFTWARE REAL 🔥🔥🔥
     // =========================
     if(data.software){
 
-        html += `<h2>🧠 SOFTWARE GENERADO</h2>`;
+        html += `<div class="bloque"><h2>🧠 SOFTWARE GENERADO</h2>`;
 
-        // Arquitectura
         if(data.software.arquitectura){
             html += `<h3>📁 Arquitectura</h3>`;
-            let estructura = data.software.arquitectura.estructura || [];
-            html += `<pre>${estructura.join("\n")}</pre>`;
+            html += `<pre>${JSON.stringify(data.software.arquitectura, null, 2)}</pre>`;
         }
 
-        // Algoritmos
         if(data.software.algoritmos){
             html += `<h3>⚙️ Algoritmos</h3>`;
             html += `<pre>${data.software.algoritmos.join("\n")}</pre>`;
         }
 
-        // Sensores
         if(data.software.sensores){
             html += `<h3>📡 Sensores</h3>`;
             html += `<pre>${data.software.sensores.join("\n")}</pre>`;
         }
 
-        // Código REAL
         if(data.software.codigo){
-            html += `<h3>💻 Código fuente</h3>`;
+            html += `<h3>💻 Código fuente completo</h3>`;
 
             for(const archivo in data.software.codigo){
                 html += `
@@ -230,17 +242,32 @@ async function cargarResultadoFinal(){
             }
         }
 
-        // Config
         if(data.software.config){
             html += `<h3>⚙️ Configuración</h3>`;
             html += `<pre>${JSON.stringify(data.software.config, null, 2)}</pre>`;
         }
+
+        html += `</div>`;
     }
 
-    html += `</div>`;
+    html += `
+        <div class="bloque">
+            <h3>🧊 Modelo 3D</h3>
+            <pre>${data.modelo_3d}</pre>
+        </div>
+
+        <div class="bloque">
+            <h3>📁 Proyecto</h3>
+            ${data.software_generado}
+            <br><br>
+            <a href="/descargar_proyecto" target="_blank">
+                <button>⬇ Descargar</button>
+            </a>
+        </div>
+    </div>
+    `;
 
     document.getElementById("resultado").innerHTML = html;
-
     window.ultimoProyecto = data;
 }
 
@@ -266,6 +293,7 @@ function verCapacidades() {
 // 💾 GUARDAR
 // =========================
 async function guardarProyectoInvent(){
+
     if(!window.ultimoProyecto){
         alert("⚠️ Primero genera una idea");
         return;

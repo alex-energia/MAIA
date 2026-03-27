@@ -9,14 +9,12 @@ body {
     background: #0f172a;
     color: #e5e7eb;
 }
-
 textarea {
     width: 100%;
     height: 80px;
     border-radius: 8px;
     padding: 10px;
 }
-
 button {
     padding: 10px;
     margin: 5px;
@@ -26,7 +24,6 @@ button {
     background: #2563eb;
     color: white;
 }
-
 #panel_maia {
     display: none;
     background: black;
@@ -34,7 +31,6 @@ button {
     margin-top: 20px;
     border-radius: 10px;
 }
-
 #barra_container {
     width: 100%;
     background: #111;
@@ -43,7 +39,6 @@ button {
     overflow: hidden;
     display: none;
 }
-
 #barra {
     width: 0%;
     height: 25px;
@@ -52,17 +47,14 @@ button {
     color: white;
     font-weight: bold;
 }
-
 .panel {
     background: #020617;
     padding: 15px;
     border-radius: 10px;
     margin-top: 20px;
 }
-
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
-
 pre {
     background: black;
     padding: 10px;
@@ -71,7 +63,6 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
-
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -84,9 +75,10 @@ pre {
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
-<p>Generador de ingeniería de drones (FASE 18)</p>
+<p>Generador de ingeniería de drones (FASE 20 🔥)</p>
 
 <textarea id="idea" placeholder="Ej: Drone autónomo con visión artificial"></textarea>
+
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -211,47 +203,45 @@ async function cargarResultadoFinal(){
 
         html += `<div class="bloque"><h3>⚙️ Hardware profesional</h3>`;
 
-        if(Array.isArray(data.hardware)){
-            html += `<pre>${data.hardware.join("\n")}</pre>`;
-        } else {
+        if(data.hardware.componentes){
+            html += `<h4>🔩 Componentes</h4>`;
+            html += `<pre>${JSON.stringify(data.hardware.componentes, null, 2)}</pre>`;
+        }
 
-            if(data.hardware.motores){
-                html += `<h4>🔩 Propulsión</h4>`;
-                html += `<pre>${JSON.stringify(data.hardware.motores, null, 2)}</pre>`;
-            }
+        if(data.hardware.sensores){
+            html += `<h4>📡 Sensores</h4>`;
+            html += `<pre>${data.hardware.sensores.join("\n")}</pre>`;
+        }
 
-            if(data.hardware.esc){
-                html += `<h4>⚡ ESC</h4>`;
-                html += `<pre>${JSON.stringify(data.hardware.esc, null, 2)}</pre>`;
-            }
+        // 🔥 FIX CONEXIONES (doble compatibilidad)
+        let conexiones = data.hardware.conexionado || data.hardware.conexiones;
 
-            if(data.hardware.bateria){
-                html += `<h4>🔋 Energía</h4>`;
-                html += `<pre>${JSON.stringify(data.hardware.bateria, null, 2)}</pre>`;
-            }
-
-            if(data.hardware.controlador){
-                html += `<h4>🧠 Controlador</h4>`;
-                html += `<pre>${JSON.stringify(data.hardware.controlador, null, 2)}</pre>`;
-            }
-
-            if(data.hardware.sensores){
-                html += `<h4>📡 Sensores</h4>`;
-                html += `<pre>${Array.isArray(data.hardware.sensores) ? data.hardware.sensores.join("\n") : JSON.stringify(data.hardware.sensores, null, 2)}</pre>`;
-            }
-
-            if(data.hardware.conexiones){
-                html += `<h4>🔌 Conexiones</h4>`;
-                html += `<pre>${Array.isArray(data.hardware.conexiones) ? data.hardware.conexiones.join("\n") : JSON.stringify(data.hardware.conexiones, null, 2)}</pre>`;
-            }
-
-            if(data.hardware.conectividad){
-                html += `<h4>📡 Comunicaciones</h4>`;
-                html += `<pre>${JSON.stringify(data.hardware.conectividad, null, 2)}</pre>`;
-            }
+        if(conexiones){
+            html += `<h4>🔌 Conexiones</h4>`;
+            html += `<pre>${conexiones.join("\n")}</pre>`;
         }
 
         html += `</div>`;
+    }
+
+    // =========================
+    // 🧾 BOM 🔥 NUEVO
+    // =========================
+    if(data.bom){
+        html += `<div class="bloque">
+            <h3>🧾 Lista de materiales (BOM)</h3>
+            <pre>${data.bom.join("\n")}</pre>
+        </div>`;
+    }
+
+    // =========================
+    // 🔧 ENSAMBLAJE 🔥 NUEVO
+    // =========================
+    if(data.ensamblaje){
+        html += `<div class="bloque">
+            <h3>🔧 Plan de ensamblaje</h3>
+            <pre>${data.ensamblaje.join("\n")}</pre>
+        </div>`;
     }
 
     // =========================
@@ -294,6 +284,7 @@ async function cargarResultadoFinal(){
     `;
 
     document.getElementById("resultado").innerHTML = html;
+
     window.ultimoProyecto = data;
 }
 
@@ -306,6 +297,7 @@ function verCapacidades(){
     .then(data => {
         let panel = document.getElementById("panel_maia");
         panel.style.display = "block";
+
         panel.innerHTML = `
             <h2>🚀 MAIA FASE ${data.fase}</h2>
             <ul>

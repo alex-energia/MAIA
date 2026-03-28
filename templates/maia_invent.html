@@ -2,21 +2,18 @@
 <html>
 <head>
 <title>MAIA INVENT</title>
-
 <style>
 body {
     font-family: Arial;
     background: #0f172a;
     color: #e5e7eb;
 }
-
 textarea {
     width: 100%;
     height: 80px;
     border-radius: 8px;
     padding: 10px;
 }
-
 button {
     padding: 10px;
     margin: 5px;
@@ -26,7 +23,6 @@ button {
     background: #2563eb;
     color: white;
 }
-
 #panel_maia {
     display: none;
     background: black;
@@ -34,7 +30,6 @@ button {
     margin-top: 20px;
     border-radius: 10px;
 }
-
 #barra_container {
     width: 100%;
     background: #111;
@@ -43,7 +38,6 @@ button {
     overflow: hidden;
     display: none;
 }
-
 #barra {
     width: 0%;
     height: 25px;
@@ -52,17 +46,14 @@ button {
     color: white;
     font-weight: bold;
 }
-
 .panel {
     background: #020617;
     padding: 15px;
     border-radius: 10px;
     margin-top: 20px;
 }
-
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
-
 pre {
     background: black;
     padding: 10px;
@@ -71,7 +62,6 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
-
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -79,7 +69,6 @@ pre {
     border-radius: 10px;
 }
 </style>
-
 </head>
 
 <body>
@@ -88,7 +77,6 @@ pre {
 <p>Generador de ingeniería de drones (FASE 22 🔥)</p>
 
 <textarea id="idea" placeholder="Ej: Drone autónomo con visión artificial"></textarea>
-
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -151,12 +139,11 @@ function monitorearResultado(){
         }catch(e){
             clearInterval(intervalo);
         }
-
     }, 700);
 }
 
 // =========================
-// 🧠 RESULTADO PRO + DATA 3D
+// 🧠 RESULTADO PRO + TELEMETRÍA SEGURA
 // =========================
 async function cargarResultadoFinal(){
 
@@ -171,19 +158,9 @@ async function cargarResultadoFinal(){
     let estado = data.viabilidad || "N/A";
     let clase = estado.includes("VIABLE") ? "ok" : "bad";
 
-    // 🔥 EXTRAER TELEMETRÍA
-    let telemetria = [];
-    if(data.salida && data.salida.includes("###DATA_START###")){
-        try{
-            let raw = data.salida.split("###DATA_START###")[1].split("###DATA_END###")[0];
-            telemetria = JSON.parse(raw);
-        }catch(e){
-            console.log("Error parseando telemetría");
-        }
-    }
-
     let html = `
     <div class="panel">
+
         <h2 class="${clase}">${estado}</h2>
 
         <div class="bloque">
@@ -205,41 +182,43 @@ async function cargarResultadoFinal(){
             <h3>💻 Simulación</h3>
             <pre>${data.salida || ""}</pre>
         </div>
-    `;
 
-    // =========================
-    // 📡 TELEMETRÍA (FASE 22 🔥)
-    // =========================
-    if(telemetria.length){
-        html += `
         <div class="bloque">
-            <h3>📡 Telemetría de vuelo (3D)</h3>
-            <pre>${JSON.stringify(telemetria.slice(0, 20), null, 2)}</pre>
-            <p>Mostrando primeros 20 puntos...</p>
+            <h3>📡 Telemetría</h3>
+            <pre id="telemetria_data">Procesando...</pre>
         </div>
-        `;
-    }
+    `;
 
     // =========================
     // ⚙️ HARDWARE
     // =========================
     if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware</h3>`;
-
-        if(data.hardware.sensores){
-            html += `<pre>${data.hardware.sensores.join("\n")}</pre>`;
-        }
-
-        html += `</div>`;
+        html += `
+        <div class="bloque">
+            <h3>⚙️ Hardware</h3>
+            <pre>${JSON.stringify(data.hardware, null, 2)}</pre>
+        </div>`;
     }
 
     // =========================
     // 🧾 BOM
     // =========================
     if(data.bom){
-        html += `<div class="bloque">
+        html += `
+        <div class="bloque">
             <h3>🧾 BOM</h3>
             <pre>${data.bom.join("\n")}</pre>
+        </div>`;
+    }
+
+    // =========================
+    // 💻 SOFTWARE (RESTAURADO)
+    // =========================
+    if(data.software){
+        html += `
+        <div class="bloque">
+            <h3>💻 Software</h3>
+            <pre>${JSON.stringify(data.software, null, 2)}</pre>
         </div>`;
     }
 
@@ -252,10 +231,42 @@ async function cargarResultadoFinal(){
                 <button>⬇ Descargar</button>
             </a>
         </div>
+
     </div>
     `;
 
     document.getElementById("resultado").innerHTML = html;
+
+    // =========================
+    // 📡 PARSEO SEGURO TELEMETRÍA (FIX CRÍTICO)
+    // =========================
+    try{
+        if(data.salida && data.salida.includes("###DATA_START###")){
+
+            let limpio = data.salida
+                .split("###DATA_START###")[1]
+                .split("###DATA_END###")[0]
+                .trim();
+
+            // 🔥 eliminar truncado
+            if(limpio.includes("[Salida truncada]")){
+                limpio = limpio.split("[Salida truncada]")[0].trim();
+            }
+
+            let telemetria = JSON.parse(limpio);
+
+            document.getElementById("telemetria_data").innerText =
+                JSON.stringify(telemetria.slice(0,20), null, 2);
+
+        } else {
+            document.getElementById("telemetria_data").innerText = "Sin datos";
+        }
+
+    }catch(e){
+        console.error("Error parseando telemetría", e);
+        document.getElementById("telemetria_data").innerText = "Error en telemetría";
+    }
+
     window.ultimoProyecto = data;
 }
 

@@ -1,4 +1,4 @@
-# 🧠 MAIA SOFTWARE GENERATOR – NIVEL GLI REAL (FIX PRO FINAL)
+# 🧠 MAIA SOFTWARE GENERATOR – NIVEL GLI REAL (FIX PRO FINAL + FASE 27)
 import json
 
 def generar_software_completo(tipo="general"):
@@ -16,6 +16,8 @@ def generar_software_completo(tipo="general"):
             "drivers/camera.py",
             "drivers/lidar.py",
             "ai/decision_model.py",
+            "comunicacion/conexion.py",
+            "comunicacion/mavlink.py",
             "main.py"
         ]
     }
@@ -40,7 +42,7 @@ def generar_software_completo(tipo="general"):
     codigo = {}
 
     # =========================
-    # PID CORREGIDO
+    # PID
     # =========================
     codigo["firmware/pid.py"] = """class PID:
     def __init__(self, kp, ki, kd):
@@ -128,6 +130,7 @@ class FlightController:
     # FAILSAFE
     # =========================
     codigo["firmware/failsafe.py"] = """class FailSafe:
+
     def check(self, bateria, gps):
         if bateria < 20:
             return "RETURN_HOME"
@@ -153,7 +156,73 @@ class FlightController:
 """
 
     # =========================
-    # MAIN PRO (ANTI-TRUNCADO)
+    # SOCKET
+    # =========================
+    codigo["comunicacion/conexion.py"] = """import socket
+import json
+
+class ConexionDrone:
+
+    def __init__(self, host="127.0.0.1", puerto=5005):
+        self.host = host
+        self.puerto = puerto
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def enviar(self, data):
+        try:
+            mensaje = json.dumps(data).encode()
+            self.sock.sendto(mensaje, (self.host, self.puerto))
+        except Exception as e:
+            print("Error enviando:", e)
+
+    def recibir(self):
+        try:
+            self.sock.settimeout(0.01)
+            data, _ = self.sock.recvfrom(1024)
+            return json.loads(data.decode())
+        except:
+            return None
+"""
+
+    # =========================
+    # 🚀 MAVLINK REAL
+    # =========================
+    codigo["comunicacion/mavlink.py"] = """from pymavlink import mavutil
+
+class MAVLinkDrone:
+
+    def __init__(self, connection_string="udp:127.0.0.1:14550"):
+        self.master = mavutil.mavlink_connection(connection_string)
+        self.master.wait_heartbeat()
+        print("✅ MAVLink conectado")
+
+    def armar(self):
+        self.master.arducopter_arm()
+
+    def despegar(self, alt=10):
+        self.master.mav.command_long_send(
+            self.master.target_system,
+            self.master.target_component,
+            mavutil.mavlink.MAV_CMD_NAV_TAKEOFF,
+            0,0,0,0,0,0,0,alt
+        )
+
+    def enviar_posicion(self, x, y, z):
+        self.master.mav.set_position_target_local_ned_send(
+            0,
+            self.master.target_system,
+            self.master.target_component,
+            mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+            int(0b110111111000),
+            x, y, -z,
+            0,0,0,
+            0,0,0,
+            0,0
+        )
+"""
+
+    # =========================
+    # MAIN FINAL
     # =========================
     codigo["main.py"] = """import time
 import json
@@ -163,14 +232,24 @@ from firmware.flight_controller import FlightController
 from firmware.failsafe import FailSafe
 from firmware.navigation import generar_waypoints
 from ai.decision_model import decidir
+from comunicacion.conexion import ConexionDrone
+from comunicacion.mavlink import MAVLinkDrone
 
 fc = FlightController()
 fs = FailSafe()
+conexion = ConexionDrone()
+
+try:
+    mav = MAVLinkDrone()
+    mav.armar()
+    time.sleep(2)
+    mav.despegar(10)
+except:
+    mav = None
 
 dt = 0.1
 waypoints = generar_waypoints([0,0,0],[10,10,10],6)
 wp_index = 0
-
 datos = []
 
 for i in range(150):
@@ -196,18 +275,27 @@ for i in range(150):
 
         estado_fs = fs.check(100, True)
 
-        datos.append({
+        paquete = {
             "x": round(estado["pos"][0],2),
             "y": round(estado["pos"][1],2),
             "z": round(estado["pos"][2],2),
             "wp": wp_index,
             "fs": estado_fs
-        })
+        }
 
-    except Exception:
+        datos.append(paquete)
+
+        if mav:
+            try:
+                mav.enviar_posicion(paquete["x"], paquete["y"], paquete["z"])
+            except:
+                pass
+
+        time.sleep(0.05)
+
+    except:
         continue
 
-# 🔥 LIMITAR SALIDA (CLAVE)
 datos = datos[-50:]
 
 print("###DATA_START###")
@@ -223,9 +311,9 @@ print("OK")
     }
 
     resumen = {
-        "descripcion": "Drone autónomo con control PID, navegación y failsafe.",
-        "nivel": "Pre-real",
-        "estado": "Optimizado sin truncado"
+        "descripcion": "Drone autónomo con control PID, navegación, comunicación y MAVLink.",
+        "nivel": "Autopiloto real inicial",
+        "estado": "Integrable con Pixhawk / simuladores"
     }
 
     return {

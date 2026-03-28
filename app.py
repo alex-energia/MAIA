@@ -10,9 +10,6 @@ import os, json, time, threading, subprocess, zipfile, re, sys
 
 print("🔥 MAIA STARTING...")
 
-# =========================
-# APP
-# =========================
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_secret_ultra"
 
@@ -42,8 +39,7 @@ def generar_modelo_3d(base, peso):
 
     escala = max(1, peso / 5)
 
-    obj = f"""
-o Drone
+    obj = f"""o Drone
 v 0 0 0
 v {escala} 0 0
 v {escala} {escala} 0
@@ -56,8 +52,7 @@ f 1 2 3 4
 f 5 6 7 8
 """
 
-    stl = f"""
-solid drone
+    stl = f"""solid drone
 facet normal 0 0 0
 outer loop
 vertex 0 0 0
@@ -77,7 +72,6 @@ endsolid drone
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
     base = f"maia_projects/{nombre}"
-
     os.makedirs(base, exist_ok=True)
 
     software = generar_software_completo(tipo)
@@ -95,7 +89,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# 🚀 EJECUCIÓN MEJORADA
+# 🚀 EJECUCIÓN PRO (FIX TELEMETRÍA)
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -109,7 +103,7 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=15
         )
 
         salida = result.stdout.strip()
@@ -121,8 +115,32 @@ def ejecutar_main(ruta):
         if not salida:
             return "⚠️ Simulación sin salida"
 
-        if len(salida) > 5000:
-            salida = salida[:5000] + "\n...\n[Salida truncada]"
+        # =========================
+        # 🔥 EXTRACCIÓN PRO TELEMETRÍA
+        # =========================
+        telemetria_match = re.search(
+            r"###DATA_START###(.*?)###DATA_END###",
+            salida,
+            re.DOTALL
+        )
+
+        telemetria_limpia = ""
+
+        if telemetria_match:
+            telemetria_limpia = telemetria_match.group(0)
+
+        # =========================
+        # 🔒 CONTROL DE TAMAÑO SIN ROMPER JSON
+        # =========================
+        MAX_LEN = 20000
+
+        if len(salida) > MAX_LEN:
+            salida_recortada = salida[:MAX_LEN]
+            salida = salida_recortada + "\n...\n[Salida resumida]\n"
+
+            # 🔥 Volver a añadir telemetría completa
+            if telemetria_limpia:
+                salida += "\n" + telemetria_limpia
 
         return salida
 
@@ -161,15 +179,11 @@ class MaiaCore:
         global resultado_global
 
         try:
-            # =========================
-            # CAPA 1
-            # =========================
             self.progreso(20, "Analizando idea...")
 
             core_data = analizar_drone(idea)
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
-
             mision = analizar_mision(idea)
 
             analisis_pro = {
@@ -184,9 +198,6 @@ class MaiaCore:
                 ]
             }
 
-            # =========================
-            # CAPA 2
-            # =========================
             self.progreso(50, "Validando...")
 
             validator = MaiaValidator()
@@ -223,9 +234,6 @@ class MaiaCore:
                 "Ajustar control PID"
             ]
 
-            # =========================
-            # CAPA 3
-            # =========================
             self.progreso(75, "Generando sistema completo...")
 
             ruta, software = crear_proyecto(
@@ -236,7 +244,6 @@ class MaiaCore:
 
             salida = ejecutar_main(ruta)
             zip_path = exportar_zip(ruta)
-
             hardware = generar_hardware(analisis, fisica)
 
             if isinstance(hardware, dict):
@@ -244,11 +251,7 @@ class MaiaCore:
                 sensores_extra = set(mision.get("sensores_extra", []))
                 hardware["sensores"] = list(sensores_base.union(sensores_extra))
 
-            # =========================
-            # NIVEL CONSTRUCCIÓN REAL
-            # =========================
             bom = []
-
             if isinstance(hardware, dict):
                 for k, v in hardware.items():
                     if isinstance(v, dict):
@@ -325,10 +328,11 @@ def maia_resultado():
 @app.route("/maia_capacidades")
 def maia_capacidades():
     return jsonify({
-        "fase": 21,
+        "fase": 22,
         "capacidades": [
             "Diseño completo listo para construir",
             "Simulación física 3D",
+            "Telemetría completa sin pérdida",
             "Software ejecutable real",
             "Lista de materiales (BOM)",
             "Plan de ensamblaje",

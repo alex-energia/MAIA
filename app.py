@@ -103,7 +103,7 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=15
+            timeout=20
         )
 
         salida = result.stdout.strip()

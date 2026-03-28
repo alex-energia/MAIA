@@ -89,7 +89,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# 🚀 EJECUCIÓN PRO (ULTRA FIX)
+# 🚀 EJECUCIÓN
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -103,39 +103,20 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=35  # 🔥 aumentado para evitar corte
+            timeout=35
         )
 
         salida = result.stdout.strip()
         error = result.stderr.strip()
 
-        # 🔴 Mostrar errores reales
         if error:
             salida += "\n\n⚠️ STDERR:\n" + error
 
         if not salida:
-            return "⚠️ Simulación sin salida"
+            salida = "⚠️ Simulación sin salida"
 
-        # =========================
-        # 🔥 EXTRAER TELEMETRÍA
-        # =========================
-        telemetria_match = re.search(
-            r"###DATA_START###(.*?)###DATA_END###",
-            salida,
-            re.DOTALL
-        )
-
-        if not telemetria_match:
-            # 🔥 FORZAR TELEMETRÍA SI NO EXISTE
+        if "###DATA_START###" not in salida:
             salida += "\n\n###DATA_START###\n[{\"error\":\"sin telemetria\"}]\n###DATA_END###"
-
-        # =========================
-        # 🔒 CONTROL DE TAMAÑO
-        # =========================
-        MAX_LEN = 20000
-
-        if len(salida) > MAX_LEN:
-            salida = salida[:MAX_LEN] + "\n...\n[Salida resumida]"
 
         return salida
 
@@ -160,11 +141,13 @@ def ejecutar_main(ruta):
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
+
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, _, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
+
     return zip_path
 
 # =========================
@@ -183,20 +166,17 @@ class MaiaCore:
 
         try:
             self.progreso(20, "Analizando idea...")
-
             core_data = analizar_drone(idea)
+
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
-
             mision = analizar_mision(idea)
 
             self.progreso(50, "Validando...")
-
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
             self.progreso(75, "Generando sistema...")
-
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 1),
@@ -207,14 +187,90 @@ class MaiaCore:
             zip_path = exportar_zip(ruta)
             hardware = generar_hardware(analisis, fisica)
 
+            # =========================
+            # 🔥 DATOS PRO
+            # =========================
+            analisis_pro = {
+                "tipo": analisis.get("tipo"),
+                "peso": analisis.get("peso"),
+                "mision": mision.get("tipo"),
+                "complejidad": "Media-Alta",
+                "riesgos": [
+                    "Fallo de batería",
+                    "Pérdida de señal",
+                    "Condiciones climáticas"
+                ]
+            }
+
+            empuje = fisica.get("empuje", 0)
+            peso = analisis.get("peso", 1)
+
+            fisica_pro = {
+                "autonomia": fisica.get("autonomia"),
+                "consumo": fisica.get("consumo"),
+                "empuje": empuje,
+                "empuje_minimo": peso * 9.81 * 2,
+                "relacion_empuje_peso": round(empuje / (peso * 9.81 + 1), 2),
+                "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
+            }
+
+            if validacion["viabilidad"] == "VIABLE ✅":
+                diagnostico = (
+                    "Sistema viable.\n"
+                    "- Empuje correcto\n"
+                    "- Autonomía suficiente\n"
+                    "- Estabilidad adecuada"
+                )
+            else:
+                diagnostico = (
+                    "Sistema NO viable.\n"
+                    + "\n".join(validacion.get("errores", []))
+                )
+
+            soluciones_pro = validacion.get("soluciones", []) + [
+                "Optimizar consumo energético",
+                "Revisar dimensionamiento de motores",
+                "Ajustar control PID"
+            ]
+
+            # =========================
+            # 🔧 BOM
+            # =========================
+            bom = []
+            if isinstance(hardware, dict):
+                for k, v in hardware.items():
+                    if isinstance(v, dict):
+                        bom.append(f"{k}: {json.dumps(v)}")
+                    elif isinstance(v, list):
+                        bom.extend(v)
+
+            ensamblaje = [
+                "1. Montar frame",
+                "2. Instalar motores",
+                "3. Conectar ESC",
+                "4. Instalar controlador",
+                "5. Integrar sensores",
+                "6. Configurar software",
+                "7. Calibración",
+                "8. Prueba de vuelo"
+            ]
+
             self.progreso(100, "Completado")
 
             resultado_global = {
                 "viabilidad": validacion["viabilidad"],
+                "analisis": analisis_pro,
+                "fisica": fisica_pro,
+                "diagnostico": diagnostico,
+                "errores": validacion.get("errores", []),
+                "soluciones": soluciones_pro,
                 "software": software,
                 "hardware": hardware,
                 "mision": mision,
+                "bom": bom,
+                "ensamblaje": ensamblaje,
                 "salida": salida,
+                "software_generado": ruta,
                 "zip": zip_path
             }
 

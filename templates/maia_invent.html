@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>MAIA INVENT</title>
+
 <style>
 body {
     font-family: Arial;
@@ -54,6 +55,7 @@ button {
 }
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
+
 pre {
     background: black;
     padding: 10px;
@@ -62,6 +64,7 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
+
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -76,7 +79,8 @@ pre {
 <h1>🧠 MAIA INVENT</h1>
 <p>Generador de ingeniería de drones (FASE 22 🔥)</p>
 
-<textarea id="idea" placeholder="Ej: Drone autónomo con visión artificial"></textarea>
+<textarea id="idea"></textarea>
+
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -135,7 +139,6 @@ function monitorearResultado(){
                 clearInterval(intervalo);
                 cargarResultadoFinal();
             }
-
         }catch(e){
             clearInterval(intervalo);
         }
@@ -143,127 +146,125 @@ function monitorearResultado(){
 }
 
 // =========================
-// 🧠 RESULTADO PRO + TELEMETRÍA SEGURA
+// 🧠 RESULTADO COMPLETO
 // =========================
 async function cargarResultadoFinal(){
 
     let res = await fetch("/maia_resultado");
     let data = await res.json();
 
-    if(!data || Object.keys(data).length === 0){
-        document.getElementById("resultado").innerHTML = "⚠️ Sin resultado";
-        return;
-    }
-
     let estado = data.viabilidad || "N/A";
     let clase = estado.includes("VIABLE") ? "ok" : "bad";
 
-    let html = `
-    <div class="panel">
-
-        <h2 class="${clase}">${estado}</h2>
-
-        <div class="bloque">
-            <h3>📦 Análisis técnico</h3>
-            <pre>${JSON.stringify(data.analisis || {}, null, 2)}</pre>
-        </div>
-
-        <div class="bloque">
-            <h3>⚡ Física</h3>
-            <pre>${JSON.stringify(data.fisica || {}, null, 2)}</pre>
-        </div>
-
-        <div class="bloque">
-            <h3>🧠 Diagnóstico</h3>
-            <pre>${data.diagnostico || ""}</pre>
-        </div>
-
-        <div class="bloque">
-            <h3>💻 Simulación</h3>
-            <pre>${data.salida || ""}</pre>
-        </div>
-
-        <div class="bloque">
-            <h3>📡 Telemetría</h3>
-            <pre id="telemetria_data">Procesando...</pre>
-        </div>
-    `;
+    let html = `<div class="panel">
+    <h2 class="${clase}">${estado}</h2>`;
 
     // =========================
-    // ⚙️ HARDWARE
+    // 📦 BASE
+    // =========================
+    html += `<div class="bloque"><h3>📦 Análisis técnico</h3><pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
+    html += `<div class="bloque"><h3>⚡ Física</h3><pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
+    html += `<div class="bloque"><h3>🧠 Diagnóstico</h3><pre>${data.diagnostico}</pre></div>`;
+    html += `<div class="bloque"><h3>❌ Errores</h3><pre>${(data.errores||[]).join("\n")}</pre></div>`;
+    html += `<div class="bloque"><h3>🔧 Soluciones</h3><pre>${(data.soluciones||[]).join("\n")}</pre></div>`;
+
+    // =========================
+    // 💻 SIMULACIÓN
+    // =========================
+    html += `<div class="bloque"><h3>💻 Simulación</h3><pre>${data.salida}</pre></div>`;
+
+    // =========================
+    // 📡 TELEMETRÍA FIX REAL
+    // =========================
+    html += `<div class="bloque"><h3>📡 Telemetría</h3><pre id="telemetria_data">Procesando...</pre></div>`;
+
+    // =========================
+    // ⚙️ HARDWARE PROFESIONAL (RESTAURADO)
     // =========================
     if(data.hardware){
-        html += `
-        <div class="bloque">
-            <h3>⚙️ Hardware</h3>
-            <pre>${JSON.stringify(data.hardware, null, 2)}</pre>
-        </div>`;
+
+        html += `<div class="bloque"><h3>⚙️ Hardware profesional</h3>`;
+
+        if(data.hardware.motores)
+            html += `<pre>Motores:\n${JSON.stringify(data.hardware.motores,null,2)}</pre>`;
+
+        if(data.hardware.esc)
+            html += `<pre>ESC:\n${JSON.stringify(data.hardware.esc,null,2)}</pre>`;
+
+        if(data.hardware.bateria)
+            html += `<pre>Batería:\n${JSON.stringify(data.hardware.bateria,null,2)}</pre>`;
+
+        if(data.hardware.controlador)
+            html += `<pre>Controlador:\n${JSON.stringify(data.hardware.controlador,null,2)}</pre>`;
+
+        if(data.hardware.sensores)
+            html += `<pre>Sensores:\n${data.hardware.sensores.join("\n")}</pre>`;
+
+        if(data.hardware.conexionado)
+            html += `<pre>Conexiones:\n${data.hardware.conexionado.join("\n")}</pre>`;
+
+        if(data.hardware.conectividad)
+            html += `<pre>Telemetría:\n${JSON.stringify(data.hardware.conectividad,null,2)}</pre>`;
+
+        html += `</div>`;
     }
 
     // =========================
     // 🧾 BOM
     // =========================
-    if(data.bom){
-        html += `
-        <div class="bloque">
-            <h3>🧾 BOM</h3>
-            <pre>${data.bom.join("\n")}</pre>
-        </div>`;
-    }
+    html += `<div class="bloque"><h3>🧾 BOM</h3><pre>${(data.bom||[]).join("\n")}</pre></div>`;
 
     // =========================
-    // 💻 SOFTWARE (RESTAURADO)
+    // 🔧 ENSAMBLAJE (RESTAURADO)
+    // =========================
+    if(data.ensamblaje)
+        html += `<div class="bloque"><h3>🔧 Ensamblaje</h3><pre>${data.ensamblaje.join("\n")}</pre></div>`;
+
+    // =========================
+    // 💻 SOFTWARE COMPLETO (RESTAURADO PRO)
     // =========================
     if(data.software){
-        html += `
-        <div class="bloque">
-            <h3>💻 Software</h3>
-            <pre>${JSON.stringify(data.software, null, 2)}</pre>
-        </div>`;
+
+        html += `<div class="bloque"><h2>💻 SOFTWARE GENERADO</h2>`;
+
+        if(data.software.arquitectura)
+            html += `<pre>${JSON.stringify(data.software.arquitectura,null,2)}</pre>`;
+
+        if(data.software.codigo){
+            for(let archivo in data.software.codigo){
+                html += `<b>${archivo}</b><pre>${data.software.codigo[archivo]}</pre>`;
+            }
+        }
+
+        html += `</div>`;
     }
 
-    html += `
-        <div class="bloque">
-            <h3>📁 Proyecto</h3>
-            ${data.software_generado}
-            <br><br>
-            <a href="/descargar_proyecto" target="_blank">
-                <button>⬇ Descargar</button>
-            </a>
-        </div>
+    // =========================
+    // 📁 PROYECTO
+    // =========================
+    html += `<div class="bloque">
+        <h3>📁 Proyecto</h3>
+        ${data.software_generado}
+    </div>`;
 
-    </div>
-    `;
+    html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
 
     // =========================
-    // 📡 PARSEO SEGURO TELEMETRÍA (FIX CRÍTICO)
+    // 📡 TELEMETRÍA PARSER PRO
     // =========================
     try{
-        if(data.salida && data.salida.includes("###DATA_START###")){
+        let raw = data.salida.split("###DATA_START###")[1].split("###DATA_END###")[0];
 
-            let limpio = data.salida
-                .split("###DATA_START###")[1]
-                .split("###DATA_END###")[0]
-                .trim();
+        raw = raw.replace("[Salida truncada]", "").trim();
 
-            // 🔥 eliminar truncado
-            if(limpio.includes("[Salida truncada]")){
-                limpio = limpio.split("[Salida truncada]")[0].trim();
-            }
+        let json = JSON.parse(raw);
 
-            let telemetria = JSON.parse(limpio);
-
-            document.getElementById("telemetria_data").innerText =
-                JSON.stringify(telemetria.slice(0,20), null, 2);
-
-        } else {
-            document.getElementById("telemetria_data").innerText = "Sin datos";
-        }
+        document.getElementById("telemetria_data").innerText =
+            JSON.stringify(json.slice(0,30),null,2);
 
     }catch(e){
-        console.error("Error parseando telemetría", e);
         document.getElementById("telemetria_data").innerText = "Error en telemetría";
     }
 
@@ -279,12 +280,8 @@ function verCapacidades(){
     .then(data => {
         let panel = document.getElementById("panel_maia");
         panel.style.display = "block";
-        panel.innerHTML = `
-            <h2>🚀 MAIA FASE ${data.fase}</h2>
-            <ul>
-                ${data.capacidades.map(c => `<li>${c}</li>`).join("")}
-            </ul>
-        `;
+        panel.innerHTML = `<h2>🚀 MAIA FASE ${data.fase}</h2>
+        <ul>${data.capacidades.map(c => `<li>${c}</li>`).join("")}</ul>`;
     });
 }
 
@@ -292,11 +289,6 @@ function verCapacidades(){
 // 💾 GUARDAR
 // =========================
 async function guardarProyectoInvent(){
-
-    if(!window.ultimoProyecto){
-        alert("⚠️ Primero genera una idea");
-        return;
-    }
 
     let idea = document.getElementById("idea").value;
 
@@ -313,6 +305,5 @@ async function guardarProyectoInvent(){
 }
 
 </script>
-
 </body>
 </html>

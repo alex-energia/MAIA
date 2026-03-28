@@ -55,7 +55,6 @@ button {
 }
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
-
 pre {
     background: black;
     padding: 10px;
@@ -64,7 +63,6 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
-
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -72,12 +70,13 @@ pre {
     border-radius: 10px;
 }
 </style>
+
 </head>
 
 <body>
 
 <h1>🧠 MAIA INVENT</h1>
-<p>Generador de ingeniería de drones (FASE 22 🔥)</p>
+<p>Generador de ingeniería de drones (FASE 23 🔥)</p>
 
 <textarea id="idea"></textarea>
 
@@ -139,14 +138,16 @@ function monitorearResultado(){
                 clearInterval(intervalo);
                 cargarResultadoFinal();
             }
+
         }catch(e){
             clearInterval(intervalo);
         }
+
     }, 700);
 }
 
 // =========================
-// 🧠 RESULTADO COMPLETO
+// 🧠 RESULTADO COMPLETO PRO
 // =========================
 async function cargarResultadoFinal(){
 
@@ -160,9 +161,15 @@ async function cargarResultadoFinal(){
     <h2 class="${clase}">${estado}</h2>`;
 
     // =========================
-    // 📦 BASE
+    // 📦 ANALISIS
     // =========================
     html += `<div class="bloque"><h3>📦 Análisis técnico</h3><pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
+
+    // 🔥 RIESGOS RESTAURADOS
+    if(data.analisis && data.analisis.riesgos){
+        html += `<div class="bloque"><h3>⚠️ Riesgos</h3><pre>${data.analisis.riesgos.join("\n")}</pre></div>`;
+    }
+
     html += `<div class="bloque"><h3>⚡ Física</h3><pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
     html += `<div class="bloque"><h3>🧠 Diagnóstico</h3><pre>${data.diagnostico}</pre></div>`;
     html += `<div class="bloque"><h3>❌ Errores</h3><pre>${(data.errores||[]).join("\n")}</pre></div>`;
@@ -174,15 +181,14 @@ async function cargarResultadoFinal(){
     html += `<div class="bloque"><h3>💻 Simulación</h3><pre>${data.salida}</pre></div>`;
 
     // =========================
-    // 📡 TELEMETRÍA FIX REAL
+    // 📡 TELEMETRÍA PRO (ANTI-TRUNCADO REAL)
     // =========================
     html += `<div class="bloque"><h3>📡 Telemetría</h3><pre id="telemetria_data">Procesando...</pre></div>`;
 
     // =========================
-    // ⚙️ HARDWARE PROFESIONAL (RESTAURADO)
+    // ⚙️ HARDWARE
     // =========================
     if(data.hardware){
-
         html += `<div class="bloque"><h3>⚙️ Hardware profesional</h3>`;
 
         if(data.hardware.motores)
@@ -215,20 +221,26 @@ async function cargarResultadoFinal(){
     html += `<div class="bloque"><h3>🧾 BOM</h3><pre>${(data.bom||[]).join("\n")}</pre></div>`;
 
     // =========================
-    // 🔧 ENSAMBLAJE (RESTAURADO)
+    // 🔧 ENSAMBLAJE
     // =========================
     if(data.ensamblaje)
         html += `<div class="bloque"><h3>🔧 Ensamblaje</h3><pre>${data.ensamblaje.join("\n")}</pre></div>`;
 
     // =========================
-    // 💻 SOFTWARE COMPLETO (RESTAURADO PRO)
+    // 💻 SOFTWARE NIVEL PRO
     // =========================
     if(data.software){
 
-        html += `<div class="bloque"><h2>💻 SOFTWARE GENERADO</h2>`;
+        html += `<div class="bloque"><h2>💻 SOFTWARE DE INGENIERÍA</h2>`;
+
+        if(data.software.resumen)
+            html += `<pre>${JSON.stringify(data.software.resumen,null,2)}</pre>`;
 
         if(data.software.arquitectura)
             html += `<pre>${JSON.stringify(data.software.arquitectura,null,2)}</pre>`;
+
+        if(data.software.algoritmos)
+            html += `<pre>${data.software.algoritmos.join("\n")}</pre>`;
 
         if(data.software.codigo){
             for(let archivo in data.software.codigo){
@@ -252,36 +264,68 @@ async function cargarResultadoFinal(){
     document.getElementById("resultado").innerHTML = html;
 
     // =========================
-    // 📡 TELEMETRÍA PARSER PRO
+    // 📡 TELEMETRÍA FIX REAL NIVEL PRO
     // =========================
     try{
-        let raw = data.salida.split("###DATA_START###")[1].split("###DATA_END###")[0];
+        let salida = data.salida || "";
 
-        raw = raw.replace("[Salida truncada]", "").trim();
+        let inicio = salida.indexOf("###DATA_START###");
+        let fin = salida.indexOf("###DATA_END###");
 
-        let json = JSON.parse(raw);
+        if(inicio !== -1 && fin !== -1){
 
-        document.getElementById("telemetria_data").innerText =
-            JSON.stringify(json.slice(0,30),null,2);
+            let raw = salida.substring(inicio + 16, fin);
+
+            // 🔥 LIMPIEZA INTELIGENTE
+            raw = raw
+                .replace("[Salida truncada]", "")
+                .replace(/\\n/g, "")
+                .trim();
+
+            // 🔥 CERRAR JSON SI VIENE ROTO
+            if(!raw.endsWith("]")){
+                raw = raw + "]";
+            }
+
+            let json = JSON.parse(raw);
+
+            document.getElementById("telemetria_data").innerText =
+                JSON.stringify(json.slice(0,30), null, 2);
+
+        } else {
+            document.getElementById("telemetria_data").innerText = "Sin datos";
+        }
 
     }catch(e){
-        document.getElementById("telemetria_data").innerText = "Error en telemetría";
+        console.log(e);
+        document.getElementById("telemetria_data").innerText = "Error en telemetría (datos incompletos)";
     }
 
     window.ultimoProyecto = data;
 }
 
 // =========================
-// 🚀 CAPACIDADES
+// 🚀 CAPACIDADES PRO
 // =========================
 function verCapacidades(){
     fetch("/maia_capacidades")
     .then(r => r.json())
     .then(data => {
+
         let panel = document.getElementById("panel_maia");
         panel.style.display = "block";
-        panel.innerHTML = `<h2>🚀 MAIA FASE ${data.fase}</h2>
-        <ul>${data.capacidades.map(c => `<li>${c}</li>`).join("")}</ul>`;
+
+        panel.innerHTML = `
+        <h2>🚀 MAIA</h2>
+        <p><b>Nivel:</b> Sistema autónomo de ingeniería avanzada</p>
+        <p>Plataforma capaz de diseñar drones completos con hardware y software listos para construcción real.</p>
+
+        <h3>📊 Fase ${data.fase}</h3>
+
+        <ul>
+        ${data.capacidades.map(c => `<li>${c}</li>`).join("")}
+        </ul>
+        `;
     });
 }
 
@@ -305,5 +349,6 @@ async function guardarProyectoInvent(){
 }
 
 </script>
+
 </body>
 </html>

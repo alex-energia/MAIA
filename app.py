@@ -89,7 +89,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# 🚀 EJECUCIÓN PRO (FIX TELEMETRÍA)
+# 🚀 EJECUCIÓN PRO (ULTRA FIX)
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -103,20 +103,21 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=20
+            timeout=35  # 🔥 aumentado para evitar corte
         )
 
         salida = result.stdout.strip()
         error = result.stderr.strip()
 
+        # 🔴 Mostrar errores reales
         if error:
-            return f"⚠️ ERROR EN SIMULACIÓN:\n{error}"
+            salida += "\n\n⚠️ STDERR:\n" + error
 
         if not salida:
             return "⚠️ Simulación sin salida"
 
         # =========================
-        # 🔥 EXTRACCIÓN PRO TELEMETRÍA
+        # 🔥 EXTRAER TELEMETRÍA
         # =========================
         telemetria_match = re.search(
             r"###DATA_START###(.*?)###DATA_END###",
@@ -124,44 +125,46 @@ def ejecutar_main(ruta):
             re.DOTALL
         )
 
-        telemetria_limpia = ""
-
-        if telemetria_match:
-            telemetria_limpia = telemetria_match.group(0)
+        if not telemetria_match:
+            # 🔥 FORZAR TELEMETRÍA SI NO EXISTE
+            salida += "\n\n###DATA_START###\n[{\"error\":\"sin telemetria\"}]\n###DATA_END###"
 
         # =========================
-        # 🔒 CONTROL DE TAMAÑO SIN ROMPER JSON
+        # 🔒 CONTROL DE TAMAÑO
         # =========================
         MAX_LEN = 20000
 
         if len(salida) > MAX_LEN:
-            salida_recortada = salida[:MAX_LEN]
-            salida = salida_recortada + "\n...\n[Salida resumida]\n"
-
-            # 🔥 Volver a añadir telemetría completa
-            if telemetria_limpia:
-                salida += "\n" + telemetria_limpia
+            salida = salida[:MAX_LEN] + "\n...\n[Salida resumida]"
 
         return salida
 
     except subprocess.TimeoutExpired:
-        return "⏱️ Simulación detenida por tiempo límite"
+        return (
+            "⏱️ Simulación detenida por tiempo límite\n\n"
+            "###DATA_START###\n"
+            "[{\"error\":\"timeout\"}]\n"
+            "###DATA_END###"
+        )
 
     except Exception as e:
-        return f"❌ Error ejecutando simulación: {str(e)}"
+        return (
+            f"❌ Error ejecutando simulación: {str(e)}\n\n"
+            "###DATA_START###\n"
+            "[{\"error\":\"exception\"}]\n"
+            "###DATA_END###"
+        )
 
 # =========================
 # ZIP
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
-
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, _, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
-
     return zip_path
 
 # =========================
@@ -173,7 +176,7 @@ class MaiaCore:
         estado_maia["progreso"] = val
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
-        time.sleep(1)
+        time.sleep(0.5)
 
     def ejecutar(self, idea):
         global resultado_global
@@ -184,61 +187,19 @@ class MaiaCore:
             core_data = analizar_drone(idea)
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
-            mision = analizar_mision(idea)
 
-            analisis_pro = {
-                "tipo": analisis.get("tipo"),
-                "peso": analisis.get("peso"),
-                "mision": mision.get("tipo"),
-                "complejidad": "Media-Alta",
-                "riesgos": [
-                    "Fallo de batería",
-                    "Pérdida de señal",
-                    "Condiciones climáticas"
-                ]
-            }
+            mision = analizar_mision(idea)
 
             self.progreso(50, "Validando...")
 
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
-            empuje = fisica.get("empuje", 0)
-            peso = analisis.get("peso", 1)
-
-            fisica_pro = {
-                "autonomia": fisica.get("autonomia"),
-                "consumo": fisica.get("consumo"),
-                "empuje": empuje,
-                "empuje_minimo": peso * 9.81 * 2,
-                "relacion_empuje_peso": round(empuje / (peso * 9.81 + 1), 2),
-                "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
-            }
-
-            if validacion["viabilidad"] == "VIABLE ✅":
-                diagnostico = (
-                    "Sistema viable.\n"
-                    "- Empuje correcto\n"
-                    "- Autonomía suficiente\n"
-                    "- Estabilidad adecuada"
-                )
-            else:
-                diagnostico = (
-                    "Sistema NO viable.\n"
-                    + "\n".join(validacion["errores"])
-                )
-
-            soluciones_pro = validacion["soluciones"] + [
-                "Optimizar consumo energético",
-                "Revisar dimensionamiento de motores",
-                "Ajustar control PID"
-            ]
-
-            self.progreso(75, "Generando sistema completo...")
+            self.progreso(75, "Generando sistema...")
 
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
-                peso,
+                analisis.get("peso", 1),
                 analisis.get("tipo", "general")
             )
 
@@ -246,47 +207,14 @@ class MaiaCore:
             zip_path = exportar_zip(ruta)
             hardware = generar_hardware(analisis, fisica)
 
-            if isinstance(hardware, dict):
-                sensores_base = set(hardware.get("sensores", []))
-                sensores_extra = set(mision.get("sensores_extra", []))
-                hardware["sensores"] = list(sensores_base.union(sensores_extra))
-
-            bom = []
-            if isinstance(hardware, dict):
-                for k, v in hardware.items():
-                    if isinstance(v, dict):
-                        bom.append(f"{k}: {json.dumps(v)}")
-                    elif isinstance(v, list):
-                        bom.extend(v)
-
-            ensamblaje = [
-                "1. Montar frame",
-                "2. Instalar motores",
-                "3. Conectar ESC",
-                "4. Instalar controlador",
-                "5. Integrar sensores",
-                "6. Configurar software",
-                "7. Calibración",
-                "8. Prueba de vuelo"
-            ]
-
             self.progreso(100, "Completado")
 
             resultado_global = {
                 "viabilidad": validacion["viabilidad"],
-                "analisis": analisis_pro,
-                "fisica": fisica_pro,
-                "diagnostico": diagnostico,
-                "errores": validacion["errores"],
-                "soluciones": soluciones_pro,
                 "software": software,
                 "hardware": hardware,
                 "mision": mision,
-                "bom": bom,
-                "ensamblaje": ensamblaje,
-                "modelo_3d": f"{ruta}/models/drone.obj",
                 "salida": salida,
-                "software_generado": ruta,
                 "zip": zip_path
             }
 
@@ -325,28 +253,11 @@ def maia_progreso():
 def maia_resultado():
     return jsonify(resultado_global)
 
-@app.route("/maia_capacidades")
-def maia_capacidades():
-    return jsonify({
-        "fase": 22,
-        "capacidades": [
-            "Diseño completo listo para construir",
-            "Simulación física 3D",
-            "Telemetría completa sin pérdida",
-            "Software ejecutable real",
-            "Lista de materiales (BOM)",
-            "Plan de ensamblaje",
-            "Adaptación por misión"
-        ]
-    })
-
 @app.route("/descargar_proyecto")
 def descargar_proyecto():
     zip_path = resultado_global.get("zip")
-
     if zip_path and os.path.exists(zip_path):
         return send_file(zip_path, as_attachment=True)
-
     return "No disponible", 404
 
 @app.route("/maia_invent")

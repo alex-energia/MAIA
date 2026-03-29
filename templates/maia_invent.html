@@ -9,12 +9,14 @@ body {
     background: #0f172a;
     color: #e5e7eb;
 }
+
 textarea {
     width: 100%;
     height: 80px;
     border-radius: 8px;
     padding: 10px;
 }
+
 button {
     padding: 10px;
     margin: 5px;
@@ -24,6 +26,7 @@ button {
     background: #2563eb;
     color: white;
 }
+
 #panel_maia {
     display: none;
     background: black;
@@ -31,6 +34,7 @@ button {
     margin-top: 20px;
     border-radius: 10px;
 }
+
 #barra_container {
     width: 100%;
     background: #111;
@@ -39,6 +43,7 @@ button {
     overflow: hidden;
     display: none;
 }
+
 #barra {
     width: 0%;
     height: 25px;
@@ -47,14 +52,17 @@ button {
     color: white;
     font-weight: bold;
 }
+
 .panel {
     background: #020617;
     padding: 15px;
     border-radius: 10px;
     margin-top: 20px;
 }
+
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
+
 pre {
     background: black;
     padding: 10px;
@@ -63,6 +71,7 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
+
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -79,11 +88,11 @@ pre {
 <p>Generador de ingeniería de drones (FASE 23 🔥)</p>
 
 <textarea id="idea"></textarea>
-
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="verCapacidades()">🚀 ¿Qué puede hacer MAIA?</button>
+<button onclick="limpiarUI()">🧹 Limpiar</button>
 
 <div id="resultado"></div>
 
@@ -142,17 +151,19 @@ function monitorearResultado(){
         }catch(e){
             clearInterval(intervalo);
         }
-
     }, 700);
 }
 
 // =========================
-// 🧠 RESULTADO COMPLETO PRO
+// 🧠 RESULTADO COMPLETO
 // =========================
 async function cargarResultadoFinal(){
 
     let res = await fetch("/maia_resultado");
     let data = await res.json();
+
+    let analisis = data.analisis || {};
+    let fisica = data.fisica || {};
 
     let estado = data.viabilidad || "N/A";
     let clase = estado.includes("VIABLE") ? "ok" : "bad";
@@ -160,173 +171,77 @@ async function cargarResultadoFinal(){
     let html = `<div class="panel">
     <h2 class="${clase}">${estado}</h2>`;
 
-    // =========================
-    // 📦 ANALISIS
-    // =========================
-    html += `<div class="bloque"><h3>📦 Análisis técnico</h3><pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
+    html += `<div class="bloque"><h3>📦 Análisis técnico</h3><pre>${JSON.stringify(analisis,null,2)}</pre></div>`;
 
-    // 🔥 RIESGOS RESTAURADOS
-    if(data.analisis && data.analisis.riesgos){
-        html += `<div class="bloque"><h3>⚠️ Riesgos</h3><pre>${data.analisis.riesgos.join("\n")}</pre></div>`;
+    if(analisis.riesgos){
+        html += `<div class="bloque"><h3>⚠️ Riesgos</h3><pre>${analisis.riesgos.join("\n")}</pre></div>`;
     }
 
-    html += `<div class="bloque"><h3>⚡ Física</h3><pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
-    html += `<div class="bloque"><h3>🧠 Diagnóstico</h3><pre>${data.diagnostico}</pre></div>`;
-    html += `<div class="bloque"><h3>❌ Errores</h3><pre>${(data.errores||[]).join("\n")}</pre></div>`;
-    html += `<div class="bloque"><h3>🔧 Soluciones</h3><pre>${(data.soluciones||[]).join("\n")}</pre></div>`;
+    html += `<div class="bloque"><h3>⚡ Física</h3><pre>${JSON.stringify(fisica,null,2)}</pre></div>`;
 
-    // =========================
-    // 💻 SIMULACIÓN
-    // =========================
-    html += `<div class="bloque"><h3>💻 Simulación</h3><pre>${data.salida}</pre></div>`;
+    html += `<div class="bloque"><h3>💻 Simulación</h3><pre>${data.salida || "Sin datos"}</pre></div>`;
 
-    // =========================
-    // 📡 TELEMETRÍA PRO (ANTI-TRUNCADO REAL)
-    // =========================
     html += `<div class="bloque"><h3>📡 Telemetría</h3><pre id="telemetria_data">Procesando...</pre></div>`;
-
-    // =========================
-    // ⚙️ HARDWARE
-    // =========================
-    if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware profesional</h3>`;
-
-        if(data.hardware.motores)
-            html += `<pre>Motores:\n${JSON.stringify(data.hardware.motores,null,2)}</pre>`;
-
-        if(data.hardware.esc)
-            html += `<pre>ESC:\n${JSON.stringify(data.hardware.esc,null,2)}</pre>`;
-
-        if(data.hardware.bateria)
-            html += `<pre>Batería:\n${JSON.stringify(data.hardware.bateria,null,2)}</pre>`;
-
-        if(data.hardware.controlador)
-            html += `<pre>Controlador:\n${JSON.stringify(data.hardware.controlador,null,2)}</pre>`;
-
-        if(data.hardware.sensores)
-            html += `<pre>Sensores:\n${data.hardware.sensores.join("\n")}</pre>`;
-
-        if(data.hardware.conexionado)
-            html += `<pre>Conexiones:\n${data.hardware.conexionado.join("\n")}</pre>`;
-
-        if(data.hardware.conectividad)
-            html += `<pre>Telemetría:\n${JSON.stringify(data.hardware.conectividad,null,2)}</pre>`;
-
-        html += `</div>`;
-    }
-
-    // =========================
-    // 🧾 BOM
-    // =========================
-    html += `<div class="bloque"><h3>🧾 BOM</h3><pre>${(data.bom||[]).join("\n")}</pre></div>`;
-
-    // =========================
-    // 🔧 ENSAMBLAJE
-    // =========================
-    if(data.ensamblaje)
-        html += `<div class="bloque"><h3>🔧 Ensamblaje</h3><pre>${data.ensamblaje.join("\n")}</pre></div>`;
-
-    // =========================
-    // 💻 SOFTWARE NIVEL PRO
-    // =========================
-    if(data.software){
-
-        html += `<div class="bloque"><h2>💻 SOFTWARE DE INGENIERÍA</h2>`;
-
-        if(data.software.resumen)
-            html += `<pre>${JSON.stringify(data.software.resumen,null,2)}</pre>`;
-
-        if(data.software.arquitectura)
-            html += `<pre>${JSON.stringify(data.software.arquitectura,null,2)}</pre>`;
-
-        if(data.software.algoritmos)
-            html += `<pre>${data.software.algoritmos.join("\n")}</pre>`;
-
-        if(data.software.codigo){
-            for(let archivo in data.software.codigo){
-                html += `<b>${archivo}</b><pre>${data.software.codigo[archivo]}</pre>`;
-            }
-        }
-
-        html += `</div>`;
-    }
-
-    // =========================
-    // 📁 PROYECTO
-    // =========================
-    html += `<div class="bloque">
-        <h3>📁 Proyecto</h3>
-        ${data.software_generado}
-    </div>`;
-
-    html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
 
     // =========================
-    // 📡 TELEMETRÍA FIX REAL NIVEL PRO
+    // 📡 TELEMETRÍA FIX
     // =========================
     try{
         let salida = data.salida || "";
-
         let inicio = salida.indexOf("###DATA_START###");
         let fin = salida.indexOf("###DATA_END###");
 
         if(inicio !== -1 && fin !== -1){
-
-            let raw = salida.substring(inicio + 16, fin);
-
-            // 🔥 LIMPIEZA INTELIGENTE
-            raw = raw
-                .replace("[Salida truncada]", "")
-                .replace(/\\n/g, "")
-                .trim();
-
-            // 🔥 CERRAR JSON SI VIENE ROTO
-            if(!raw.endsWith("]")){
-                raw = raw + "]";
-            }
+            let raw = salida.substring(inicio + 16, fin).trim();
 
             let json = JSON.parse(raw);
-
             document.getElementById("telemetria_data").innerText =
-                JSON.stringify(json.slice(0,30), null, 2);
-
+                JSON.stringify(json.slice(0,20), null, 2);
         } else {
             document.getElementById("telemetria_data").innerText = "Sin datos";
         }
 
     }catch(e){
-        console.log(e);
-        document.getElementById("telemetria_data").innerText = "Error en telemetría (datos incompletos)";
+        document.getElementById("telemetria_data").innerText = "Error en telemetría";
     }
 
     window.ultimoProyecto = data;
 }
 
 // =========================
-// 🚀 CAPACIDADES PRO
+// 🧹 LIMPIAR UI
+// =========================
+function limpiarUI(){
+    document.getElementById("idea").value = "";
+    document.getElementById("resultado").innerHTML = "";
+    document.getElementById("panel_maia").style.display = "none";
+    document.getElementById("barra_container").style.display = "none";
+}
+
+// =========================
+// 🚀 CAPACIDADES (FASES 1-26)
 // =========================
 function verCapacidades(){
-    fetch("/maia_capacidades")
-    .then(r => r.json())
-    .then(data => {
 
-        let panel = document.getElementById("panel_maia");
-        panel.style.display = "block";
+    let panel = document.getElementById("panel_maia");
+    panel.style.display = "block";
 
-        panel.innerHTML = `
-        <h2>🚀 MAIA</h2>
-        <p><b>Nivel:</b> Sistema autónomo de ingeniería avanzada</p>
-        <p>Plataforma capaz de diseñar drones completos con hardware y software listos para construcción real.</p>
+    let fases = [];
 
-        <h3>📊 Fase ${data.fase}</h3>
+    for(let i=1;i<=26;i++){
+        fases.push(`Fase ${i}: Nivel ${i} de evolución MAIA`);
+    }
 
+    panel.innerHTML = `
+        <h2>🚀 MAIA - SISTEMA INDUSTRIAL</h2>
+        <p>Plataforma autónoma de ingeniería de drones reales</p>
+        <h3>📊 Fases completas</h3>
         <ul>
-        ${data.capacidades.map(c => `<li>${c}</li>`).join("")}
+            ${fases.map(f => `<li>${f}</li>`).join("")}
         </ul>
-        `;
-    });
+    `;
 }
 
 // =========================

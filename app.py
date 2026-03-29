@@ -1,10 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+rom flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
-from core.maia_hardware_generator import generar_hardware
-from core.maia_mission_planner import analizar_mision
 
 import os, json, time, threading, subprocess, zipfile, re, sys
 
@@ -55,7 +53,7 @@ def generar_modelo_3d(base, peso):
     }
 
 # =========================
-# 🚀 EJECUCIÓN SIN TIMEOUT REAL
+# 🚀 EJECUCIÓN ROBUSTA
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -87,10 +85,11 @@ def ejecutar_main(ruta):
             time.sleep(0.05)
 
         stdout, stderr = proceso.communicate()
+
         salida += stdout
 
         if stderr:
-            salida += "\n⚠️ " + stderr
+            salida += "\n🔥 ERROR REAL:\n" + stderr
 
         if "###DATA_START###" not in salida:
             salida += "\n###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
@@ -98,18 +97,20 @@ def ejecutar_main(ruta):
         return salida
 
     except Exception as e:
-        return f"###DATA_START###[{{\"error\":\"{str(e)}\"}}]###DATA_END###"
+        return f"###DATA_START###\n[{{\"error\":\"{str(e)}\"}}]\n###DATA_END###"
 
 # =========================
 # ZIP
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
+
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, _, files in os.walk(ruta):
+        for root, dirs, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
+
     return zip_path
 
 # =========================
@@ -136,9 +137,6 @@ class MaiaCore:
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
 
-            # =========================
-            # 🔥 ANALISIS PRO
-            # =========================
             analisis_pro = {
                 **analisis,
                 "estructura": "Fibra de carbono",
@@ -146,15 +144,13 @@ class MaiaCore:
                 "carga_util_kg": round(peso * 0.3, 2)
             }
 
-            # =========================
-            # 🔥 FISICA PRO
-            # =========================
             fisica_pro = {
                 **fisica,
                 "relacion_empuje_peso": round(empuje/(peso*9.81+1),2)
             }
 
             self.progreso(40, "Validando...")
+
             validator = MaiaValidator()
             validacion = validator.validar(core)
 
@@ -162,6 +158,7 @@ class MaiaCore:
 
             nombre = f"drone_{int(time.time())}"
             base = f"maia_projects/{nombre}"
+
             os.makedirs(base, exist_ok=True)
 
             software_base = generar_software_completo(analisis.get("tipo","general"))
@@ -169,14 +166,19 @@ class MaiaCore:
             for r, c in software_base["codigo"].items():
                 generar_archivo(os.path.join(base, r), c)
 
+            # 🔥 FIX CRÍTICO: PYTHON MODULES
+            for root, dirs, files in os.walk(base):
+                init_file = os.path.join(root, "__init__.py")
+                if not os.path.exists(init_file):
+                    with open(init_file, "w") as f:
+                        f.write("# auto-generated")
+
             modelos = generar_modelo_3d(base, peso)
 
             salida = ejecutar_main(base)
+
             zip_path = exportar_zip(base)
 
-            # =========================
-            # 🔥 HARDWARE REAL
-            # =========================
             hardware_pro = {
                 "estructura": "Fibra de carbono",
                 "motores": "3508 700KV x4",
@@ -186,9 +188,6 @@ class MaiaCore:
                 "sensores": ["GPS", "IMU", "Lidar", "FPV"]
             }
 
-            # =========================
-            # ⚠️ RIESGOS FIJOS
-            # =========================
             riesgos_pro = [
                 "Sobrecalentamiento ESC",
                 "Fallo GPS urbano",
@@ -197,9 +196,6 @@ class MaiaCore:
                 "Batería crítica"
             ]
 
-            # =========================
-            # 💻 SOFTWARE PRO
-            # =========================
             software_pro = {
                 "nivel": "Industrial",
                 "capacidades": [

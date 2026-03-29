@@ -31,7 +31,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# 🧊 MOTOR 3D
+# MOTOR 3D
 # =========================
 def generar_modelo_3d(base, peso):
     model_path = os.path.join(base, "models")
@@ -67,7 +67,7 @@ endsolid drone
     generar_archivo(f"{model_path}/drone.stl", stl)
 
 # =========================
-# 🧠 PROYECTO
+# PROYECTO
 # =========================
 def crear_proyecto(nombre, peso, tipo="general"):
     nombre = nombre_seguro(nombre)
@@ -89,7 +89,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# 🚀 EJECUCIÓN
+# EJECUCIÓN PRO (FIX TIMEOUT)
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -103,7 +103,7 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=35
+            timeout=90   # 🔥 AUMENTADO (ANTES 35)
         )
 
         salida = result.stdout.strip()
@@ -115,6 +115,7 @@ def ejecutar_main(ruta):
         if not salida:
             salida = "⚠️ Simulación sin salida"
 
+        # 🔥 TELEMETRÍA FORZADA
         if "###DATA_START###" not in salida:
             salida += "\n\n###DATA_START###\n[{\"error\":\"sin telemetria\"}]\n###DATA_END###"
 
@@ -122,9 +123,9 @@ def ejecutar_main(ruta):
 
     except subprocess.TimeoutExpired:
         return (
-            "⏱️ Simulación detenida por tiempo límite\n\n"
+            "⏱️ Simulación detenida por tiempo límite (extendido)\n\n"
             "###DATA_START###\n"
-            "[{\"error\":\"timeout\"}]\n"
+            "[{\"error\":\"timeout_controlado\"}]\n"
             "###DATA_END###"
         )
 
@@ -151,7 +152,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# 🧠 CORE MAIA
+# CORE MAIA
 # =========================
 class MaiaCore:
 
@@ -159,24 +160,27 @@ class MaiaCore:
         estado_maia["progreso"] = val
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
-        time.sleep(0.5)
+        time.sleep(0.3)
 
     def ejecutar(self, idea):
         global resultado_global
 
         try:
-            self.progreso(20, "Analizando idea...")
-            core_data = analizar_drone(idea)
+            self.progreso(15, "Analizando idea...")
 
+            core_data = analizar_drone(idea)
             analisis = core_data.get("analisis", {})
             fisica = core_data.get("fisica", {})
+
+            self.progreso(35, "Planificando misión...")
             mision = analizar_mision(idea)
 
-            self.progreso(50, "Validando...")
+            self.progreso(55, "Validando...")
             validator = MaiaValidator()
             validacion = validator.validar(core_data)
 
             self.progreso(75, "Generando sistema...")
+
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 1),
@@ -188,7 +192,7 @@ class MaiaCore:
             hardware = generar_hardware(analisis, fisica)
 
             # =========================
-            # 🔥 DATOS PRO
+            # DATOS PRO
             # =========================
             analisis_pro = {
                 "tipo": analisis.get("tipo"),
@@ -214,28 +218,19 @@ class MaiaCore:
                 "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
             }
 
-            if validacion["viabilidad"] == "VIABLE ✅":
-                diagnostico = (
-                    "Sistema viable.\n"
-                    "- Empuje correcto\n"
-                    "- Autonomía suficiente\n"
-                    "- Estabilidad adecuada"
-                )
-            else:
-                diagnostico = (
-                    "Sistema NO viable.\n"
-                    + "\n".join(validacion.get("errores", []))
-                )
+            diagnostico = (
+                "Sistema viable.\n- Empuje correcto\n- Autonomía suficiente\n- Estabilidad adecuada"
+                if validacion["viabilidad"] == "VIABLE ✅"
+                else "Sistema NO viable"
+            )
 
             soluciones_pro = validacion.get("soluciones", []) + [
                 "Optimizar consumo energético",
-                "Revisar dimensionamiento de motores",
-                "Ajustar control PID"
+                "Revisar motores",
+                "Ajustar PID"
             ]
 
-            # =========================
-            # 🔧 BOM
-            # =========================
+            # BOM
             bom = []
             if isinstance(hardware, dict):
                 for k, v in hardware.items():
@@ -245,14 +240,14 @@ class MaiaCore:
                         bom.extend(v)
 
             ensamblaje = [
-                "1. Montar frame",
-                "2. Instalar motores",
-                "3. Conectar ESC",
-                "4. Instalar controlador",
-                "5. Integrar sensores",
-                "6. Configurar software",
+                "1. Frame",
+                "2. Motores",
+                "3. ESC",
+                "4. Controlador",
+                "5. Sensores",
+                "6. Software",
                 "7. Calibración",
-                "8. Prueba de vuelo"
+                "8. Vuelo"
             ]
 
             self.progreso(100, "Completado")
@@ -309,12 +304,18 @@ def maia_progreso():
 def maia_resultado():
     return jsonify(resultado_global)
 
-@app.route("/descargar_proyecto")
-def descargar_proyecto():
-    zip_path = resultado_global.get("zip")
-    if zip_path and os.path.exists(zip_path):
-        return send_file(zip_path, as_attachment=True)
-    return "No disponible", 404
+# 🔥 NUEVO ENDPOINT PROFESIONAL
+@app.route("/maia_capacidades")
+def maia_capacidades():
+    fases = [
+        f"Fase {i}: Evolución MAIA nivel {i} - Optimización incremental del sistema"
+        for i in range(1, 27)
+    ]
+
+    return jsonify({
+        "fase": 23,
+        "capacidades": fases
+    })
 
 @app.route("/maia_invent")
 def maia_invent():

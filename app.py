@@ -1,4 +1,4 @@
-rom flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator

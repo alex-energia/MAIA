@@ -1,11 +1,12 @@
 # ==========================================
 # MAIA SISTEMA INDUSTRIAL INTELIGENTE
-# + SIMULADOR DE DRONE REAL
+# + SIMULADOR DE DRONE REAL (NIVEL BRUTAL)
 # ==========================================
 
 import json
 import time
 import random
+import math
 
 from core.evaluador_integral import EvaluadorIntegral
 from core.motor_conocimiento import MotorConocimiento
@@ -76,62 +77,133 @@ def procesar_entrada(entrada):
             }
 
     resultado_final["vision"] = vision_data
-
     return resultado_final
 
 # ==========================================
-# 🚀 SIMULADOR DE DRONE (NUEVO NIVEL)
+# 🧠 CONTROL PID REAL
+# ==========================================
+class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.integral = 0
+        self.prev_error = 0
+
+    def update(self, error, dt):
+        self.integral += error * dt
+        derivative = (error - self.prev_error) / dt if dt > 0 else 0
+        self.prev_error = error
+
+        return (
+            self.kp * error +
+            self.ki * self.integral +
+            self.kd * derivative
+        )
+
+# ==========================================
+# 🚁 DRONE FÍSICO
+# ==========================================
+class Drone:
+
+    def __init__(self):
+
+        self.pos = [0.0, 0.0, 0.0]
+        self.vel = [0.0, 0.0, 0.0]
+
+        self.mass = 12
+        self.battery = 100
+
+        self.pid_z = PID(2.5, 0.2, 0.8)
+
+        self.estado = "DESPEGANDO"
+
+    def update(self, target_z, dt):
+
+        # CONTROL ALTURA
+        error_z = target_z - self.pos[2]
+        thrust = self.pid_z.update(error_z, dt)
+
+        # FÍSICA
+        az = (thrust - 9.81 * self.mass) / self.mass
+
+        self.vel[2] += az * dt
+        self.pos[2] += self.vel[2] * dt
+
+        # MOVIMIENTO HORIZONTAL (simulado)
+        self.vel[0] += random.uniform(-0.2, 0.2)
+        self.vel[1] += random.uniform(-0.2, 0.2)
+
+        self.pos[0] += self.vel[0] * dt
+        self.pos[1] += self.vel[1] * dt
+
+        # CONSUMO
+        consumo = abs(thrust) * 0.0008
+        self.battery -= consumo
+
+        # ESTADOS
+        if self.pos[2] > 15:
+            self.estado = "EN_MISION"
+
+        if self.battery < 30:
+            self.estado = "RETORNO"
+
+        if self.battery < 10:
+            self.estado = "CRITICO"
+
+        return {
+            "x": round(self.pos[0], 2),
+            "y": round(self.pos[1], 2),
+            "z": round(self.pos[2], 2),
+            "vx": round(self.vel[0], 2),
+            "vy": round(self.vel[1], 2),
+            "vz": round(self.vel[2], 2),
+            "battery": round(self.battery, 2),
+            "estado": self.estado,
+            "thrust": round(thrust, 2)
+        }
+
+# ==========================================
+# 🚀 SIMULADOR DE DRONE PRO
 # ==========================================
 def simular_drone():
 
-    estado = {
-        "pos": [0.0, 0.0, 0.0],
-        "vel": [0.0, 0.0, 0.0]
-    }
-
+    drone = Drone()
     datos = []
 
-    for t in range(150):
+    dt = 0.1
+    pasos = 200
+
+    target_altitude = 20
+
+    for t in range(pasos):
 
         try:
-            # 🔥 dinámica simple
-            ax = random.uniform(0.1, 0.3)
-            ay = random.uniform(0.1, 0.3)
-            az = random.uniform(0.05, 0.15)
+            data = drone.update(target_altitude, dt)
 
-            estado["vel"][0] += ax * 0.1
-            estado["vel"][1] += ay * 0.1
-            estado["vel"][2] += az * 0.1
-
-            estado["pos"][0] += estado["vel"][0] * 0.1
-            estado["pos"][1] += estado["vel"][1] * 0.1
-            estado["pos"][2] += estado["vel"][2] * 0.1
-
-            # 🔥 visión
+            # VISIÓN
             try:
                 vision_data = vision.analizar_entorno()
             except:
-                vision_data = None
+                vision_data = "clear"
 
-            # 🔥 decisiones
-            decision = procesar_entrada("analizar estabilidad drone")
+            # DECISIÓN IA
+            decision = procesar_entrada("optimizar estabilidad drone")
 
             paquete = {
                 "t": t,
-                "x": round(estado["pos"][0], 2),
-                "y": round(estado["pos"][1], 2),
-                "z": round(estado["pos"][2], 2),
-                "vx": round(estado["vel"][0], 2),
-                "vy": round(estado["vel"][1], 2),
-                "vz": round(estado["vel"][2], 2),
-                "vision": vision_data or "clear",
-                "decision": decision.get("tipo"),
-                "estado": "OK"
+                **data,
+                "vision": vision_data,
+                "decision": decision.get("tipo", "IA"),
+                "alerta": (
+                    "⚠️ batería baja" if data["battery"] < 30 else None
+                )
             }
 
             datos.append(paquete)
 
-            time.sleep(0.01)
+            if drone.battery <= 5:
+                break
 
         except Exception as e:
             datos.append({"error": str(e)})
@@ -141,12 +213,12 @@ def simular_drone():
 # ==========================================
 # 🔥 EJECUCIÓN AUTOMÁTICA (WEB)
 # ==========================================
+
 print("🚀 Ejecutando simulación MAIA...")
 
-# 🔥 PARTE 1: simulación drone
 telemetria = simular_drone()
 
-# 🔥 PARTE 2: inteligencia
+# INTELIGENCIA (NO SE BORRA)
 inputs_demo = [
     "solar 50 colombia 0.02",
     "optimizar bateria drone",
@@ -167,9 +239,10 @@ for entrada in inputs_demo:
         historial.append({"error": str(e)})
 
 # ==========================================
-# 📡 SALIDA FINAL (CRÍTICA PARA FRONTEND)
+# 📡 SALIDA FINAL
 # ==========================================
-salida_final = telemetria[-50:]  # 🔥 SOLO LO ÚLTIMO
+
+salida_final = telemetria[-50:]
 
 print("###DATA_START###")
 print(json.dumps(salida_final))

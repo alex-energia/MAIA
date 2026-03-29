@@ -3,20 +3,21 @@
 <head>
 <title>MAIA INVENT</title>
 
+<!-- 🔥 THREE JS -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+
 <style>
 body {
     font-family: Arial;
     background: #0f172a;
     color: #e5e7eb;
 }
-
 textarea {
     width: 100%;
     height: 80px;
     border-radius: 8px;
     padding: 10px;
 }
-
 button {
     padding: 10px;
     margin: 5px;
@@ -26,7 +27,6 @@ button {
     background: #2563eb;
     color: white;
 }
-
 #panel_maia {
     display: none;
     background: black;
@@ -34,7 +34,6 @@ button {
     margin-top: 20px;
     border-radius: 10px;
 }
-
 #barra_container {
     width: 100%;
     background: #111;
@@ -43,7 +42,6 @@ button {
     overflow: hidden;
     display: none;
 }
-
 #barra {
     width: 0%;
     height: 25px;
@@ -52,14 +50,12 @@ button {
     color: white;
     font-weight: bold;
 }
-
 .panel {
     background: #020617;
     padding: 15px;
     border-radius: 10px;
     margin-top: 20px;
 }
-
 .ok { color: #22c55e; }
 .bad { color: #ef4444; }
 
@@ -71,7 +67,6 @@ pre {
     font-size: 12px;
     max-height: 300px;
 }
-
 .bloque {
     margin-top: 20px;
     padding: 10px;
@@ -145,6 +140,7 @@ function monitorearResultado(){
                 clearInterval(intervalo);
                 cargarResultadoFinal();
             }
+
         }catch(e){
             clearInterval(intervalo);
         }
@@ -152,7 +148,7 @@ function monitorearResultado(){
 }
 
 // =========================
-// 🧠 RESULTADO COMPLETO PRO
+// 🧠 RESULTADO
 // =========================
 async function cargarResultadoFinal(){
 
@@ -167,97 +163,34 @@ async function cargarResultadoFinal(){
     let html = `<div class="panel">
     <h2 class="${clase}">${estado}</h2>`;
 
-    // =========================
-    // 📦 ANALISIS
-    // =========================
-    html += `<div class="bloque"><h3>📦 Análisis técnico</h3><pre>${JSON.stringify(analisis,null,2)}</pre></div>`;
+    html += `<div class="bloque"><h3>📦 Análisis técnico</h3>
+    <pre>${JSON.stringify(analisis,null,2)}</pre></div>`;
 
-    if(analisis.riesgos){
-        html += `<div class="bloque"><h3>⚠️ Riesgos</h3><pre>${analisis.riesgos.join("\n")}</pre></div>`;
-    }
+    let riesgos = data.riesgos || analisis.riesgos || [];
+    html += `<div class="bloque"><h3>⚠️ Riesgos</h3>
+    <pre>${riesgos.length ? riesgos.join("\n") : "Sin riesgos detectados"}</pre></div>`;
 
-    // =========================
-    // ⚡ FISICA
-    // =========================
-    html += `<div class="bloque"><h3>⚡ Física</h3><pre>${JSON.stringify(fisica,null,2)}</pre></div>`;
+    html += `<div class="bloque"><h3>⚡ Física</h3>
+    <pre>${JSON.stringify(fisica,null,2)}</pre></div>`;
 
-    // =========================
-    // 💻 SIMULACIÓN
-    // =========================
-    html += `<div class="bloque"><h3>💻 Simulación</h3><pre>${data.salida || "Sin datos"}</pre></div>`;
+    html += `<div class="bloque"><h3>💻 Simulación</h3>
+    <pre>${data.salida || "Sin datos"}</pre></div>`;
 
-    // =========================
-    // 📡 TELEMETRÍA
-    // =========================
-    html += `<div class="bloque"><h3>📡 Telemetría</h3><pre id="telemetria_data">Procesando...</pre></div>`;
+    html += `<div class="bloque"><h3>📡 Telemetría</h3>
+    <pre id="telemetria_data">Procesando...</pre></div>`;
 
-    // =========================
-    // 🧠 DIAGNÓSTICO
-    // =========================
-    if(data.diagnostico){
-        html += `<div class="bloque"><h3>🧠 Diagnóstico</h3><pre>${data.diagnostico}</pre></div>`;
-    }
-
-    // =========================
-    // ❌ ERRORES
-    // =========================
-    if(data.errores && data.errores.length){
-        html += `<div class="bloque"><h3>❌ Errores</h3><pre>${data.errores.join("\n")}</pre></div>`;
-    }
-
-    // =========================
-    // 🔧 SOLUCIONES
-    // =========================
-    if(data.soluciones && data.soluciones.length){
-        html += `<div class="bloque"><h3>🔧 Soluciones</h3><pre>${data.soluciones.join("\n")}</pre></div>`;
-    }
-
-    // =========================
-    // ⚙️ HARDWARE
-    // =========================
     if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware</h3><pre>${JSON.stringify(data.hardware,null,2)}</pre></div>`;
+        html += `<div class="bloque"><h3>⚙️ Hardware Industrial</h3>
+        <pre>${JSON.stringify(data.hardware,null,2)}</pre></div>`;
     }
 
-    // =========================
-    // 🧾 BOM
-    // =========================
-    if(data.bom){
-        html += `<div class="bloque"><h3>🧾 BOM</h3><pre>${data.bom.join("\n")}</pre></div>`;
-    }
-
-    // =========================
-    // 🔧 ENSAMBLAJE
-    // =========================
-    if(data.ensamblaje){
-        html += `<div class="bloque"><h3>🔧 Ensamblaje</h3><pre>${data.ensamblaje.join("\n")}</pre></div>`;
-    }
-
-    // =========================
-    // 💻 SOFTWARE (NIVEL BRUTAL)
-    // =========================
-    if(data.software){
-        html += `<div class="bloque"><h3>💻 Software de Ingeniería</h3>`;
-
-        if(data.software.resumen){
-            html += `<pre>${JSON.stringify(data.software.resumen,null,2)}</pre>`;
-        }
-
-        if(data.software.arquitectura){
-            html += `<pre>${JSON.stringify(data.software.arquitectura,null,2)}</pre>`;
-        }
-
-        if(data.software.algoritmos){
-            html += `<pre>${data.software.algoritmos.join("\n")}</pre>`;
-        }
-
-        if(data.software.codigo){
-            for(let archivo in data.software.codigo){
-                html += `<b>${archivo}</b><pre>${data.software.codigo[archivo]}</pre>`;
-            }
-        }
-
-        html += `</div>`;
+    // 🔥 BLOQUE 3D REAL
+    if(data.modelos_3d){
+        html += `
+        <div class="bloque">
+            <h3>🧊 Modelo 3D</h3>
+            <canvas id="viewer3d" style="width:100%; height:300px;"></canvas>
+        </div>`;
     }
 
     html += `</div>`;
@@ -265,7 +198,7 @@ async function cargarResultadoFinal(){
     document.getElementById("resultado").innerHTML = html;
 
     // =========================
-    // 📡 TELEMETRÍA FIX
+    // 📡 TELEMETRÍA
     // =========================
     try{
         let salida = data.salida || "";
@@ -278,18 +211,62 @@ async function cargarResultadoFinal(){
 
             document.getElementById("telemetria_data").innerText =
                 JSON.stringify(json.slice(0,20), null, 2);
-        } else {
-            document.getElementById("telemetria_data").innerText = "Sin datos";
         }
+
     }catch(e){
-        document.getElementById("telemetria_data").innerText = "Error en telemetría";
+        document.getElementById("telemetria_data").innerText = "Error";
     }
 
-    window.ultimoProyecto = data;
+    // =========================
+    // 🧊 RENDER 3D REAL
+    // =========================
+    try{
+        if(data.modelos_3d && document.getElementById("viewer3d")){
+
+            let scene = new THREE.Scene();
+            let camera = new THREE.PerspectiveCamera(75, 2, 0.1, 1000);
+
+            let renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById("viewer3d")
+            });
+
+            renderer.setSize(400, 300);
+
+            let geometry = new THREE.BoxGeometry(2, 0.4, 2);
+            let material = new THREE.MeshNormalMaterial();
+            let drone = new THREE.Mesh(geometry, material);
+
+            // hélices simuladas
+            let prop1 = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.02, 1),
+                material
+            );
+            prop1.position.set(1, 0.3, 1);
+
+            scene.add(drone);
+            scene.add(prop1);
+
+            camera.position.z = 5;
+
+            function animate(){
+                requestAnimationFrame(animate);
+
+                drone.rotation.y += 0.01;
+                prop1.rotation.y += 0.3;
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+        }
+
+    }catch(e){
+        console.log("3D error", e);
+    }
 }
 
 // =========================
-// 🧹 LIMPIAR UI
+// 🧹 LIMPIAR
 // =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";
@@ -312,8 +289,6 @@ function verCapacidades(){
 
     panel.innerHTML = `
         <h2>🚀 MAIA - SISTEMA INDUSTRIAL</h2>
-        <p>Plataforma autónoma de ingeniería de drones reales</p>
-        <h3>📊 Fases completas</h3>
         <ul>${fases.map(f => `<li>${f}</li>`).join("")}</ul>
     `;
 }
@@ -337,5 +312,6 @@ async function guardarProyectoInvent(){
 }
 
 </script>
+
 </body>
 </html>

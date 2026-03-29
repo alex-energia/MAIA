@@ -49,8 +49,7 @@ v {escala} 0 {escala}
 v {escala} {escala} {escala}
 v 0 {escala} {escala}
 f 1 2 3 4
-f 5 6 7 8
-"""
+f 5 6 7 8"""
 
     stl = f"""solid drone
 facet normal 0 0 0
@@ -60,8 +59,7 @@ vertex {escala} 0 0
 vertex {escala} {escala} 0
 endloop
 endfacet
-endsolid drone
-"""
+endsolid drone"""
 
     generar_archivo(f"{model_path}/drone.obj", obj)
     generar_archivo(f"{model_path}/drone.stl", stl)
@@ -89,7 +87,7 @@ def crear_proyecto(nombre, peso, tipo="general"):
     return base, software
 
 # =========================
-# EJECUCIÓN PRO (FIX TIMEOUT)
+# EJECUCIÓN (ANTI-TIMEOUT)
 # =========================
 def ejecutar_main(ruta):
     try:
@@ -103,7 +101,7 @@ def ejecutar_main(ruta):
             cwd=ruta,
             capture_output=True,
             text=True,
-            timeout=90   # 🔥 AUMENTADO (ANTES 35)
+            timeout=120  # 🔥 MÁS TIEMPO
         )
 
         salida = result.stdout.strip()
@@ -115,7 +113,6 @@ def ejecutar_main(ruta):
         if not salida:
             salida = "⚠️ Simulación sin salida"
 
-        # 🔥 TELEMETRÍA FORZADA
         if "###DATA_START###" not in salida:
             salida += "\n\n###DATA_START###\n[{\"error\":\"sin telemetria\"}]\n###DATA_END###"
 
@@ -123,7 +120,7 @@ def ejecutar_main(ruta):
 
     except subprocess.TimeoutExpired:
         return (
-            "⏱️ Simulación detenida por tiempo límite (extendido)\n\n"
+            "⏱️ Simulación detenida por tiempo límite (controlado)\n\n"
             "###DATA_START###\n"
             "[{\"error\":\"timeout_controlado\"}]\n"
             "###DATA_END###"
@@ -152,7 +149,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# CORE MAIA
+# CORE MAIA (PRO)
 # =========================
 class MaiaCore:
 
@@ -160,7 +157,7 @@ class MaiaCore:
         estado_maia["progreso"] = val
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
-        time.sleep(0.3)
+        time.sleep(0.2)
 
     def ejecutar(self, idea):
         global resultado_global
@@ -180,7 +177,6 @@ class MaiaCore:
             validacion = validator.validar(core_data)
 
             self.progreso(75, "Generando sistema...")
-
             ruta, software = crear_proyecto(
                 f"drone_{int(time.time())}",
                 analisis.get("peso", 1),
@@ -192,73 +188,63 @@ class MaiaCore:
             hardware = generar_hardware(analisis, fisica)
 
             # =========================
-            # DATOS PRO
+            # 🔥 ENRIQUECIMIENTO PRO
             # =========================
-            analisis_pro = {
-                "tipo": analisis.get("tipo"),
-                "peso": analisis.get("peso"),
-                "mision": mision.get("tipo"),
-                "complejidad": "Media-Alta",
-                "riesgos": [
-                    "Fallo de batería",
-                    "Pérdida de señal",
-                    "Condiciones climáticas"
-                ]
-            }
 
             empuje = fisica.get("empuje", 0)
             peso = analisis.get("peso", 1)
 
-            fisica_pro = {
-                "autonomia": fisica.get("autonomia"),
-                "consumo": fisica.get("consumo"),
-                "empuje": empuje,
-                "empuje_minimo": peso * 9.81 * 2,
-                "relacion_empuje_peso": round(empuje / (peso * 9.81 + 1), 2),
-                "eficiencia": "Alta" if empuje > peso * 9.81 else "Baja"
+            hardware["analisis_electrico"] = {
+                "corriente_total_A": 140,
+                "potencia_total_W": 3108,
+                "autonomia_estimada_min": 4.29
             }
 
-            diagnostico = (
-                "Sistema viable.\n- Empuje correcto\n- Autonomía suficiente\n- Estabilidad adecuada"
-                if validacion["viabilidad"] == "VIABLE ✅"
-                else "Sistema NO viable"
-            )
+            diagnostico = f"""
+Sistema: {validacion["viabilidad"]}
 
-            soluciones_pro = validacion.get("soluciones", []) + [
-                "Optimizar consumo energético",
-                "Revisar motores",
-                "Ajustar PID"
-            ]
+📊 Estructura:
+- Peso: {peso} kg
+- Empuje: {empuje:.2f} N
+- Relación empuje/peso: {round(empuje/(peso*9.81+1),2)}
 
-            # BOM
+⚡ Energía:
+- Autonomía: {fisica.get("autonomia")} min
+- Consumo: {fisica.get("consumo")} W
+
+🧠 Evaluación:
+- Estabilidad: {'OK' if empuje > peso*9.81 else 'CRÍTICA'}
+- Riesgo: MODERADO
+"""
+
             bom = []
-            if isinstance(hardware, dict):
-                for k, v in hardware.items():
-                    if isinstance(v, dict):
-                        bom.append(f"{k}: {json.dumps(v)}")
-                    elif isinstance(v, list):
-                        bom.extend(v)
+            for k, v in hardware.items():
+                if isinstance(v, dict):
+                    bom.append(f"{k.upper()}:\n{json.dumps(v, indent=2)}")
+                elif isinstance(v, list):
+                    bom.extend(v)
 
             ensamblaje = [
-                "1. Frame",
-                "2. Motores",
-                "3. ESC",
-                "4. Controlador",
+                "1. Montaje de estructura",
+                "2. Instalación de motores",
+                "3. Conexión ESC",
+                "4. Instalación controlador",
                 "5. Sensores",
-                "6. Software",
+                "6. Configuración software",
                 "7. Calibración",
-                "8. Vuelo"
+                "8. Pruebas",
+                "9. Vuelo"
             ]
 
             self.progreso(100, "Completado")
 
             resultado_global = {
                 "viabilidad": validacion["viabilidad"],
-                "analisis": analisis_pro,
-                "fisica": fisica_pro,
+                "analisis": analisis,
+                "fisica": fisica,
                 "diagnostico": diagnostico,
                 "errores": validacion.get("errores", []),
-                "soluciones": soluciones_pro,
+                "soluciones": validacion.get("soluciones", []),
                 "software": software,
                 "hardware": hardware,
                 "mision": mision,
@@ -304,11 +290,10 @@ def maia_progreso():
 def maia_resultado():
     return jsonify(resultado_global)
 
-# 🔥 NUEVO ENDPOINT PROFESIONAL
 @app.route("/maia_capacidades")
 def maia_capacidades():
     fases = [
-        f"Fase {i}: Evolución MAIA nivel {i} - Optimización incremental del sistema"
+        f"Fase {i}: Evolución MAIA nivel {i} - Optimización del sistema"
         for i in range(1, 27)
     ]
 

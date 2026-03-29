@@ -1,19 +1,17 @@
 # ==========================================
-# MAIA SISTEMA INSTITUCIONAL INTELIGENTE
-# Motor Financiero + Motor de Conocimiento
-# + MODO AUTO PARA WEB (FIX TIMEOUT)
+# MAIA SISTEMA INDUSTRIAL INTELIGENTE
+# + SIMULADOR DE DRONE REAL
 # ==========================================
 
 import json
 import time
-import os
+import random
 
 from core.evaluador_integral import EvaluadorIntegral
 from core.motor_conocimiento import MotorConocimiento
 from ai.vision import VisionSystem
 
-print("MAIA SISTEMA INSTITUCIONAL ACTIVADO")
-print("Modo dual: Financiero + Conocimiento")
+print("🔥 MAIA SISTEMA INDUSTRIAL ACTIVADO")
 
 evaluador = EvaluadorIntegral()
 motor_conocimiento = MotorConocimiento()
@@ -22,18 +20,12 @@ vision = VisionSystem()
 historial = []
 
 # ==========================================
-# 🔥 DETECCIÓN MODO AUTOMÁTICO
-# ==========================================
-MODO_AUTO = True  # ← 🔥 FORZAMOS PARA MAIA WEB
-
-# ==========================================
-# 🚀 FUNCION DE PROCESO
+# 🧠 PROCESADOR ORIGINAL (NO SE BORRA)
 # ==========================================
 def procesar_entrada(entrada):
 
     resultado_final = {}
 
-    # 🔥 VISIÓN
     try:
         vision_data = vision.analizar_entorno()
     except:
@@ -41,9 +33,6 @@ def procesar_entrada(entrada):
 
     partes = entrada.split()
 
-    # =========================
-    # MODO FINANCIERO
-    # =========================
     if len(partes) == 4:
         try:
             tecnologia = partes[0].lower()
@@ -70,9 +59,6 @@ def procesar_entrada(entrada):
                 "error": str(e)
             }
 
-    # =========================
-    # MODO CONOCIMIENTO
-    # =========================
     else:
         try:
             respuesta = motor_conocimiento.responder(entrada)
@@ -94,84 +80,98 @@ def procesar_entrada(entrada):
     return resultado_final
 
 # ==========================================
-# 🤖 MODO AUTOMÁTICO (WEB)
+# 🚀 SIMULADOR DE DRONE (NUEVO NIVEL)
 # ==========================================
-if MODO_AUTO:
+def simular_drone():
 
-    inputs_demo = [
-        "solar 50 colombia 0.02",
-        "analizar estabilidad de drone",
-        "riesgos de energia eolica",
-        "optimizacion de baterias"
-    ]
+    estado = {
+        "pos": [0.0, 0.0, 0.0],
+        "vel": [0.0, 0.0, 0.0]
+    }
 
-    for entrada in inputs_demo:
+    datos = []
+
+    for t in range(150):
+
         try:
-            resultado = procesar_entrada(entrada)
+            # 🔥 dinámica simple
+            ax = random.uniform(0.1, 0.3)
+            ay = random.uniform(0.1, 0.3)
+            az = random.uniform(0.05, 0.15)
 
-            historial.append({
-                "timestamp": time.time(),
-                "input": entrada,
-                "output": resultado
-            })
+            estado["vel"][0] += ax * 0.1
+            estado["vel"][1] += ay * 0.1
+            estado["vel"][2] += az * 0.1
 
-            time.sleep(0.2)
+            estado["pos"][0] += estado["vel"][0] * 0.1
+            estado["pos"][1] += estado["vel"][1] * 0.1
+            estado["pos"][2] += estado["vel"][2] * 0.1
+
+            # 🔥 visión
+            try:
+                vision_data = vision.analizar_entorno()
+            except:
+                vision_data = None
+
+            # 🔥 decisiones
+            decision = procesar_entrada("analizar estabilidad drone")
+
+            paquete = {
+                "t": t,
+                "x": round(estado["pos"][0], 2),
+                "y": round(estado["pos"][1], 2),
+                "z": round(estado["pos"][2], 2),
+                "vx": round(estado["vel"][0], 2),
+                "vy": round(estado["vel"][1], 2),
+                "vz": round(estado["vel"][2], 2),
+                "vision": vision_data or "clear",
+                "decision": decision.get("tipo"),
+                "estado": "OK"
+            }
+
+            datos.append(paquete)
+
+            time.sleep(0.01)
 
         except Exception as e:
-            historial.append({
-                "error": str(e)
-            })
+            datos.append({"error": str(e)})
+
+    return datos
 
 # ==========================================
-# 💻 MODO INTERACTIVO (CONSOLA)
+# 🔥 EJECUCIÓN AUTOMÁTICA (WEB)
 # ==========================================
-else:
+print("🚀 Ejecutando simulación MAIA...")
 
-    print("Formato financiero:")
-    print("tecnologia capacidad_MW pais riesgo_regulatorio")
-    print("Escribe 'salir' para cerrar\n")
+# 🔥 PARTE 1: simulación drone
+telemetria = simular_drone()
 
-    while True:
-        try:
-            entrada = input("MAIA> ").strip()
+# 🔥 PARTE 2: inteligencia
+inputs_demo = [
+    "solar 50 colombia 0.02",
+    "optimizar bateria drone",
+    "riesgos vuelo autonomo"
+]
 
-            if not entrada:
-                print("⚠️ Entrada vacía")
-                continue
+for entrada in inputs_demo:
+    try:
+        resultado = procesar_entrada(entrada)
 
-            if entrada.lower() == "salir":
-                print("Cerrando MAIA...")
-                break
+        historial.append({
+            "timestamp": time.time(),
+            "input": entrada,
+            "output": resultado
+        })
 
-            resultado = procesar_entrada(entrada)
-
-            print(resultado)
-
-            historial.append({
-                "timestamp": time.time(),
-                "input": entrada,
-                "output": resultado
-            })
-
-            historial = historial[-20:]
-
-        except KeyboardInterrupt:
-            print("\nInterrupción manual")
-            break
-
-        except Exception as e:
-            print("ERROR GLOBAL:", e)
+    except Exception as e:
+        historial.append({"error": str(e)})
 
 # ==========================================
-# 📡 SALIDA PARA MAIA WEB
+# 📡 SALIDA FINAL (CRÍTICA PARA FRONTEND)
 # ==========================================
-try:
-    if not historial:
-        historial = [{"error": "sin datos"}]
-except Exception as e:
-    historial = [{"error": str(e)}]
+salida_final = telemetria[-50:]  # 🔥 SOLO LO ÚLTIMO
 
 print("###DATA_START###")
-print(json.dumps(historial))
+print(json.dumps(salida_final))
 print("###DATA_END###")
 print("OK")

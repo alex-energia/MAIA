@@ -4,7 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 
-import os, time, threading, subprocess, zipfile, sys
+import os, time, threading, subprocess, zipfile, sys, json
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -29,40 +29,31 @@ def generar_archivo(ruta, contenido):
 # 🔥 MODELO 3D REAL
 # =========================
 def generar_modelo_3d(base, peso):
-
     path = os.path.join(base, "models")
     os.makedirs(path, exist_ok=True)
 
     escala = max(1, peso / 3)
 
     partes = {
-        "frame.obj": f"""
-o frame
+        "frame.obj": f"""o frame
 v {-escala} 0 {-escala}
 v {escala} 0 {-escala}
 v {escala} 0 {escala}
 v {-escala} 0 {escala}
 """,
-
-        "arm_x.obj": f"""
-o arm_x
+        "arm_x.obj": f"""o arm_x
 v {-escala} 0 0
 v {escala} 0 0
 """,
-
-        "arm_z.obj": f"""
-o arm_z
+        "arm_z.obj": f"""o arm_z
 v 0 0 {-escala}
 v 0 0 {escala}
 """,
-
         "motor_1.obj": f"o motor\nv {escala} 0 {escala}",
         "motor_2.obj": f"o motor\nv {-escala} 0 {escala}",
         "motor_3.obj": f"o motor\nv {escala} 0 {-escala}",
         "motor_4.obj": f"o motor\nv {-escala} 0 {-escala}",
-
-        "payload.obj": f"""
-o payload
+        "payload.obj": f"""o payload
 v 0 0 0
 v {escala/2} {escala/2} {escala/2}
 """
@@ -83,7 +74,6 @@ v {escala/2} {escala/2} {escala/2}
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
-
         if not os.path.exists(main_path):
             return "###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
 
@@ -141,10 +131,16 @@ class MaiaCore:
         estado_maia["progreso"] = val
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
+
+        try:
+            with open("estado.json", "w") as f:
+                json.dump(estado_maia, f)
+        except:
+            pass
+
         time.sleep(0.1)
 
     def ejecutar(self, idea):
-
         global resultado_global
 
         try:
@@ -157,12 +153,8 @@ class MaiaCore:
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
 
-            # 🔥 ESCALA REAL
             factor = max(1, peso / 5)
 
-            # =========================
-            # ANALISIS
-            # =========================
             analisis_pro = {
                 **analisis,
                 "estructura": "Fibra de carbono",
@@ -170,9 +162,6 @@ class MaiaCore:
                 "carga_util_kg": round(peso * 0.3 * factor, 2)
             }
 
-            # =========================
-            # FISICA REAL
-            # =========================
             consumo_estimado = round(peso * 120 * factor, 2)
 
             fisica_pro = {
@@ -194,9 +183,6 @@ class MaiaCore:
             base = f"maia_projects/{nombre}"
             os.makedirs(base, exist_ok=True)
 
-            # =========================
-            # SOFTWARE REAL
-            # =========================
             software_gen = generar_software_completo(
                 analisis.get("tipo","general")
             )
@@ -211,7 +197,6 @@ class MaiaCore:
             }
 
             for ruta, codigo in software_gen.get("codigo", {}).items():
-
                 nombre_mod = ruta.split("/")[-1].replace(".py","")
 
                 software_pro["modulos"].append({
@@ -221,17 +206,10 @@ class MaiaCore:
                     "codigo": codigo[:4000]
                 })
 
-            # =========================
-            # 3D
-            # =========================
             modelos = generar_modelo_3d(base, peso)
-
             salida = ejecutar_main(base)
             zip_path = exportar_zip(base)
 
-            # =========================
-            # 🔥 HARDWARE REAL
-            # =========================
             thrust_needed = peso * 9.81 * 2
             motor_thrust = round(thrust_needed / 4, 2)
 
@@ -276,6 +254,12 @@ class MaiaCore:
                 "zip": zip_path
             }
 
+            try:
+                with open("resultado.json", "w") as f:
+                    json.dump(resultado_global, f)
+            except:
+                pass
+
             estado_maia["estado"] = "COMPLETADO"
 
         except Exception as e:
@@ -283,7 +267,7 @@ class MaiaCore:
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# THREAD
+# PROCESO
 # =========================
 def proceso_maia(idea):
     MaiaCore().ejecutar(idea)
@@ -299,21 +283,38 @@ def evaluar_drone():
     estado_maia["progreso"] = 0
     estado_maia["estado"] = "PROCESANDO"
 
-    threading.Thread(
-        target=proceso_maia,
-        args=(idea,),
-        daemon=True
-    ).start()
+    # limpiar archivos anteriores
+    for f in ["estado.json", "resultado.json"]:
+        try:
+            os.remove(f)
+        except:
+            pass
+
+    subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            f"from app import proceso_maia; proceso_maia({repr(idea)})"
+        ]
+    )
 
     return jsonify({"ok": True})
 
 @app.route("/maia_progreso")
 def maia_progreso():
-    return jsonify(estado_maia)
+    try:
+        with open("estado.json") as f:
+            return jsonify(json.load(f))
+    except:
+        return jsonify(estado_maia)
 
 @app.route("/maia_resultado")
 def maia_resultado():
-    return jsonify(resultado_global)
+    try:
+        with open("resultado.json") as f:
+            return jsonify(json.load(f))
+    except:
+        return jsonify({"estado": "procesando"})
 
 @app.route("/maia_invent")
 def maia_invent():

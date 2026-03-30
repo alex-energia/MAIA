@@ -18,7 +18,7 @@ estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
 resultado_global = {}
 
 # =========================
-# UTILIDAD SEGURA
+# JSON SEGURO
 # =========================
 def guardar_json_seguro(path, data):
     try:
@@ -26,8 +26,8 @@ def guardar_json_seguro(path, data):
         with open(tmp, "w") as f:
             json.dump(data, f)
         os.replace(tmp, path)
-    except:
-        pass
+    except Exception as e:
+        print("ERROR guardando JSON:", e)
 
 # =========================
 # ARCHIVOS
@@ -88,7 +88,9 @@ class MaiaCore:
         estado_maia["estado"] = "PROCESANDO"
 
         guardar_json_seguro("estado.json", estado_maia)
-        time.sleep(0.1)
+
+        # 🔥 clave: liberar CPU
+        time.sleep(0.05)
 
     def ejecutar(self, idea):
         global resultado_global
@@ -129,6 +131,7 @@ class MaiaCore:
 
             nombre = f"drone_{int(time.time())}"
             base = f"maia_projects/{nombre}"
+
             os.makedirs(base, exist_ok=True)
 
             software_gen = generar_software_completo(
@@ -151,6 +154,7 @@ class MaiaCore:
                 })
 
             modelos = generar_modelo_3d(base, peso)
+
             zip_path = exportar_zip(base)
 
             hardware_pro = {
@@ -176,14 +180,18 @@ class MaiaCore:
             estado_maia["estado"] = "COMPLETADO"
 
         except Exception as e:
+            print("ERROR MAIA:", e)
             resultado_global = {"error": str(e)}
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# THREAD (CLAVE 🔥)
+# THREAD CONTROLADO
 # =========================
 def proceso_maia(idea):
-    MaiaCore().ejecutar(idea)
+    try:
+        MaiaCore().ejecutar(idea)
+    except Exception as e:
+        print("ERROR THREAD:", e)
 
 # =========================
 # ENDPOINT PRINCIPAL

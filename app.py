@@ -4,7 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 
-import os, json, time, threading, subprocess, zipfile, re, sys
+import os, time, threading, subprocess, zipfile, sys
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -18,7 +18,7 @@ estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
 resultado_global = {}
 
 # =========================
-# UTILIDADES
+# UTILIDAD
 # =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
@@ -26,25 +26,55 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# MODELO 3D
+# 🔥 MODELO 3D REAL
 # =========================
 def generar_modelo_3d(base, peso):
+
     path = os.path.join(base, "models")
     os.makedirs(path, exist_ok=True)
 
-    escala = max(1, peso / 2)
+    escala = max(1, peso / 3)
 
     partes = {
-        "frame.obj": f"o frame\nv 0 0 0\nv {escala} 0 0",
-        "arm.obj": f"o arm\nv 0 0 0\nv {escala} {escala} 0"
+        "frame.obj": f"""
+o frame
+v {-escala} 0 {-escala}
+v {escala} 0 {-escala}
+v {escala} 0 {escala}
+v {-escala} 0 {escala}
+""",
+
+        "arm_x.obj": f"""
+o arm_x
+v {-escala} 0 0
+v {escala} 0 0
+""",
+
+        "arm_z.obj": f"""
+o arm_z
+v 0 0 {-escala}
+v 0 0 {escala}
+""",
+
+        "motor_1.obj": f"o motor\nv {escala} 0 {escala}",
+        "motor_2.obj": f"o motor\nv {-escala} 0 {escala}",
+        "motor_3.obj": f"o motor\nv {escala} 0 {-escala}",
+        "motor_4.obj": f"o motor\nv {-escala} 0 {-escala}",
+
+        "payload.obj": f"""
+o payload
+v 0 0 0
+v {escala/2} {escala/2} {escala/2}
+"""
     }
 
     for nombre, contenido in partes.items():
         generar_archivo(os.path.join(path, nombre), contenido)
 
     return {
-        "ruta": path,
-        "escala": escala
+        "componentes": list(partes.keys()),
+        "escala": escala,
+        "detalle": "Modelo estructural quadcopter realista"
     }
 
 # =========================
@@ -71,7 +101,7 @@ def ejecutar_main(ruta):
         while True:
             if proceso.poll() is not None:
                 break
-            if time.time() - start > 20:
+            if time.time() - start > 25:
                 proceso.kill()
                 break
             time.sleep(0.05)
@@ -114,6 +144,7 @@ class MaiaCore:
         time.sleep(0.1)
 
     def ejecutar(self, idea):
+
         global resultado_global
 
         try:
@@ -126,11 +157,11 @@ class MaiaCore:
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
 
-            # 🔥 FACTOR EXPONENCIAL REAL
+            # 🔥 ESCALA REAL
             factor = max(1, peso / 5)
 
             # =========================
-            # ANALISIS PRO
+            # ANALISIS
             # =========================
             analisis_pro = {
                 **analisis,
@@ -140,11 +171,15 @@ class MaiaCore:
             }
 
             # =========================
-            # FISICA PRO
+            # FISICA REAL
             # =========================
+            consumo_estimado = round(peso * 120 * factor, 2)
+
             fisica_pro = {
                 **fisica,
                 "relacion_empuje_peso": round(empuje/(peso*9.81+1),2),
+                "consumo_w": consumo_estimado,
+                "autonomia_estimada_min": round((10000 / consumo_estimado) * 60, 2),
                 "rendimiento": "Óptimo" if factor > 2 else "Limitado"
             }
 
@@ -160,7 +195,7 @@ class MaiaCore:
             os.makedirs(base, exist_ok=True)
 
             # =========================
-            # 🔥 SOFTWARE REAL
+            # SOFTWARE REAL
             # =========================
             software_gen = generar_software_completo(
                 analisis.get("tipo","general")
@@ -171,7 +206,7 @@ class MaiaCore:
 
             software_pro = {
                 "nivel": "Industrial",
-                "arquitectura": "Distribuida por módulos",
+                "arquitectura": "Modular distribuida",
                 "modulos": []
             }
 
@@ -179,26 +214,15 @@ class MaiaCore:
 
                 nombre_mod = ruta.split("/")[-1].replace(".py","")
 
-                if "pid" in nombre_mod:
-                    categoria = "Control"
-                elif "nav" in nombre_mod:
-                    categoria = "Navegación"
-                elif "tele" in nombre_mod:
-                    categoria = "Telemetría"
-                elif "fail" in nombre_mod:
-                    categoria = "Failsafe"
-                else:
-                    categoria = "Core"
-
                 software_pro["modulos"].append({
                     "nombre": nombre_mod,
-                    "categoria": categoria,
+                    "categoria": ruta.split("/")[0],
                     "archivo": ruta,
-                    "codigo": codigo[:2000]
+                    "codigo": codigo[:4000]
                 })
 
             # =========================
-            # MODELOS
+            # 3D
             # =========================
             modelos = generar_modelo_3d(base, peso)
 
@@ -206,34 +230,35 @@ class MaiaCore:
             zip_path = exportar_zip(base)
 
             # =========================
-            # 🔥 HARDWARE PRO
+            # 🔥 HARDWARE REAL
             # =========================
+            thrust_needed = peso * 9.81 * 2
+            motor_thrust = round(thrust_needed / 4, 2)
+
             hardware_pro = {
                 "estructura": {
                     "material": "Fibra de carbono",
-                    "frame": f"{650 + int(factor*120)}mm",
-                    "resistencia": "Alta",
-                    "diseno": "Quadcopter X"
+                    "frame": f"{650 + int(factor*150)}mm",
+                    "peso_estructura_kg": round(peso * 0.25,2)
                 },
                 "propulsion": {
-                    "motores": f"{3508 + int(factor*300)} KV x4",
-                    "helices": f"{15 + int(factor)}x5",
-                    "esc": f"{40 + int(factor*10)}A BLHeli"
+                    "motores": f"{motor_thrust}N thrust x4",
+                    "helices": f"{15 + int(factor)} pulgadas",
+                    "esc": f"{40 + int(factor*15)}A"
                 },
                 "energia": {
-                    "bateria": f"LiPo {6 + int(factor)}S {10000 + int(factor*3000)}mAh",
-                    "gestion": "Control inteligente de consumo"
+                    "bateria": f"{6 + int(factor)}S {10000 + int(factor*4000)}mAh",
+                    "consumo_estimado_w": consumo_estimado
                 },
                 "control": {
-                    "flight_controller": "Pixhawk",
-                    "sensores": ["GPS", "IMU", "Lidar", "FPV", "RTK"] if factor > 2 else ["GPS","IMU"],
-                    "redundancia": "IMU dual" if factor > 2 else "Básica"
+                    "flight_controller": "Pixhawk / PX4",
+                    "redundancia": "IMU dual + GPS dual" if factor > 2 else "Básica"
                 },
                 "capacidades": [
                     "Vuelo autónomo",
-                    "Retorno automático",
-                    "Estabilización avanzada",
-                    "Failsafe hardware"
+                    "RTL",
+                    "Failsafe activo",
+                    "Navegación inteligente"
                 ]
             }
 

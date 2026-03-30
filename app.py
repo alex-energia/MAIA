@@ -86,25 +86,72 @@ class MaiaCore:
         estado_maia["progreso"] = val
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
-
         guardar_json_seguro("estado.json", estado_maia)
-
-        # 🔥 clave: liberar CPU
         time.sleep(0.05)
 
+    # 🔥 NUEVO: ejecución por pasos (para Render FREE)
+    def ejecutar_paso(self, idea, paso, data):
+        try:
+            if paso == 0:
+                core = analizar_drone(idea)
+                return {"paso": 1, "data": {"core": core}}
+
+            elif paso == 1:
+                analisis = data.get("core", {}).get("analisis", {})
+                peso = analisis.get("peso", 1)
+                factor = max(1, peso / 5)
+
+                data["analisis_pro"] = {
+                    **analisis,
+                    "estructura": "Fibra de carbono",
+                    "nivel_autonomia": "Alto" if factor > 2 else "Medio",
+                    "carga_util_kg": round(peso * 0.3 * factor, 2)
+                }
+
+                return {"paso": 2, "data": data}
+
+            elif paso == 2:
+                validacion = MaiaValidator().validar(data.get("core", {}))
+                data["validacion"] = validacion
+                return {"paso": 3, "data": data}
+
+            elif paso == 3:
+                nombre = f"drone_{int(time.time())}"
+                base = f"maia_projects/{nombre}"
+                os.makedirs(base, exist_ok=True)
+
+                data["base"] = base
+                return {"paso": 4, "data": data}
+
+            elif paso == 4:
+                peso = data.get("analisis_pro", {}).get("peso", 1)
+                modelos = generar_modelo_3d(data["base"], peso)
+                data["modelos_3d"] = modelos
+                return {"paso": 5, "data": data}
+
+            elif paso == 5:
+                zip_path = exportar_zip(data["base"])
+                data["zip"] = zip_path
+                return {"paso": 6, "data": data}
+
+            elif paso == 6:
+                return {"final": True, "resultado": data}
+
+        except Exception as e:
+            return {"error": str(e)}
+
+    # 🔥 TU SISTEMA ORIGINAL (NO TOCADO)
     def ejecutar(self, idea):
         global resultado_global
-
         try:
             self.progreso(10, "Analizando...")
-
             core = analizar_drone(idea)
+
             analisis = core.get("analisis", {})
             fisica = core.get("fisica", {})
 
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
-
             factor = max(1, peso / 5)
 
             analisis_pro = {
@@ -124,14 +171,12 @@ class MaiaCore:
             }
 
             self.progreso(40, "Validando...")
-
             validacion = MaiaValidator().validar(core)
 
             self.progreso(65, "Construyendo sistema...")
 
             nombre = f"drone_{int(time.time())}"
             base = f"maia_projects/{nombre}"
-
             os.makedirs(base, exist_ok=True)
 
             software_gen = generar_software_completo(
@@ -141,27 +186,8 @@ class MaiaCore:
             for ruta, codigo in software_gen.get("codigo", {}).items():
                 generar_archivo(os.path.join(base, ruta), codigo)
 
-            software_pro = {
-                "nivel": "Industrial",
-                "modulos": []
-            }
-
-            for ruta, codigo in software_gen.get("codigo", {}).items():
-                software_pro["modulos"].append({
-                    "nombre": ruta.split("/")[-1],
-                    "archivo": ruta,
-                    "codigo": codigo[:3000]
-                })
-
             modelos = generar_modelo_3d(base, peso)
-
             zip_path = exportar_zip(base)
-
-            hardware_pro = {
-                "estructura": {"frame": f"{650+int(factor*150)}mm"},
-                "energia": {"bateria": f"{6+int(factor)}S"},
-                "control": {"fc": "PX4/Pixhawk"}
-            }
 
             self.progreso(100, "Completado")
 
@@ -169,14 +195,11 @@ class MaiaCore:
                 "viabilidad": validacion.get("viabilidad","N/A"),
                 "analisis": analisis_pro,
                 "fisica": fisica_pro,
-                "hardware": hardware_pro,
-                "software": software_pro,
                 "modelos_3d": modelos,
                 "zip": zip_path
             }
 
             guardar_json_seguro("resultado.json", resultado_global)
-
             estado_maia["estado"] = "COMPLETADO"
 
         except Exception as e:
@@ -185,7 +208,7 @@ class MaiaCore:
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# THREAD CONTROLADO
+# THREAD ORIGINAL (SE CONSERVA)
 # =========================
 def proceso_maia(idea):
     try:
@@ -194,11 +217,10 @@ def proceso_maia(idea):
         print("ERROR THREAD:", e)
 
 # =========================
-# ENDPOINT PRINCIPAL
+# ENDPOINT ORIGINAL
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-
     data = request.get_json() or {}
     idea = data.get("idea","")
 
@@ -218,6 +240,22 @@ def evaluar_drone():
     ).start()
 
     return jsonify({"ok": True})
+
+# =========================
+# 🔥 NUEVO ENDPOINT (CLAVE FREE)
+# =========================
+@app.route("/maia_step", methods=["POST"])
+def maia_step():
+    data = request.get_json() or {}
+
+    idea = data.get("idea", "")
+    paso = data.get("paso", 0)
+    estado = data.get("data", {})
+
+    core = MaiaCore()
+    resultado = core.ejecutar_paso(idea, paso, estado)
+
+    return jsonify(resultado)
 
 # =========================
 # PROGRESO

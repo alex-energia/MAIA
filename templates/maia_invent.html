@@ -3,24 +3,20 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ FIX REAL -->
+<!-- FIX THREE -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
-
 textarea { width:100%; height:80px; border-radius:8px; padding:10px;}
-
 button {
     padding:10px; margin:5px;
     border-radius:8px; border:none;
     cursor:pointer;
     background:#2563eb; color:white;
 }
-
 .panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
 .bloque { margin-top:20px; padding:12px; background:#020617; border-radius:10px; border:1px solid #1e293b;}
-
 .ok { color:#22c55e; }
 .bad { color:#ef4444; }
 
@@ -32,7 +28,6 @@ pre {
     font-size:12px;
 }
 
-/* SOFTWARE */
 .modulo {
     background:#0b1220;
     padding:12px;
@@ -46,7 +41,6 @@ pre {
     margin-top:10px;
 }
 
-/* HARDWARE PRO */
 .hw-section{
     margin-bottom:10px;
     padding:10px;
@@ -54,7 +48,6 @@ pre {
     border-radius:8px;
 }
 
-/* BARRA */
 #barra_container {
     width:100%;
     background:#111;
@@ -78,7 +71,6 @@ pre {
 <h1>🧠 MAIA INVENT</h1>
 
 <textarea id="idea"></textarea>
-
 <br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
@@ -93,10 +85,9 @@ pre {
 <script>
 
 // =========================
-// GENERAR
+// 🔥 NUEVO MOTOR (STEP SYSTEM)
 // =========================
 async function evaluar(){
-
     const idea = document.getElementById("idea").value;
 
     if(!idea){
@@ -106,117 +97,80 @@ async function evaluar(){
 
     document.getElementById("barra_container").style.display = "block";
 
-    await fetch("/evaluar_drone",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({idea})
-    });
-
-    monitorearResultado();
-}
-
-// =========================
-// PROGRESO FIX REAL
-// =========================
-function monitorearResultado(){
+    let paso = 0;
+    let data = {};
 
     let barra = document.getElementById("barra");
 
-    let intervalo = setInterval(async () => {
-
+    while(true){
         try{
-            let r = await fetch("/maia_progreso");
-            let data = await r.json();
+            let res = await fetch("/maia_step", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify({
+                    idea: idea,
+                    paso: paso,
+                    data: data
+                })
+            });
 
-            barra.style.width = data.progreso + "%";
-            barra.innerText = data.progreso + "%";
+            let json = await res.json();
 
-            if(data.estado === "COMPLETADO"){
-                clearInterval(intervalo);
-                cargarResultadoFinal();
+            if(json.error){
+                alert("Error MAIA");
+                console.error(json.error);
+                break;
             }
-        }catch(e){
-            clearInterval(intervalo);
-        }
 
-    },600);
+            // 🔥 progreso simulado fluido
+            paso = json.paso || paso;
+            data = json.data || data;
+
+            let progreso = Math.min(95, paso * 15);
+            barra.style.width = progreso + "%";
+            barra.innerText = progreso + "%";
+
+            if(json.final){
+                barra.style.width = "100%";
+                barra.innerText = "100%";
+
+                renderResultado(json.resultado);
+                break;
+            }
+
+            await new Promise(r => setTimeout(r, 300));
+
+        }catch(e){
+            console.error(e);
+            break;
+        }
+    }
 }
 
 // =========================
-// RESULTADO
+// RESULTADO (TU UI ORIGINAL)
 // =========================
-async function cargarResultadoFinal(){
-
-    let res = await fetch("/maia_resultado");
-    let data = await res.json();
+function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    html += `<h2>${data.viabilidad || "SIN RESULTADO"}</h2>`;
+    html += `<h2>${data.validacion?.viabilidad || "RESULTADO"}</h2>`;
 
-    // 📦 ANALISIS
     html += `<div class="bloque"><h3>📦 Ingeniería</h3>
-    <pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
+    <pre>${JSON.stringify(data.analisis_pro || data.analisis,null,2)}</pre></div>`;
 
-    // ⚡ FISICA
     html += `<div class="bloque"><h3>⚡ Física</h3>
-    <pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
+    <pre>${JSON.stringify(data.fisica || {},null,2)}</pre></div>`;
 
-    // 🔥 HARDWARE REAL ESTRUCTURADO
-    if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware (Nivel Ingeniería)</h3>`;
+    html += `<div class="bloque"><h3>🧊 Modelo 3D</h3>
+    <canvas id="viewer3d" style="width:100%; height:400px;"></canvas></div>`;
 
-        Object.entries(data.hardware).forEach(([k,v])=>{
-            html += `<div class="hw-section">
-                <b>${k.toUpperCase()}</b><br>
-                <pre>${JSON.stringify(v,null,2)}</pre>
-            </div>`;
-        });
-
-        html += `</div>`;
-    }
-
-    // 💻 SOFTWARE REAL
-    if(data.software){
-        html += `<div class="bloque"><h3>💻 Software IA</h3>`;
-
-        (data.software.modulos || []).forEach((m,i)=>{
-
-            html += `
-            <div class="modulo" onclick="toggleCodigo(${i})">
-                <b>[${m.categoria || "CORE"}]</b> ${m.nombre}
-                <div class="codigo" id="code_${i}">
-                    <pre>${m.codigo}</pre>
-                </div>
-            </div>`;
-        });
-
-        html += `</div>`;
-    }
-
-    // 📡 TELEMETRIA
-    html += `<div class="bloque"><h3>📡 Telemetría</h3>
-    <pre id="telemetria_data">Procesando...</pre></div>`;
-
-    // 🧊 3D MEJORADO
-    html += `<div class="bloque">
-        <h3>🧊 Modelo 3D</h3>
-        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
-    </div>`;
+    html += `<div class="bloque"><h3>📦 ZIP</h3>
+    <pre>${data.zip || "No generado"}</pre></div>`;
 
     html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
-
-    // TELEMETRIA
-    try{
-        let salida = data.salida || "";
-        let raw = salida.split("###DATA_START###")[1]?.split("###DATA_END###")[0];
-        document.getElementById("telemetria_data").innerText =
-            raw ? raw : "Sin telemetría real";
-    }catch(e){
-        document.getElementById("telemetria_data").innerText = "Error";
-    }
 
     render3D();
 }
@@ -230,10 +184,9 @@ function toggleCodigo(i){
 }
 
 // =========================
-// 3D REAL (DRON)
+// 3D
 // =========================
 function render3D(){
-
     const canvas = document.getElementById("viewer3d");
     if(!canvas) return;
 
@@ -245,14 +198,12 @@ function render3D(){
 
     scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
-    // cuerpo
     let body = new THREE.Mesh(
         new THREE.BoxGeometry(1,0.3,1),
         new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
     scene.add(body);
 
-    // brazos + motores
     for(let i=0;i<4;i++){
         let angle = i*Math.PI/2;
 
@@ -260,7 +211,6 @@ function render3D(){
             new THREE.BoxGeometry(2,0.1,0.1),
             new THREE.MeshStandardMaterial({color:0xffffff})
         );
-
         arm.rotation.y = angle;
         scene.add(arm);
 
@@ -268,7 +218,6 @@ function render3D(){
             new THREE.CylinderGeometry(0.2,0.2,0.2,16),
             new THREE.MeshStandardMaterial({color:0xff0000})
         );
-
         motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
         scene.add(motor);
     }

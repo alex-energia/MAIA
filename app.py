@@ -79,6 +79,9 @@ def ejecutar_main(ruta):
         stdout, stderr = proceso.communicate()
         salida += stdout
 
+        if stderr:
+            salida += "\nERROR:\n" + stderr
+
         if "###DATA_START###" not in salida:
             salida += "\n###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
 
@@ -98,57 +101,6 @@ def exportar_zip(ruta):
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
     return zip_path
-
-# =========================
-# 🔥 SOFTWARE AVANZADO REAL
-# =========================
-def generar_software_avanzado():
-    return {
-        "nivel": "Industrial",
-        "arquitectura": "Microservicios + Control distribuido",
-        "modulos": [
-            {
-                "nombre": "Control PID",
-                "codigo": """class PID:
-    def __init__(self,kp,ki,kd):
-        self.kp=kp; self.ki=ki; self.kd=kd
-        self.error_acum=0
-
-    def calcular(self,error):
-        self.error_acum += error
-        return self.kp*error + self.ki*self.error_acum
-"""
-            },
-            {
-                "nombre": "Navegación Autónoma",
-                "codigo": """def navegar(destino):
-    while True:
-        ajustar_ruta()
-        evitar_obstaculos()
-"""
-            },
-            {
-                "nombre": "IA Obstáculos",
-                "codigo": """def evitar_obstaculos(sensor):
-    if sensor.detecta():
-        cambiar_ruta()
-"""
-            },
-            {
-                "nombre": "Telemetría",
-                "codigo": """def enviar(data):
-    print("DATA:", data)
-"""
-            },
-            {
-                "nombre": "Failsafe",
-                "codigo": """def failsafe(bateria):
-    if bateria < 20:
-        return_base()
-"""
-            }
-        ]
-    }
 
 # =========================
 # CORE
@@ -174,9 +126,12 @@ class MaiaCore:
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
 
-            # 🔥 PROGRESIÓN REAL
+            # 🔥 FACTOR EXPONENCIAL REAL
             factor = max(1, peso / 5)
 
+            # =========================
+            # ANALISIS PRO
+            # =========================
             analisis_pro = {
                 **analisis,
                 "estructura": "Fibra de carbono",
@@ -184,6 +139,9 @@ class MaiaCore:
                 "carga_util_kg": round(peso * 0.3 * factor, 2)
             }
 
+            # =========================
+            # FISICA PRO
+            # =========================
             fisica_pro = {
                 **fisica,
                 "relacion_empuje_peso": round(empuje/(peso*9.81+1),2),
@@ -201,26 +159,83 @@ class MaiaCore:
             base = f"maia_projects/{nombre}"
             os.makedirs(base, exist_ok=True)
 
+            # =========================
+            # 🔥 SOFTWARE REAL
+            # =========================
             software_gen = generar_software_completo(
                 analisis.get("tipo","general")
             )
 
-            for r, c in software_gen["codigo"].items():
-                generar_archivo(os.path.join(base, r), c)
+            for ruta, codigo in software_gen.get("codigo", {}).items():
+                generar_archivo(os.path.join(base, ruta), codigo)
 
+            software_pro = {
+                "nivel": "Industrial",
+                "arquitectura": "Distribuida por módulos",
+                "modulos": []
+            }
+
+            for ruta, codigo in software_gen.get("codigo", {}).items():
+
+                nombre_mod = ruta.split("/")[-1].replace(".py","")
+
+                if "pid" in nombre_mod:
+                    categoria = "Control"
+                elif "nav" in nombre_mod:
+                    categoria = "Navegación"
+                elif "tele" in nombre_mod:
+                    categoria = "Telemetría"
+                elif "fail" in nombre_mod:
+                    categoria = "Failsafe"
+                else:
+                    categoria = "Core"
+
+                software_pro["modulos"].append({
+                    "nombre": nombre_mod,
+                    "categoria": categoria,
+                    "archivo": ruta,
+                    "codigo": codigo[:2000]
+                })
+
+            # =========================
+            # MODELOS
+            # =========================
             modelos = generar_modelo_3d(base, peso)
+
             salida = ejecutar_main(base)
             zip_path = exportar_zip(base)
 
-            # 🔥 HARDWARE DINÁMICO (YA NO PLANO)
+            # =========================
+            # 🔥 HARDWARE PRO
+            # =========================
             hardware_pro = {
-                "frame": f"{650 + int(factor*100)}mm",
-                "motores": f"{3508 + int(factor*200)} KV x4",
-                "bateria": f"LiPo {6 + int(factor)}S {10000 + int(factor*2000)}mAh",
-                "sensores": ["GPS", "IMU", "Lidar", "FPV", "RTK"] if factor > 2 else ["GPS","IMU"]
+                "estructura": {
+                    "material": "Fibra de carbono",
+                    "frame": f"{650 + int(factor*120)}mm",
+                    "resistencia": "Alta",
+                    "diseno": "Quadcopter X"
+                },
+                "propulsion": {
+                    "motores": f"{3508 + int(factor*300)} KV x4",
+                    "helices": f"{15 + int(factor)}x5",
+                    "esc": f"{40 + int(factor*10)}A BLHeli"
+                },
+                "energia": {
+                    "bateria": f"LiPo {6 + int(factor)}S {10000 + int(factor*3000)}mAh",
+                    "gestion": "Control inteligente de consumo"
+                },
+                "control": {
+                    "flight_controller": "Pixhawk",
+                    "sensores": ["GPS", "IMU", "Lidar", "FPV", "RTK"] if factor > 2 else ["GPS","IMU"],
+                    "redundancia": "IMU dual" if factor > 2 else "Básica"
+                },
+                "capacidades": [
+                    "Vuelo autónomo",
+                    "Retorno automático",
+                    "Estabilización avanzada",
+                    "Failsafe hardware"
+                ]
             }
-
-            software_pro = generar_software_avanzado()
 
             self.progreso(100, "Completado")
 

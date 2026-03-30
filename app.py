@@ -29,7 +29,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# 🔥 MOTOR 3D PRO REAL (MEJORADO)
+# 🔥 MODELO 3D MEJORADO
 # =========================
 def generar_modelo_3d(base, peso):
     path = os.path.join(base, "models")
@@ -38,13 +38,7 @@ def generar_modelo_3d(base, peso):
     escala = max(1, peso / 2)
 
     partes = {
-        "frame.obj": f"""
-o frame
-v 0 0 0
-v {escala} 0 0
-v {escala} {escala} 0
-v 0 {escala} 0
-""",
+        "frame.obj": f"o frame\nv 0 0 0\nv {escala} 0 0\nv {escala} {escala} 0\nv 0 {escala} 0",
         "arm_1.obj": f"o arm\nv 0 0 0\nv {escala} 0 0",
         "arm_2.obj": f"o arm\nv 0 0 0\nv 0 {escala} 0",
         "payload.obj": f"o payload\nv 0 0 0\nv {escala/2} {escala/2} {escala/2}"
@@ -65,12 +59,11 @@ v 0 {escala} 0
     }
 
 # =========================
-# 🚀 EJECUCIÓN ROBUSTA
+# EJECUCIÓN
 # =========================
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
-
         if not os.path.exists(main_path):
             return "###DATA_START###\n[{\"error\":\"main_missing\"}]\n###DATA_END###"
 
@@ -95,7 +88,6 @@ def ejecutar_main(ruta):
             time.sleep(0.05)
 
         stdout, stderr = proceso.communicate()
-
         salida += stdout
 
         if stderr:
@@ -114,17 +106,15 @@ def ejecutar_main(ruta):
 # =========================
 def exportar_zip(ruta):
     zip_path = ruta + ".zip"
-
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
-
     return zip_path
 
 # =========================
-# 🧠 CORE ULTRA (MEJORADO)
+# CORE
 # =========================
 class MaiaCore:
 
@@ -141,25 +131,24 @@ class MaiaCore:
             self.progreso(10, "Analizando ingeniería...")
 
             core = analizar_drone(idea)
-
             analisis = core.get("analisis", {})
             fisica = core.get("fisica", {})
 
             peso = analisis.get("peso", 1)
             empuje = fisica.get("empuje", 0)
 
-            # 🔥 ANALISIS PRO EXPANDIDO
+            # 🔥 ANALISIS PRO
             analisis_pro = {
                 **analisis,
                 "estructura": "Fibra de carbono",
                 "configuracion": "Quadcopter X",
                 "carga_util_kg": round(peso * 0.3, 2),
                 "uso": "Agrícola / Industrial",
-                "eficiencia": round((empuje / (peso+1)), 2),
-                "nivel_autonomia": "Alto"
+                "nivel_autonomia": "Alto",
+                "resistencia_climatica": "Media-Alta"
             }
 
-            # 🔥 FISICA PRO EXPANDIDA
+            # 🔥 FISICA PRO
             fisica_pro = {
                 **fisica,
                 "relacion_empuje_peso": round(empuje/(peso*9.81+1),2),
@@ -185,48 +174,51 @@ class MaiaCore:
             for r, c in software_base["codigo"].items():
                 generar_archivo(os.path.join(base, r), c)
 
-            # 🔥 FIX MÓDULOS PYTHON
+            # init modules
             for root, dirs, files in os.walk(base):
                 init_file = os.path.join(root, "__init__.py")
                 if not os.path.exists(init_file):
-                    with open(init_file, "w") as f:
-                        f.write("# auto-generated")
+                    open(init_file, "w").close()
 
             modelos = generar_modelo_3d(base, peso)
 
             salida = ejecutar_main(base)
             zip_path = exportar_zip(base)
 
-            # 🔥 HARDWARE PRO EXPANDIDO
+            # 🔥 HARDWARE PRO
             hardware_pro = {
                 "estructura": "Fibra de carbono",
+                "frame": "650mm",
                 "motores": "3508 700KV x4",
                 "helices": "15x5",
+                "esc": "40A BLHeli",
                 "bateria": "LiPo 6S 10000mAh",
                 "controlador": "Pixhawk",
                 "sensores": ["GPS", "IMU", "Lidar", "FPV"],
-                "esc": "40A BLHeli",
-                "frame_size": "650mm"
+                "extras": ["RTK opcional", "Cámara HD"]
             }
 
-            riesgos_pro = [
-                "Sobrecalentamiento ESC",
-                "Fallo GPS urbano",
-                "Interferencia RF",
-                "Viento extremo",
-                "Batería crítica"
-            ]
-
+            # 🔥 SOFTWARE PRO (YA NO BÁSICO)
             software_pro = {
                 "nivel": "Industrial",
-                "capacidades": [
+                "arquitectura": "Modular distribuida",
+                "modulos": [
                     "Control PID adaptativo",
-                    "Vuelo autónomo",
-                    "IA evasión obstáculos",
+                    "Navegación autónoma",
+                    "Evasión de obstáculos IA",
                     "Telemetría en tiempo real",
-                    "Planificación de misión",
-                    "Failsafe inteligente"
+                    "Planificador de rutas",
+                    "Failsafe inteligente",
+                    "Gestión energética"
                 ]
+            }
+
+            # 🔥 NUEVOS BLOQUES
+            mision = {
+                "tipo": "Riego agrícola",
+                "modo": "Autónomo",
+                "area_cobertura_m2": round(peso * 100, 2),
+                "eficiencia": "Alta"
             }
 
             self.progreso(100, "Completado")
@@ -235,9 +227,17 @@ class MaiaCore:
                 "viabilidad": validacion.get("viabilidad","N/A"),
                 "analisis": analisis_pro,
                 "fisica": fisica_pro,
-                "riesgos": riesgos_pro,
+                "riesgos": [
+                    "Sobrecalentamiento ESC",
+                    "Fallo GPS urbano",
+                    "Interferencia RF",
+                    "Viento extremo",
+                    "Batería crítica"
+                ],
                 "hardware": hardware_pro,
                 "software": software_pro,
+                "validacion": validacion,
+                "mision": mision,
                 "modelos_3d": modelos,
                 "salida": salida,
                 "zip": zip_path,

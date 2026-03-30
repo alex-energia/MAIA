@@ -4,7 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 
-import os, time, subprocess, zipfile, sys, json, tempfile
+import os, time, threading, zipfile, json, sys
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -38,7 +38,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# 🔥 MODELO 3D MEJORADO
+# MODELO 3D
 # =========================
 def generar_modelo_3d(base, peso):
     path = os.path.join(base, "models")
@@ -66,43 +66,6 @@ def generar_modelo_3d(base, peso):
     }
 
 # =========================
-# EJECUCIÓN SEGURA
-# =========================
-def ejecutar_main(ruta):
-    try:
-        main_path = os.path.join(ruta, "main.py")
-
-        if not os.path.exists(main_path):
-            return "###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
-
-        proceso = subprocess.Popen(
-            [sys.executable, "main.py"],
-            cwd=ruta,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-
-        stdout, stderr = proceso.communicate(timeout=25)
-
-        salida = stdout
-
-        if stderr:
-            salida += "\nERROR:\n" + stderr
-
-        if "###DATA_START###" not in salida:
-            salida += "\n###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
-
-        return salida
-
-    except subprocess.TimeoutExpired:
-        proceso.kill()
-        return "###DATA_START###\n[{\"error\":\"timeout\"}]\n###DATA_END###"
-
-    except Exception as e:
-        return f"###DATA_START###\n[{{\"error\":\"{str(e)}\"}}]\n###DATA_END###"
-
-# =========================
 # ZIP
 # =========================
 def exportar_zip(ruta):
@@ -115,7 +78,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# 🔥 CORE MAIA
+# CORE MAIA
 # =========================
 class MaiaCore:
 
@@ -159,6 +122,7 @@ class MaiaCore:
             }
 
             self.progreso(40, "Validando...")
+
             validacion = MaiaValidator().validar(core)
 
             self.progreso(65, "Construyendo sistema...")
@@ -187,7 +151,6 @@ class MaiaCore:
                 })
 
             modelos = generar_modelo_3d(base, peso)
-            salida = ejecutar_main(base)
             zip_path = exportar_zip(base)
 
             hardware_pro = {
@@ -205,7 +168,6 @@ class MaiaCore:
                 "hardware": hardware_pro,
                 "software": software_pro,
                 "modelos_3d": modelos,
-                "salida": salida,
                 "zip": zip_path
             }
 
@@ -218,7 +180,13 @@ class MaiaCore:
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# PROCESO AISLADO REAL
+# THREAD (CLAVE 🔥)
+# =========================
+def proceso_maia(idea):
+    MaiaCore().ejecutar(idea)
+
+# =========================
+# ENDPOINT PRINCIPAL
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
@@ -235,16 +203,11 @@ def evaluar_drone():
         except:
             pass
 
-    # 🔥 SCRIPT TEMPORAL AISLADO (SIN IMPORT APP)
-    script = f"""
-from app import MaiaCore
-MaiaCore().ejecutar({repr(idea)})
-"""
-
-    with open("worker_maia.py", "w") as f:
-        f.write(script)
-
-    subprocess.Popen([sys.executable, "worker_maia.py"])
+    threading.Thread(
+        target=proceso_maia,
+        args=(idea,),
+        daemon=True
+    ).start()
 
     return jsonify({"ok": True})
 

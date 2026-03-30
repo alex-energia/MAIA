@@ -3,11 +3,8 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- 🔥 THREE JS FIX MODERNO -->
-<script type="module">
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js";
-window.THREE = THREE;
-</script>
+<!-- 🔥 THREE JS ESTABLE -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
 body {
@@ -30,13 +27,31 @@ button {
     background: #2563eb;
     color: white;
 }
-#panel_maia {
-    display: none;
-    background: black;
-    padding: 20px;
-    margin-top: 20px;
+.panel {
+    background: #020617;
+    padding: 15px;
     border-radius: 10px;
+    margin-top: 20px;
 }
+.bloque {
+    margin-top: 20px;
+    padding: 10px;
+    background: #020617;
+    border-radius: 10px;
+    border: 1px solid #1e293b;
+}
+.ok { color: #22c55e; }
+.bad { color: #ef4444; }
+
+pre {
+    background: black;
+    padding: 10px;
+    border-radius: 8px;
+    overflow: auto;
+    font-size: 12px;
+    max-height: 300px;
+}
+
 #barra_container {
     width: 100%;
     background: #111;
@@ -53,28 +68,6 @@ button {
     color: white;
     font-weight: bold;
 }
-.panel {
-    background: #020617;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 20px;
-}
-.ok { color: #22c55e; }
-.bad { color: #ef4444; }
-pre {
-    background: black;
-    padding: 10px;
-    border-radius: 8px;
-    overflow: auto;
-    font-size: 12px;
-    max-height: 300px;
-}
-.bloque {
-    margin-top: 20px;
-    padding: 10px;
-    background: #020617;
-    border-radius: 10px;
-}
 </style>
 </head>
 
@@ -86,7 +79,6 @@ pre {
 <textarea id="idea"></textarea><br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
-<button onclick="verCapacidades()">🚀 ¿Qué puede hacer MAIA?</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
 
 <div id="resultado"></div>
@@ -94,10 +86,6 @@ pre {
 <div id="barra_container">
     <div id="barra">0%</div>
 </div>
-
-<div id="panel_maia"></div>
-
-<button onclick="guardarProyectoInvent()">💾 Guardar proyecto</button>
 
 <script>
 
@@ -142,132 +130,168 @@ function monitorearResultado(){
                 clearInterval(intervalo);
                 cargarResultadoFinal();
             }
+
         }catch(e){
             clearInterval(intervalo);
         }
+
     }, 700);
 }
 
 // =========================
-// 🧠 RESULTADO
+// 🧠 RESULTADO PRO REAL
 // =========================
 async function cargarResultadoFinal(){
 
     let res = await fetch("/maia_resultado");
     let data = await res.json();
 
-    let analisis = data.analisis || {};
-    let fisica = data.fisica || {};
-    let estado = data.viabilidad || "N/A";
-    let clase = estado.includes("VIABLE") ? "ok" : "bad";
+    let html = `<div class="panel">`;
 
-    let html = `<div class="panel">
-    <h2 class="${clase}">${estado}</h2>`;
+    html += `<h2 class="${(data.viabilidad||"").includes("VIABLE")?"ok":"bad"}">
+                ${data.viabilidad || "SIN RESULTADO"}
+            </h2>`;
 
-    html += `<div class="bloque"><h3>📦 Análisis técnico</h3>
-    <pre>${JSON.stringify(analisis,null,2)}</pre></div>`;
+    // 📦 ANALISIS ENRIQUECIDO
+    html += `<div class="bloque"><h3>📦 Ingeniería</h3>
+    <pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
 
-    let riesgos = data.riesgos || analisis.riesgos || [];
+    // ⚡ FISICA
+    html += `<div class="bloque"><h3>⚡ Física avanzada</h3>
+    <pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
 
+    // ⚠️ RIESGOS
     html += `<div class="bloque"><h3>⚠️ Riesgos</h3>
-    <pre>${riesgos.length ? riesgos.join("\n") : "Sin riesgos detectados"}</pre></div>`;
+    <pre>${(data.riesgos||["Sin datos"]).join("\n")}</pre></div>`;
 
-    html += `<div class="bloque"><h3>⚡ Física</h3>
-    <pre>${JSON.stringify(fisica,null,2)}</pre></div>`;
-
-    html += `<div class="bloque"><h3>💻 Simulación</h3>
-    <pre>${data.salida || "Sin datos"}</pre></div>`;
-
-    html += `<div class="bloque"><h3>📡 Telemetría</h3>
-    <pre id="telemetria_data">Procesando...</pre></div>`;
-
+    // ⚙️ HARDWARE
     if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware Industrial</h3>
+        html += `<div class="bloque"><h3>⚙️ Hardware</h3>
         <pre>${JSON.stringify(data.hardware,null,2)}</pre></div>`;
     }
 
-    // 🔥 3D PRO
-    if(data.modelos_3d){
-        html += `
-        <div class="bloque">
-            <h3>🧊 Modelo 3D</h3>
-            <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
-        </div>`;
+    // 💻 SOFTWARE
+    if(data.software){
+        html += `<div class="bloque"><h3>💻 Software IA</h3>
+        <pre>${JSON.stringify(data.software,null,2)}</pre></div>`;
     }
+
+    // 📡 TELEMETRIA
+    html += `<div class="bloque"><h3>📡 Telemetría</h3>
+    <pre id="telemetria_data">Procesando...</pre></div>`;
+
+    // 🧊 3D
+    html += `<div class="bloque">
+        <h3>🧊 Modelo 3D</h3>
+        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
+    </div>`;
 
     html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
 
+    // =========================
+    // TELEMETRIA ROBUSTA
+    // =========================
+    try{
+        let salida = data.salida || "";
+
+        let raw = salida.split("###DATA_START###")[1]?.split("###DATA_END###")[0];
+
+        if(raw){
+            let json = JSON.parse(raw);
+
+            let texto = json.map(d =>
+                `t:${d.t || 0}s | alt:${d.alt || 0}m | vel:${d.vel || 0}m/s`
+            ).join("\n");
+
+            document.getElementById("telemetria_data").innerText = texto;
+
+        }else{
+            document.getElementById("telemetria_data").innerText = "Sin telemetría real";
+        }
+
+    }catch(e){
+        document.getElementById("telemetria_data").innerText = "Error parseando telemetría";
+    }
+
     render3D();
 }
 
 // =========================
-// 🧊 RENDER 3D PRO REAL
+// 🧊 DRON 3D PRO REAL
 // =========================
 function render3D(){
 
     const canvas = document.getElementById("viewer3d");
-    if(!canvas || !window.THREE) return;
-
-    const THREE = window.THREE;
+    if(!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x111111);
+    scene.background = new THREE.Color(0x0b0f1a);
 
-    const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / 400, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, 2, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 
-    const renderer = new THREE.WebGLRenderer({canvas});
     renderer.setSize(canvas.clientWidth, 400);
 
-    // 🔥 LUCES REALES
-    const light = new THREE.DirectionalLight(0xffffff, 1);
+    // 🔥 luces realistas
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+    let light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(5,5,5);
     scene.add(light);
 
-    const ambient = new THREE.AmbientLight(0x404040);
-    scene.add(ambient);
-
-    // 🔥 CUERPO DRONE
-    const body = new THREE.Mesh(
-        new THREE.BoxGeometry(2,0.3,2),
-        new THREE.MeshStandardMaterial({color:0x00ffcc})
+    // 🔥 cuerpo central PRO
+    let body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.6,0.6,0.25,32),
+        new THREE.MeshStandardMaterial({color:0x00ffaa, metalness:0.6, roughness:0.3})
     );
     scene.add(body);
 
-    // 🔥 BRAZOS
+    // 🔥 brazos + motores + hélices REALISTAS
     for(let i=0;i<4;i++){
-        const arm = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.05,0.05,2),
+
+        let angle = i * Math.PI/2;
+
+        // brazo
+        let arm = new THREE.Mesh(
+            new THREE.BoxGeometry(2.2,0.1,0.1),
             new THREE.MeshStandardMaterial({color:0xffffff})
         );
-        arm.rotation.z = Math.PI/2;
-        arm.rotation.y = i * (Math.PI/2);
+        arm.rotation.y = angle;
         scene.add(arm);
-    }
 
-    // 🔥 HÉLICES
-    for(let i=0;i<4;i++){
-        const prop = new THREE.Mesh(
-            new THREE.BoxGeometry(0.1,0.02,1),
-            new THREE.MeshStandardMaterial({color:0xff0000})
+        // motor
+        let motor = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.25,0.25,0.2,32),
+            new THREE.MeshStandardMaterial({color:0x222222})
         );
-        prop.position.set(Math.cos(i*Math.PI/2)*1.5,0.3,Math.sin(i*Math.PI/2)*1.5);
-        scene.add(prop);
+        motor.position.set(Math.cos(angle)*1.1,0,Math.sin(angle)*1.1);
+        scene.add(motor);
 
-        prop.userData.spin = true;
+        // hélice doble (más real)
+        for(let j=0;j<2;j++){
+            let prop = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1,0.02,1.4),
+                new THREE.MeshStandardMaterial({color:0xff0000})
+            );
+            prop.position.set(Math.cos(angle)*1.1,0.2,Math.sin(angle)*1.1);
+            prop.rotation.y = j * Math.PI/2;
+            prop.userData.spin = true;
+            scene.add(prop);
+        }
     }
 
-    camera.position.z = 5;
+    camera.position.z = 6;
 
     function animate(){
         requestAnimationFrame(animate);
 
-        scene.rotation.y += 0.01;
+        scene.rotation.y += 0.005;
 
         scene.children.forEach(obj=>{
             if(obj.userData.spin){
-                obj.rotation.y += 0.3;
+                obj.rotation.y += 0.4;
             }
         });
 
@@ -278,50 +302,12 @@ function render3D(){
 }
 
 // =========================
-// 🧹 LIMPIAR
+// LIMPIAR
 // =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";
     document.getElementById("resultado").innerHTML = "";
-    document.getElementById("panel_maia").style.display = "none";
     document.getElementById("barra_container").style.display = "none";
-}
-
-// =========================
-// 🚀 CAPACIDADES
-// =========================
-function verCapacidades(){
-    let panel = document.getElementById("panel_maia");
-    panel.style.display = "block";
-
-    let fases = [];
-
-    for(let i=1;i<=26;i++){
-        fases.push(`Fase ${i}: Nivel ${i} de evolución MAIA`);
-    }
-
-    panel.innerHTML = `
-        <h2>🚀 MAIA - SISTEMA INDUSTRIAL</h2>
-        <ul>${fases.map(f => `<li>${f}</li>`).join("")}</ul>
-    `;
-}
-
-// =========================
-// 💾 GUARDAR
-// =========================
-async function guardarProyectoInvent(){
-    let idea = document.getElementById("idea").value;
-
-    await fetch("/maia_guardar_proyecto", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nombre: idea,
-            tecnologia: "drone"
-        })
-    });
-
-    alert("✅ Proyecto guardado");
 }
 
 </script>

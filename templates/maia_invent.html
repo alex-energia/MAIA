@@ -3,71 +3,64 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- 🔥 THREE JS ESTABLE -->
+<!-- 🔥 FIX REAL CDN -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: #e5e7eb;
-}
+body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
+
 textarea {
-    width: 100%;
-    height: 80px;
-    border-radius: 8px;
-    padding: 10px;
+    width:100%; height:80px;
+    border-radius:8px; padding:10px;
 }
+
 button {
-    padding: 10px;
-    margin: 5px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background: #2563eb;
-    color: white;
+    padding:10px; margin:5px;
+    border-radius:8px; border:none;
+    cursor:pointer;
+    background:#2563eb; color:white;
 }
-.panel {
-    background: #020617;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 20px;
-}
-.bloque {
-    margin-top: 20px;
-    padding: 10px;
-    background: #020617;
-    border-radius: 10px;
-    border: 1px solid #1e293b;
-}
-.ok { color: #22c55e; }
-.bad { color: #ef4444; }
+
+.panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
+.bloque { margin-top:20px; padding:10px; background:#020617; border-radius:10px; border:1px solid #1e293b;}
+
+.ok { color:#22c55e; }
+.bad { color:#ef4444; }
 
 pre {
-    background: black;
-    padding: 10px;
-    border-radius: 8px;
-    overflow: auto;
-    font-size: 12px;
-    max-height: 300px;
+    background:black;
+    padding:10px;
+    border-radius:8px;
+    overflow:auto;
+    font-size:12px;
+    max-height:300px;
 }
 
 #barra_container {
-    width: 100%;
-    background: #111;
-    margin-top: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-    display: none;
+    width:100%;
+    background:#111;
+    margin-top:20px;
+    border-radius:10px;
+    overflow:hidden;
+    display:none;
 }
+
 #barra {
-    width: 0%;
-    height: 25px;
-    background: #22c55e;
-    text-align: center;
-    color: white;
-    font-weight: bold;
+    width:0%;
+    height:25px;
+    background:#22c55e;
+    text-align:center;
+    color:white;
+    font-weight:bold;
 }
+
+.modulo {
+    background:#111;
+    padding:8px;
+    margin:5px 0;
+    border-radius:6px;
+}
+
 </style>
 </head>
 
@@ -79,6 +72,7 @@ pre {
 <textarea id="idea"></textarea><br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
+<button onclick="verCapacidades()">🧠 ¿Qué puede hacer MAIA?</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
 
 <div id="resultado"></div>
@@ -87,12 +81,15 @@ pre {
     <div id="barra">0%</div>
 </div>
 
+<div id="panel_maia" style="display:none;"></div>
+
 <script>
 
 // =========================
-// 🚀 GENERAR
+// GENERAR
 // =========================
 async function evaluar(){
+
     const idea = document.getElementById("idea").value;
 
     if(!idea || idea.length < 3){
@@ -104,21 +101,23 @@ async function evaluar(){
     document.getElementById("resultado").innerHTML = "🧠 MAIA procesando...";
 
     await fetch("/evaluar_drone", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({idea})
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({idea})
     });
 
     monitorearResultado();
 }
 
 // =========================
-// 📊 PROGRESO
+// PROGRESO
 // =========================
 function monitorearResultado(){
+
     let barra = document.getElementById("barra");
 
     let intervalo = setInterval(async () => {
+
         try{
             let r = await fetch("/maia_progreso");
             let data = await r.json();
@@ -135,11 +134,11 @@ function monitorearResultado(){
             clearInterval(intervalo);
         }
 
-    }, 700);
+    },700);
 }
 
 // =========================
-// 🧠 RESULTADO PRO REAL
+// RESULTADO PRO REAL
 // =========================
 async function cargarResultadoFinal(){
 
@@ -152,7 +151,7 @@ async function cargarResultadoFinal(){
                 ${data.viabilidad || "SIN RESULTADO"}
             </h2>`;
 
-    // 📦 ANALISIS ENRIQUECIDO
+    // 📦 ANALISIS
     html += `<div class="bloque"><h3>📦 Ingeniería</h3>
     <pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
 
@@ -164,16 +163,38 @@ async function cargarResultadoFinal(){
     html += `<div class="bloque"><h3>⚠️ Riesgos</h3>
     <pre>${(data.riesgos||["Sin datos"]).join("\n")}</pre></div>`;
 
+    // 🎯 MISION (🔥 NUEVO)
+    if(data.mision){
+        html += `<div class="bloque"><h3>🎯 Misión</h3>
+        <pre>${JSON.stringify(data.mision,null,2)}</pre></div>`;
+    }
+
+    // 🧠 VALIDACION (🔥 NUEVO)
+    if(data.validacion){
+        html += `<div class="bloque"><h3>🧠 Validación IA</h3>
+        <pre>${JSON.stringify(data.validacion,null,2)}</pre></div>`;
+    }
+
     // ⚙️ HARDWARE
     if(data.hardware){
         html += `<div class="bloque"><h3>⚙️ Hardware</h3>
         <pre>${JSON.stringify(data.hardware,null,2)}</pre></div>`;
     }
 
-    // 💻 SOFTWARE
+    // 💻 SOFTWARE (🔥 CLAVE)
     if(data.software){
-        html += `<div class="bloque"><h3>💻 Software IA</h3>
-        <pre>${JSON.stringify(data.software,null,2)}</pre></div>`;
+
+        html += `<div class="bloque"><h3>💻 Software IA</h3>`;
+
+        if(data.software.modulos){
+            data.software.modulos.forEach(m=>{
+                html += `<div class="modulo">✔ ${m}</div>`;
+            });
+        } else {
+            html += `<pre>${JSON.stringify(data.software,null,2)}</pre>`;
+        }
+
+        html += `</div>`;
     }
 
     // 📡 TELEMETRIA
@@ -190,36 +211,26 @@ async function cargarResultadoFinal(){
 
     document.getElementById("resultado").innerHTML = html;
 
-    // =========================
-    // TELEMETRIA ROBUSTA
-    // =========================
+    // TELEMETRIA
     try{
         let salida = data.salida || "";
-
         let raw = salida.split("###DATA_START###")[1]?.split("###DATA_END###")[0];
 
         if(raw){
             let json = JSON.parse(raw);
-
-            let texto = json.map(d =>
-                `t:${d.t || 0}s | alt:${d.alt || 0}m | vel:${d.vel || 0}m/s`
-            ).join("\n");
-
-            document.getElementById("telemetria_data").innerText = texto;
-
-        }else{
-            document.getElementById("telemetria_data").innerText = "Sin telemetría real";
+            document.getElementById("telemetria_data").innerText =
+                JSON.stringify(json,null,2);
         }
 
     }catch(e){
-        document.getElementById("telemetria_data").innerText = "Error parseando telemetría";
+        document.getElementById("telemetria_data").innerText = "Error telemetría";
     }
 
     render3D();
 }
 
 // =========================
-// 🧊 DRON 3D PRO REAL
+// 3D
 // =========================
 function render3D(){
 
@@ -234,52 +245,40 @@ function render3D(){
 
     renderer.setSize(canvas.clientWidth, 400);
 
-    // 🔥 luces realistas
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
-    let light = new THREE.DirectionalLight(0xffffff, 1);
+    let light = new THREE.DirectionalLight(0xffffff,1);
     light.position.set(5,5,5);
     scene.add(light);
 
-    // 🔥 cuerpo central PRO
     let body = new THREE.Mesh(
         new THREE.CylinderGeometry(0.6,0.6,0.25,32),
-        new THREE.MeshStandardMaterial({color:0x00ffaa, metalness:0.6, roughness:0.3})
+        new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
+
     scene.add(body);
 
-    // 🔥 brazos + motores + hélices REALISTAS
     for(let i=0;i<4;i++){
 
         let angle = i * Math.PI/2;
 
-        // brazo
         let arm = new THREE.Mesh(
             new THREE.BoxGeometry(2.2,0.1,0.1),
             new THREE.MeshStandardMaterial({color:0xffffff})
         );
+
         arm.rotation.y = angle;
         scene.add(arm);
 
-        // motor
-        let motor = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.25,0.25,0.2,32),
-            new THREE.MeshStandardMaterial({color:0x222222})
+        let prop = new THREE.Mesh(
+            new THREE.BoxGeometry(0.1,0.02,1.4),
+            new THREE.MeshStandardMaterial({color:0xff0000})
         );
-        motor.position.set(Math.cos(angle)*1.1,0,Math.sin(angle)*1.1);
-        scene.add(motor);
 
-        // hélice doble (más real)
-        for(let j=0;j<2;j++){
-            let prop = new THREE.Mesh(
-                new THREE.BoxGeometry(0.1,0.02,1.4),
-                new THREE.MeshStandardMaterial({color:0xff0000})
-            );
-            prop.position.set(Math.cos(angle)*1.1,0.2,Math.sin(angle)*1.1);
-            prop.rotation.y = j * Math.PI/2;
-            prop.userData.spin = true;
-            scene.add(prop);
-        }
+        prop.position.set(Math.cos(angle)*1.1,0.2,Math.sin(angle)*1.1);
+        prop.userData.spin = true;
+
+        scene.add(prop);
     }
 
     camera.position.z = 6;
@@ -299,6 +298,25 @@ function render3D(){
     }
 
     animate();
+}
+
+// =========================
+// CAPACIDADES MAIA (🔥 FIX)
+// =========================
+function verCapacidades(){
+
+    let panel = document.getElementById("panel_maia");
+    panel.style.display = "block";
+
+    let html = `<div class="panel"><h2>🚀 MAIA - SISTEMA COMPLETO</h2><ul>`;
+
+    for(let i=1;i<=26;i++){
+        html += `<li>Fase ${i}: Nivel evolutivo MAIA ${i}</li>`;
+    }
+
+    html += `</ul></div>`;
+
+    panel.innerHTML = html;
 }
 
 // =========================

@@ -3,30 +3,21 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- 🔥 FIX REAL CDN -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
-
-textarea {
-    width:100%; height:80px;
-    border-radius:8px; padding:10px;
-}
-
+textarea { width:100%; height:80px; border-radius:8px; padding:10px;}
 button {
     padding:10px; margin:5px;
     border-radius:8px; border:none;
     cursor:pointer;
     background:#2563eb; color:white;
 }
-
 .panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
 .bloque { margin-top:20px; padding:10px; background:#020617; border-radius:10px; border:1px solid #1e293b;}
-
 .ok { color:#22c55e; }
 .bad { color:#ef4444; }
-
 pre {
     background:black;
     padding:10px;
@@ -35,7 +26,6 @@ pre {
     font-size:12px;
     max-height:300px;
 }
-
 #barra_container {
     width:100%;
     background:#111;
@@ -44,7 +34,6 @@ pre {
     overflow:hidden;
     display:none;
 }
-
 #barra {
     width:0%;
     height:25px;
@@ -54,13 +43,27 @@ pre {
     font-weight:bold;
 }
 
+/* 🔥 SOFTWARE INTERACTIVO */
 .modulo {
     background:#111;
+    padding:10px;
+    margin:6px 0;
+    border-radius:6px;
+    cursor:pointer;
+}
+.codigo {
+    display:none;
+    background:#000;
+    margin-top:5px;
     padding:8px;
-    margin:5px 0;
     border-radius:6px;
 }
 
+/* 🔥 HARDWARE GRID */
+.hw-item{
+    padding:6px;
+    border-bottom:1px solid #333;
+}
 </style>
 </head>
 
@@ -89,7 +92,6 @@ pre {
 // GENERAR
 // =========================
 async function evaluar(){
-
     const idea = document.getElementById("idea").value;
 
     if(!idea || idea.length < 3){
@@ -113,35 +115,26 @@ async function evaluar(){
 // PROGRESO
 // =========================
 function monitorearResultado(){
-
     let barra = document.getElementById("barra");
 
     let intervalo = setInterval(async () => {
+        let r = await fetch("/maia_progreso");
+        let data = await r.json();
 
-        try{
-            let r = await fetch("/maia_progreso");
-            let data = await r.json();
+        barra.style.width = data.progreso + "%";
+        barra.innerText = data.progreso + "%";
 
-            barra.style.width = data.progreso + "%";
-            barra.innerText = data.progreso + "%";
-
-            if(data.progreso >= 100){
-                clearInterval(intervalo);
-                cargarResultadoFinal();
-            }
-
-        }catch(e){
+        if(data.progreso >= 100){
             clearInterval(intervalo);
+            cargarResultadoFinal();
         }
-
     },700);
 }
 
 // =========================
-// RESULTADO PRO REAL
+// RESULTADO PRO
 // =========================
 async function cargarResultadoFinal(){
-
     let res = await fetch("/maia_resultado");
     let data = await res.json();
 
@@ -156,43 +149,40 @@ async function cargarResultadoFinal(){
     <pre>${JSON.stringify(data.analisis,null,2)}</pre></div>`;
 
     // ⚡ FISICA
-    html += `<div class="bloque"><h3>⚡ Física avanzada</h3>
+    html += `<div class="bloque"><h3>⚡ Física</h3>
     <pre>${JSON.stringify(data.fisica,null,2)}</pre></div>`;
 
-    // ⚠️ RIESGOS
-    html += `<div class="bloque"><h3>⚠️ Riesgos</h3>
-    <pre>${(data.riesgos||["Sin datos"]).join("\n")}</pre></div>`;
-
-    // 🎯 MISION (🔥 NUEVO)
-    if(data.mision){
-        html += `<div class="bloque"><h3>🎯 Misión</h3>
-        <pre>${JSON.stringify(data.mision,null,2)}</pre></div>`;
-    }
-
-    // 🧠 VALIDACION (🔥 NUEVO)
-    if(data.validacion){
-        html += `<div class="bloque"><h3>🧠 Validación IA</h3>
-        <pre>${JSON.stringify(data.validacion,null,2)}</pre></div>`;
-    }
-
-    // ⚙️ HARDWARE
+    // ⚙️ HARDWARE (🔥 MEJORADO)
     if(data.hardware){
-        html += `<div class="bloque"><h3>⚙️ Hardware</h3>
-        <pre>${JSON.stringify(data.hardware,null,2)}</pre></div>`;
+        html += `<div class="bloque"><h3>⚙️ Hardware</h3>`;
+        Object.entries(data.hardware).forEach(([k,v])=>{
+            html += `<div class="hw-item"><b>${k}:</b> ${JSON.stringify(v)}</div>`;
+        });
+        html += `</div>`;
     }
 
-    // 💻 SOFTWARE (🔥 CLAVE)
+    // 💻 SOFTWARE INTERACTIVO (🔥 CLAVE)
     if(data.software){
-
         html += `<div class="bloque"><h3>💻 Software IA</h3>`;
 
-        if(data.software.modulos){
-            data.software.modulos.forEach(m=>{
-                html += `<div class="modulo">✔ ${m}</div>`;
-            });
-        } else {
-            html += `<pre>${JSON.stringify(data.software,null,2)}</pre>`;
-        }
+        let modulos = data.software.capacidades || [];
+
+        modulos.forEach((m,i)=>{
+            html += `
+            <div class="modulo" onclick="toggleCodigo(${i})">
+                ✔ ${m}
+                <div class="codigo" id="code_${i}">
+def ${m.replace(/ /g,"_").toLowerCase()}():
+    # algoritmo simulado MAIA
+    estado = "activo"
+    while estado == "activo":
+        procesar_datos()
+        optimizar()
+        if fallo:
+            activar_failsafe()
+                </div>
+            </div>`;
+        });
 
         html += `</div>`;
     }
@@ -215,103 +205,73 @@ async function cargarResultadoFinal(){
     try{
         let salida = data.salida || "";
         let raw = salida.split("###DATA_START###")[1]?.split("###DATA_END###")[0];
-
-        if(raw){
-            let json = JSON.parse(raw);
-            document.getElementById("telemetria_data").innerText =
-                JSON.stringify(json,null,2);
-        }
-
+        document.getElementById("telemetria_data").innerText =
+            raw ? raw : "Sin telemetría real";
     }catch(e){
-        document.getElementById("telemetria_data").innerText = "Error telemetría";
+        document.getElementById("telemetria_data").innerText = "Error";
     }
 
     render3D();
 }
 
 // =========================
+// TOGGLE CODIGO
+// =========================
+function toggleCodigo(i){
+    let el = document.getElementById("code_"+i);
+    el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+// =========================
 // 3D
 // =========================
 function render3D(){
-
     const canvas = document.getElementById("viewer3d");
     if(!canvas) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0f1a);
-
     const camera = new THREE.PerspectiveCamera(75, 2, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    const renderer = new THREE.WebGLRenderer({canvas});
 
     renderer.setSize(canvas.clientWidth, 400);
 
     scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
-    let light = new THREE.DirectionalLight(0xffffff,1);
-    light.position.set(5,5,5);
-    scene.add(light);
-
     let body = new THREE.Mesh(
         new THREE.CylinderGeometry(0.6,0.6,0.25,32),
         new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
-
     scene.add(body);
-
-    for(let i=0;i<4;i++){
-
-        let angle = i * Math.PI/2;
-
-        let arm = new THREE.Mesh(
-            new THREE.BoxGeometry(2.2,0.1,0.1),
-            new THREE.MeshStandardMaterial({color:0xffffff})
-        );
-
-        arm.rotation.y = angle;
-        scene.add(arm);
-
-        let prop = new THREE.Mesh(
-            new THREE.BoxGeometry(0.1,0.02,1.4),
-            new THREE.MeshStandardMaterial({color:0xff0000})
-        );
-
-        prop.position.set(Math.cos(angle)*1.1,0.2,Math.sin(angle)*1.1);
-        prop.userData.spin = true;
-
-        scene.add(prop);
-    }
 
     camera.position.z = 6;
 
     function animate(){
         requestAnimationFrame(animate);
-
-        scene.rotation.y += 0.005;
-
-        scene.children.forEach(obj=>{
-            if(obj.userData.spin){
-                obj.rotation.y += 0.4;
-            }
-        });
-
+        scene.rotation.y += 0.01;
         renderer.render(scene, camera);
     }
-
     animate();
 }
 
 // =========================
-// CAPACIDADES MAIA (🔥 FIX)
+// MAIA COMPLETO (🔥 PRO)
 // =========================
 function verCapacidades(){
-
     let panel = document.getElementById("panel_maia");
     panel.style.display = "block";
 
-    let html = `<div class="panel"><h2>🚀 MAIA - SISTEMA COMPLETO</h2><ul>`;
+    let html = `<div class="panel">
+    <h2>🚀 MAIA - SISTEMA COMPLETO</h2>
+    <p>
+    MAIA es un sistema de ingeniería autónoma capaz de diseñar,
+    validar y generar soluciones aeroespaciales completas.
+    Cada fase representa un incremento en inteligencia,
+    autonomía y capacidad de simulación.
+    </p><ul>`;
 
     for(let i=1;i<=26;i++){
-        html += `<li>Fase ${i}: Nivel evolutivo MAIA ${i}</li>`;
+        html += `<li><b>Fase ${i}:</b> Nivel evolutivo con mayor precisión,
+        automatización y capacidad de decisión autónoma.</li>`;
     }
 
     html += `</ul></div>`;
@@ -320,15 +280,16 @@ function verCapacidades(){
 }
 
 // =========================
-// LIMPIAR
+// LIMPIAR (🔥 FIX)
 // =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";
     document.getElementById("resultado").innerHTML = "";
+    document.getElementById("panel_maia").innerHTML = "";
+    document.getElementById("panel_maia").style.display = "none";
     document.getElementById("barra_container").style.display = "none";
 }
 
 </script>
-
 </body>
 </html>

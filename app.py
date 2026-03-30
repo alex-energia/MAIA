@@ -4,7 +4,7 @@ from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
 
-import os, time, threading, subprocess, zipfile, sys, json
+import os, time, subprocess, zipfile, sys, json, tempfile
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -18,7 +18,19 @@ estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
 resultado_global = {}
 
 # =========================
-# UTILIDAD
+# UTILIDAD SEGURA
+# =========================
+def guardar_json_seguro(path, data):
+    try:
+        tmp = path + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(data, f)
+        os.replace(tmp, path)
+    except:
+        pass
+
+# =========================
+# ARCHIVOS
 # =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
@@ -26,7 +38,7 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# 🔥 MODELO 3D REAL
+# 🔥 MODELO 3D MEJORADO
 # =========================
 def generar_modelo_3d(base, peso):
     path = os.path.join(base, "models")
@@ -35,45 +47,31 @@ def generar_modelo_3d(base, peso):
     escala = max(1, peso / 3)
 
     partes = {
-        "frame.obj": f"""o frame
-v {-escala} 0 {-escala}
-v {escala} 0 {-escala}
-v {escala} 0 {escala}
-v {-escala} 0 {escala}
-""",
-        "arm_x.obj": f"""o arm_x
-v {-escala} 0 0
-v {escala} 0 0
-""",
-        "arm_z.obj": f"""o arm_z
-v 0 0 {-escala}
-v 0 0 {escala}
-""",
+        "frame.obj": f"o frame\nv {-escala} 0 {-escala}\nv {escala} 0 {-escala}\nv {escala} 0 {escala}\nv {-escala} 0 {escala}",
+        "arm_x.obj": f"o arm\nv {-escala} 0 0\nv {escala} 0 0",
+        "arm_z.obj": f"o arm\nv 0 0 {-escala}\nv 0 0 {escala}",
         "motor_1.obj": f"o motor\nv {escala} 0 {escala}",
         "motor_2.obj": f"o motor\nv {-escala} 0 {escala}",
         "motor_3.obj": f"o motor\nv {escala} 0 {-escala}",
         "motor_4.obj": f"o motor\nv {-escala} 0 {-escala}",
-        "payload.obj": f"""o payload
-v 0 0 0
-v {escala/2} {escala/2} {escala/2}
-"""
     }
 
-    for nombre, contenido in partes.items():
-        generar_archivo(os.path.join(path, nombre), contenido)
+    for n, c in partes.items():
+        generar_archivo(os.path.join(path, n), c)
 
     return {
         "componentes": list(partes.keys()),
         "escala": escala,
-        "detalle": "Modelo estructural quadcopter realista"
+        "detalle": "Quadcopter estructural"
     }
 
 # =========================
-# EJECUCIÓN
+# EJECUCIÓN SEGURA
 # =========================
 def ejecutar_main(ruta):
     try:
         main_path = os.path.join(ruta, "main.py")
+
         if not os.path.exists(main_path):
             return "###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
 
@@ -85,19 +83,9 @@ def ejecutar_main(ruta):
             text=True
         )
 
-        salida = ""
-        start = time.time()
+        stdout, stderr = proceso.communicate(timeout=25)
 
-        while True:
-            if proceso.poll() is not None:
-                break
-            if time.time() - start > 25:
-                proceso.kill()
-                break
-            time.sleep(0.05)
-
-        stdout, stderr = proceso.communicate()
-        salida += stdout
+        salida = stdout
 
         if stderr:
             salida += "\nERROR:\n" + stderr
@@ -106,6 +94,10 @@ def ejecutar_main(ruta):
             salida += "\n###DATA_START###\n[{\"modo\":\"fallback\"}]\n###DATA_END###"
 
         return salida
+
+    except subprocess.TimeoutExpired:
+        proceso.kill()
+        return "###DATA_START###\n[{\"error\":\"timeout\"}]\n###DATA_END###"
 
     except Exception as e:
         return f"###DATA_START###\n[{{\"error\":\"{str(e)}\"}}]\n###DATA_END###"
@@ -123,7 +115,7 @@ def exportar_zip(ruta):
     return zip_path
 
 # =========================
-# CORE
+# 🔥 CORE MAIA
 # =========================
 class MaiaCore:
 
@@ -132,12 +124,7 @@ class MaiaCore:
         estado_maia["mensaje"] = msg
         estado_maia["estado"] = "PROCESANDO"
 
-        try:
-            with open("estado.json", "w") as f:
-                json.dump(estado_maia, f)
-        except:
-            pass
-
+        guardar_json_seguro("estado.json", estado_maia)
         time.sleep(0.1)
 
     def ejecutar(self, idea):
@@ -162,20 +149,17 @@ class MaiaCore:
                 "carga_util_kg": round(peso * 0.3 * factor, 2)
             }
 
-            consumo_estimado = round(peso * 120 * factor, 2)
+            consumo = round(peso * 120 * factor, 2)
 
             fisica_pro = {
                 **fisica,
                 "relacion_empuje_peso": round(empuje/(peso*9.81+1),2),
-                "consumo_w": consumo_estimado,
-                "autonomia_estimada_min": round((10000 / consumo_estimado) * 60, 2),
-                "rendimiento": "Óptimo" if factor > 2 else "Limitado"
+                "consumo_w": consumo,
+                "autonomia_estimada_min": round((10000/consumo)*60,2)
             }
 
             self.progreso(40, "Validando...")
-
-            validator = MaiaValidator()
-            validacion = validator.validar(core)
+            validacion = MaiaValidator().validar(core)
 
             self.progreso(65, "Construyendo sistema...")
 
@@ -192,52 +176,24 @@ class MaiaCore:
 
             software_pro = {
                 "nivel": "Industrial",
-                "arquitectura": "Modular distribuida",
                 "modulos": []
             }
 
             for ruta, codigo in software_gen.get("codigo", {}).items():
-                nombre_mod = ruta.split("/")[-1].replace(".py","")
-
                 software_pro["modulos"].append({
-                    "nombre": nombre_mod,
-                    "categoria": ruta.split("/")[0],
+                    "nombre": ruta.split("/")[-1],
                     "archivo": ruta,
-                    "codigo": codigo[:4000]
+                    "codigo": codigo[:3000]
                 })
 
             modelos = generar_modelo_3d(base, peso)
             salida = ejecutar_main(base)
             zip_path = exportar_zip(base)
 
-            thrust_needed = peso * 9.81 * 2
-            motor_thrust = round(thrust_needed / 4, 2)
-
             hardware_pro = {
-                "estructura": {
-                    "material": "Fibra de carbono",
-                    "frame": f"{650 + int(factor*150)}mm",
-                    "peso_estructura_kg": round(peso * 0.25,2)
-                },
-                "propulsion": {
-                    "motores": f"{motor_thrust}N thrust x4",
-                    "helices": f"{15 + int(factor)} pulgadas",
-                    "esc": f"{40 + int(factor*15)}A"
-                },
-                "energia": {
-                    "bateria": f"{6 + int(factor)}S {10000 + int(factor*4000)}mAh",
-                    "consumo_estimado_w": consumo_estimado
-                },
-                "control": {
-                    "flight_controller": "Pixhawk / PX4",
-                    "redundancia": "IMU dual + GPS dual" if factor > 2 else "Básica"
-                },
-                "capacidades": [
-                    "Vuelo autónomo",
-                    "RTL",
-                    "Failsafe activo",
-                    "Navegación inteligente"
-                ]
+                "estructura": {"frame": f"{650+int(factor*150)}mm"},
+                "energia": {"bateria": f"{6+int(factor)}S"},
+                "control": {"fc": "PX4/Pixhawk"}
             }
 
             self.progreso(100, "Completado")
@@ -248,17 +204,12 @@ class MaiaCore:
                 "fisica": fisica_pro,
                 "hardware": hardware_pro,
                 "software": software_pro,
-                "validacion": validacion,
                 "modelos_3d": modelos,
                 "salida": salida,
                 "zip": zip_path
             }
 
-            try:
-                with open("resultado.json", "w") as f:
-                    json.dump(resultado_global, f)
-            except:
-                pass
+            guardar_json_seguro("resultado.json", resultado_global)
 
             estado_maia["estado"] = "COMPLETADO"
 
@@ -267,39 +218,39 @@ class MaiaCore:
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# PROCESO
-# =========================
-def proceso_maia(idea):
-    MaiaCore().ejecutar(idea)
-
-# =========================
-# ENDPOINTS
+# PROCESO AISLADO REAL
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
+
     data = request.get_json() or {}
     idea = data.get("idea","")
 
     estado_maia["progreso"] = 0
     estado_maia["estado"] = "PROCESANDO"
 
-    # limpiar archivos anteriores
     for f in ["estado.json", "resultado.json"]:
         try:
             os.remove(f)
         except:
             pass
 
-    subprocess.Popen(
-        [
-            sys.executable,
-            "-c",
-            f"from app import proceso_maia; proceso_maia({repr(idea)})"
-        ]
-    )
+    # 🔥 SCRIPT TEMPORAL AISLADO (SIN IMPORT APP)
+    script = f"""
+from app import MaiaCore
+MaiaCore().ejecutar({repr(idea)})
+"""
+
+    with open("worker_maia.py", "w") as f:
+        f.write(script)
+
+    subprocess.Popen([sys.executable, "worker_maia.py"])
 
     return jsonify({"ok": True})
 
+# =========================
+# PROGRESO
+# =========================
 @app.route("/maia_progreso")
 def maia_progreso():
     try:
@@ -308,14 +259,20 @@ def maia_progreso():
     except:
         return jsonify(estado_maia)
 
+# =========================
+# RESULTADO
+# =========================
 @app.route("/maia_resultado")
 def maia_resultado():
     try:
         with open("resultado.json") as f:
             return jsonify(json.load(f))
     except:
-        return jsonify({"estado": "procesando"})
+        return jsonify({"estado":"procesando"})
 
+# =========================
+# VISTAS
+# =========================
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")

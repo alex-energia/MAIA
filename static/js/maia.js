@@ -1,14 +1,20 @@
 // ==============================
 // 💥 ANEXO CRÍTICO (FUNCIONES GLOBALES PARA BOTONES)
 // ==============================
-
 window.generarDrone = async function() {
     console.log("🚀 generarDrone ejecutado");
+
+    if (window.__maia_running) {
+        console.warn("⚠️ MAIA ya está corriendo");
+        return;
+    }
+    window.__maia_running = true;
 
     let idea = document.getElementById("idea")?.value;
 
     if (!idea || idea.length < 3) {
         alert("Escribe una idea");
+        window.__maia_running = false;
         return;
     }
 
@@ -17,9 +23,11 @@ window.generarDrone = async function() {
 
     let paso = 0;
     let data = {};
+    let max_iter = 20; // 🔥 evita loops infinitos
 
     try {
-        while (true) {
+        while (max_iter-- > 0) {
+
             let res = await fetch("/maia_step", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -30,7 +38,9 @@ window.generarDrone = async function() {
                 })
             });
 
-            if (!res.ok) throw new Error("Error en backend");
+            if (!res.ok) {
+                throw new Error("HTTP " + res.status);
+            }
 
             let response = await res.json();
             console.log("🧠 Paso:", response);
@@ -39,7 +49,6 @@ window.generarDrone = async function() {
                 throw new Error(response.error);
             }
 
-            // avanzar pasos
             if (response.final) {
                 console.log("✅ FINAL:", response.resultado);
 
@@ -50,18 +59,22 @@ window.generarDrone = async function() {
                     salida.innerText = JSON.stringify(response.resultado, null, 2);
                 }
 
-                break;
+                window.__maia_running = false;
+                return;
             }
 
-            paso = response.paso;
-            data = response.data;
+            paso = response.paso ?? paso + 1;
+            data = response.data ?? data;
 
-            // actualizar progreso visual
+            // 🔥 progreso visual estable
             let barra = document.getElementById("progreso");
             if (barra) {
-                barra.style.width = (paso * 15) + "%";
+                let progreso = Math.min(95, paso * 15);
+                barra.style.width = progreso + "%";
             }
         }
+
+        throw new Error("MAIA se quedó en loop");
 
     } catch (e) {
         console.error("❌ Error MAIA:", e);
@@ -70,12 +83,14 @@ window.generarDrone = async function() {
         if (errorBox) {
             errorBox.innerText = "❌ Error: " + e.message;
         }
+
+    } finally {
+        window.__maia_running = false;
     }
 };
 
 window.limpiar = function() {
     console.log("🧹 limpiar ejecutado");
-
     if (document.getElementById("idea")) document.getElementById("idea").value = "";
     if (document.getElementById("salida")) document.getElementById("salida").innerText = "";
     if (document.getElementById("estado")) document.getElementById("estado").innerText = "";
@@ -84,10 +99,8 @@ window.limpiar = function() {
 
 window.togglePanel = function() {
     console.log("⚡ togglePanel ejecutado");
-
     let panel = document.getElementById("panel_maia");
     if (!panel) return;
-
     panel.style.display = panel.style.display === "block" ? "none" : "block";
 };
 
@@ -117,13 +130,8 @@ window.guardar = async function() {
 };
 
 // ==============================
-// 🔥 TU CÓDIGO ORIGINAL (NO SE BORRA)
-// ==============================
-
-// ==============================
 // 🔥 PROTECCIÓN GLOBAL
 // ==============================
-
 window.onerror = function(msg, url, line) {
     console.error("💥 JS ERROR:", msg, "en línea", line);
 };
@@ -131,7 +139,6 @@ window.onerror = function(msg, url, line) {
 // ==============================
 // 🔥 ESTADO GLOBAL REAL
 // ==============================
-
 let vozActiva = false;
 let reconocimiento = null;
 let vocesDisponibles = [];
@@ -140,18 +147,15 @@ let historialConversacion = [];
 // ==============================
 // 🔥 VOCES
 // ==============================
-
 function cargarVoces() {
     vocesDisponibles = speechSynthesis.getVoices();
 }
-
 cargarVoces();
 speechSynthesis.onvoiceschanged = cargarVoces;
 
 // ==============================
 // 🔥 DOM READY
 // ==============================
-
 window.addEventListener("DOMContentLoaded", () => {
 
     const vozBtn = document.getElementById("maia-voz-btn");
@@ -215,8 +219,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (existe(vozBtn)) {
         vozBtn.onclick = () => {
-            vozActiva = !vozActiva;
 
+            vozActiva = !vozActiva;
             vozBtn.style.background = vozActiva ? "green" : "red";
             vozBtn.innerText = vozActiva ? "MAIA ON" : "Activar MAIA";
 
@@ -241,6 +245,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 };
 
                 reconocimiento.start();
+
             } else {
                 if (reconocimiento) reconocimiento.stop();
             }
@@ -269,6 +274,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (existe(uploadInput)) {
         uploadInput.addEventListener("change", () => {
+
             let form = new FormData();
 
             for (let f of uploadInput.files) {

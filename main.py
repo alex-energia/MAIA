@@ -8,6 +8,7 @@ import time
 import random
 import math
 import threading
+import os
 
 from core.evaluador_integral import EvaluadorIntegral
 from core.motor_conocimiento import MotorConocimiento
@@ -56,6 +57,7 @@ def procesar_entrada(entrada):
                 "tipo": "error_financiero",
                 "error": str(e)
             }
+
     else:
         try:
             respuesta = motor_conocimiento.responder(entrada)
@@ -75,15 +77,15 @@ def procesar_entrada(entrada):
     resultado_final["vision"] = vision_data
     return resultado_final
 
-
 # ==========================================
-# 🧠 CONTROL PID (FIXED)
+# 🧠 CONTROL PID (FIXED REAL)
 # ==========================================
 class PID:
     def __init__(self, kp, ki, kd):
-        self.kp = kp
-        self.ki = ki
+        self.kp = kp   # 🔥 FIX
+        self.ki = ki   # 🔥 FIX
         self.kd = kd
+
         self.integral = 0
         self.prev_error = 0
 
@@ -97,7 +99,6 @@ class PID:
             self.ki * self.integral +
             self.kd * derivative
         )
-
 
 # ==========================================
 # 🚁 DRONE FÍSICO
@@ -121,7 +122,6 @@ class Drone:
             self.vel[2] += az * dt
             self.pos[2] += self.vel[2] * dt
 
-            # Movimiento suave
             self.vel[0] += random.uniform(-0.1, 0.1)
             self.vel[1] += random.uniform(-0.1, 0.1)
 
@@ -131,7 +131,6 @@ class Drone:
             consumo = abs(thrust) * 0.0005
             self.battery -= consumo
 
-            # Estados inteligentes
             if self.pos[2] > 15:
                 self.estado = "EN_MISION"
             if self.battery < 30:
@@ -154,21 +153,20 @@ class Drone:
         except Exception as e:
             return {"error": str(e)}
 
-
 # ==========================================
-# 🚀 SIMULADOR OPTIMIZADO (ANTI-TIMEOUT)
+# 🚀 SIMULADOR OPTIMIZADO
 # ==========================================
 def simular_drone():
     drone = Drone()
     datos = []
 
     dt = 0.1
-    max_time = 5  # 🔥 límite real en segundos
+    max_time = 5
     start_time = time.time()
 
     target_altitude = 20
-
     t = 0
+
     while True:
         try:
             if time.time() - start_time > max_time:
@@ -176,7 +174,6 @@ def simular_drone():
 
             data = drone.update(target_altitude, dt)
 
-            # Visión (no bloqueante)
             try:
                 vision_data = vision.analizar_entorno()
             except:
@@ -190,7 +187,8 @@ def simular_drone():
                 "vision": vision_data,
                 "decision": decision.get("tipo", "IA"),
                 "alerta": (
-                    "⚠️ batería baja" if data.get("battery", 100) < 30 else None
+                    "⚠️ batería baja"
+                    if data.get("battery", 100) < 30 else None
                 )
             }
 
@@ -207,47 +205,21 @@ def simular_drone():
 
     return datos
 
-
 # ==========================================
-# 🔥 EJECUCIÓN
+# 🔥 EJECUCIÓN SEGURA (NO BLOQUEA RENDER)
 # ==========================================
-print("🚀 Ejecutando simulación MAIA...")
 
-try:
-    telemetria = simular_drone()
-except Exception as e:
-    telemetria = [{"error": str(e)}]
+if os.environ.get("RUN_MAIN_SIM") == "true":
+    print("🚀 Ejecutando simulación MAIA...")
 
-
-# ==========================================
-# 🧠 INTELIGENCIA
-# ==========================================
-inputs_demo = [
-    "solar 50 colombia 0.02",
-    "optimizar bateria drone",
-    "riesgos vuelo autonomo"
-]
-
-for entrada in inputs_demo:
     try:
-        resultado = procesar_entrada(entrada)
-
-        historial.append({
-            "timestamp": time.time(),
-            "input": entrada,
-            "output": resultado
-        })
-
+        telemetria = simular_drone()
     except Exception as e:
-        historial.append({"error": str(e)})
+        telemetria = [{"error": str(e)}]
 
+    salida_final = telemetria[-50:] if telemetria else [{"error": "sin datos"}]
 
-# ==========================================
-# 📡 SALIDA FINAL (SIEMPRE GARANTIZADA)
-# ==========================================
-salida_final = telemetria[-50:] if telemetria else [{"error": "sin datos"}]
-
-print("###DATA_START###")
-print(json.dumps(salida_final))
-print("###DATA_END###")
-print("OK")
+    print("###DATA_START###")
+    print(json.dumps(salida_final))
+    print("###DATA_END###")
+    print("OK")

@@ -3,7 +3,7 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- FIX THREE -->
+<!-- ✅ FIX REAL THREE -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <style>
@@ -19,7 +19,6 @@ button {
 .bloque { margin-top:20px; padding:12px; background:#020617; border-radius:10px; border:1px solid #1e293b;}
 .ok { color:#22c55e; }
 .bad { color:#ef4444; }
-
 pre {
     background:black;
     padding:10px;
@@ -27,7 +26,6 @@ pre {
     overflow:auto;
     font-size:12px;
 }
-
 .modulo {
     background:#0b1220;
     padding:12px;
@@ -36,18 +34,13 @@ pre {
     cursor:pointer;
     border:1px solid #1e293b;
 }
-.codigo {
-    display:none;
-    margin-top:10px;
-}
-
+.codigo { display:none; margin-top:10px;}
 .hw-section{
     margin-bottom:10px;
     padding:10px;
     background:#111;
     border-radius:8px;
 }
-
 #barra_container {
     width:100%;
     background:#111;
@@ -85,9 +78,10 @@ pre {
 <script>
 
 // =========================
-// 🔥 NUEVO MOTOR (STEP SYSTEM)
+// 🔥 MOTOR STEP FIXED
 // =========================
 async function evaluar(){
+
     const idea = document.getElementById("idea").value;
 
     if(!idea){
@@ -99,15 +93,16 @@ async function evaluar(){
 
     let paso = 0;
     let data = {};
-
     let barra = document.getElementById("barra");
 
     while(true){
+
         try{
+
             let res = await fetch("/maia_step", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
+                body: JSON.stringify({
                     idea: idea,
                     paso: paso,
                     data: data
@@ -122,18 +117,24 @@ async function evaluar(){
                 break;
             }
 
-            // 🔥 progreso simulado fluido
-            paso = json.paso || paso;
-            data = json.data || data;
+            // ✅ CONTROL SEGURO
+            if(typeof json.paso !== "undefined"){
+                paso = json.paso;
+            }
 
-            let progreso = Math.min(95, paso * 15);
+            if(json.data){
+                data = json.data;
+            }
+
+            // 🔥 PROGRESO SUAVE
+            let progreso = Math.min(95, (paso + 1) * 15);
             barra.style.width = progreso + "%";
             barra.innerText = progreso + "%";
 
+            // ✅ FINAL
             if(json.final){
                 barra.style.width = "100%";
                 barra.innerText = "100%";
-
                 renderResultado(json.resultado);
                 break;
             }
@@ -141,32 +142,40 @@ async function evaluar(){
             await new Promise(r => setTimeout(r, 300));
 
         }catch(e){
-            console.error(e);
+            console.error("ERROR FETCH:", e);
             break;
         }
     }
 }
 
 // =========================
-// RESULTADO (TU UI ORIGINAL)
+// RESULTADO (MEJORADO)
 // =========================
 function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    html += `<h2>${data.validacion?.viabilidad || "RESULTADO"}</h2>`;
+    html += `<h2>${data.validacion?.viabilidad || "RESULTADO MAIA"}</h2>`;
 
-    html += `<div class="bloque"><h3>📦 Ingeniería</h3>
-    <pre>${JSON.stringify(data.analisis_pro || data.analisis,null,2)}</pre></div>`;
+    html += `<div class="bloque">
+        <h3>📦 Ingeniería</h3>
+        <pre>${JSON.stringify(data.analisis_pro || data.analisis || {},null,2)}</pre>
+    </div>`;
 
-    html += `<div class="bloque"><h3>⚡ Física</h3>
-    <pre>${JSON.stringify(data.fisica || {},null,2)}</pre></div>`;
+    html += `<div class="bloque">
+        <h3>⚡ Física</h3>
+        <pre>${JSON.stringify(data.fisica || {},null,2)}</pre>
+    </div>`;
 
-    html += `<div class="bloque"><h3>🧊 Modelo 3D</h3>
-    <canvas id="viewer3d" style="width:100%; height:400px;"></canvas></div>`;
+    html += `<div class="bloque">
+        <h3>🧊 Modelo 3D</h3>
+        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
+    </div>`;
 
-    html += `<div class="bloque"><h3>📦 ZIP</h3>
-    <pre>${data.zip || "No generado"}</pre></div>`;
+    html += `<div class="bloque">
+        <h3>📦 ZIP</h3>
+        <pre>${data.zip || "No generado"}</pre>
+    </div>`;
 
     html += `</div>`;
 
@@ -176,19 +185,12 @@ function renderResultado(data){
 }
 
 // =========================
-// TOGGLE
-// =========================
-function toggleCodigo(i){
-    let el = document.getElementById("code_"+i);
-    el.style.display = el.style.display === "block" ? "none" : "block";
-}
-
-// =========================
-// 3D
+// 3D FIX
 // =========================
 function render3D(){
+
     const canvas = document.getElementById("viewer3d");
-    if(!canvas) return;
+    if(!canvas || typeof THREE === "undefined") return;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75,2,0.1,1000);
@@ -202,6 +204,7 @@ function render3D(){
         new THREE.BoxGeometry(1,0.3,1),
         new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
+
     scene.add(body);
 
     for(let i=0;i<4;i++){
@@ -211,6 +214,7 @@ function render3D(){
             new THREE.BoxGeometry(2,0.1,0.1),
             new THREE.MeshStandardMaterial({color:0xffffff})
         );
+
         arm.rotation.y = angle;
         scene.add(arm);
 
@@ -218,6 +222,7 @@ function render3D(){
             new THREE.CylinderGeometry(0.2,0.2,0.2,16),
             new THREE.MeshStandardMaterial({color:0xff0000})
         );
+
         motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
         scene.add(motor);
     }

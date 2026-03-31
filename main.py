@@ -77,13 +77,14 @@ def procesar_entrada(entrada):
     resultado_final["vision"] = vision_data
     return resultado_final
 
+
 # ==========================================
 # 🧠 CONTROL PID (FIXED REAL)
 # ==========================================
 class PID:
     def __init__(self, kp, ki, kd):
-        self.kp = kp   # 🔥 FIX
-        self.ki = ki   # 🔥 FIX
+        self.kp = kp   # ✅ FIX REAL
+        self.ki = ki   # ✅ FIX REAL
         self.kd = kd
 
         self.integral = 0
@@ -91,7 +92,11 @@ class PID:
 
     def update(self, error, dt):
         self.integral += error * dt
-        derivative = (error - self.prev_error) / dt if dt > 0 else 0
+
+        derivative = 0
+        if dt > 0:
+            derivative = (error - self.prev_error) / dt
+
         self.prev_error = error
 
         return (
@@ -100,6 +105,7 @@ class PID:
             self.kd * derivative
         )
 
+
 # ==========================================
 # 🚁 DRONE FÍSICO
 # ==========================================
@@ -107,8 +113,10 @@ class Drone:
     def __init__(self):
         self.pos = [0.0, 0.0, 0.0]
         self.vel = [0.0, 0.0, 0.0]
+
         self.mass = 12
         self.battery = 100
+
         self.pid_z = PID(2.5, 0.2, 0.8)
         self.estado = "DESPEGANDO"
 
@@ -119,22 +127,32 @@ class Drone:
 
             az = (thrust - 9.81 * self.mass) / self.mass
 
+            # Movimiento vertical
             self.vel[2] += az * dt
             self.pos[2] += self.vel[2] * dt
 
+            # Movimiento horizontal suave
             self.vel[0] += random.uniform(-0.1, 0.1)
             self.vel[1] += random.uniform(-0.1, 0.1)
 
             self.pos[0] += self.vel[0] * dt
             self.pos[1] += self.vel[1] * dt
 
+            # Consumo batería
             consumo = abs(thrust) * 0.0005
             self.battery -= consumo
 
+            # Evitar valores negativos
+            if self.battery < 0:
+                self.battery = 0
+
+            # Estados inteligentes
             if self.pos[2] > 15:
                 self.estado = "EN_MISION"
+
             if self.battery < 30:
                 self.estado = "RETORNO"
+
             if self.battery < 10:
                 self.estado = "CRITICO"
 
@@ -153,6 +171,7 @@ class Drone:
         except Exception as e:
             return {"error": str(e)}
 
+
 # ==========================================
 # 🚀 SIMULADOR OPTIMIZADO
 # ==========================================
@@ -162,8 +181,8 @@ def simular_drone():
 
     dt = 0.1
     max_time = 5
-    start_time = time.time()
 
+    start_time = time.time()
     target_altitude = 20
     t = 0
 
@@ -205,11 +224,12 @@ def simular_drone():
 
     return datos
 
+
 # ==========================================
 # 🔥 EJECUCIÓN SEGURA (NO BLOQUEA RENDER)
 # ==========================================
-
 if os.environ.get("RUN_MAIN_SIM") == "true":
+
     print("🚀 Ejecutando simulación MAIA...")
 
     try:
@@ -217,7 +237,11 @@ if os.environ.get("RUN_MAIN_SIM") == "true":
     except Exception as e:
         telemetria = [{"error": str(e)}]
 
-    salida_final = telemetria[-50:] if telemetria else [{"error": "sin datos"}]
+    salida_final = (
+        telemetria[-50:]
+        if telemetria
+        else [{"error": "sin datos"}]
+    )
 
     print("###DATA_START###")
     print(json.dumps(salida_final))

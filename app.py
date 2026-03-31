@@ -9,6 +9,7 @@ import time
 import zipfile
 import json
 import sys
+import threading
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -96,7 +97,6 @@ def exportar_zip(ruta):
 # CORE
 # =========================
 class MaiaCore:
-
     def ejecutar_paso(self, idea, paso, data):
         try:
             print(f"➡️ Paso {paso}")
@@ -147,13 +147,64 @@ class MaiaCore:
             return {"error": str(e)}
 
 # =========================
+# 🔥 MOTOR EN SEGUNDO PLANO
+# =========================
+def ejecutar_maia_background(idea):
+    global estado_maia, resultado_global
+
+    estado_maia["progreso"] = 0
+    estado_maia["mensaje"] = "Iniciando..."
+
+    core = MaiaCore()
+    paso = 0
+    data = {}
+
+    while True:
+        res = core.ejecutar_paso(idea, paso, data)
+
+        if "error" in res:
+            estado_maia["mensaje"] = "Error"
+            resultado_global = res
+            break
+
+        if res.get("final"):
+            estado_maia["progreso"] = 100
+            estado_maia["mensaje"] = "Completado"
+            resultado_global = res["resultado"]
+            break
+
+        paso = res.get("paso", paso + 1)
+        data = res.get("data", {})
+
+        estado_maia["progreso"] += 15
+        estado_maia["mensaje"] = f"Paso {paso}..."
+
+        time.sleep(0.5)
+
+# =========================
 # ENDPOINTS
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-    return jsonify({
-        "error": "Sistema antiguo desactivado. Usa /maia_step"
-    })
+    try:
+        req = request.get_json() or {}
+        idea = req.get("idea", "")
+
+        hilo = threading.Thread(target=ejecutar_maia_background, args=(idea,))
+        hilo.start()
+
+        return jsonify({"ok": True})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route("/maia_progreso")
+def maia_progreso():
+    return jsonify(estado_maia)
+
+@app.route("/maia_resultado")
+def maia_resultado():
+    return jsonify(resultado_global)
 
 @app.route("/maia_step", methods=["POST"])
 def maia_step():

@@ -12,22 +12,64 @@ window.generarDrone = async function() {
         return;
     }
 
-    document.getElementById("estado") && (document.getElementById("estado").innerText = "🧠 Activando MAIA...");
+    let estado = document.getElementById("estado");
+    if (estado) estado.innerText = "🧠 MAIA procesando...";
+
+    let paso = 0;
+    let data = {};
 
     try {
-        let res = await fetch("/evaluar_drone", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({idea})
-        });
+        while (true) {
+            let res = await fetch("/maia_step", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    idea: idea,
+                    paso: paso,
+                    data: data
+                })
+            });
 
-        if (!res.ok) throw new Error();
+            if (!res.ok) throw new Error("Error en backend");
 
-        console.log("✅ Backend OK");
+            let response = await res.json();
+            console.log("🧠 Paso:", response);
+
+            if (response.error) {
+                throw new Error(response.error);
+            }
+
+            // avanzar pasos
+            if (response.final) {
+                console.log("✅ FINAL:", response.resultado);
+
+                if (estado) estado.innerText = "✅ Drone generado";
+
+                let salida = document.getElementById("salida");
+                if (salida) {
+                    salida.innerText = JSON.stringify(response.resultado, null, 2);
+                }
+
+                break;
+            }
+
+            paso = response.paso;
+            data = response.data;
+
+            // actualizar progreso visual
+            let barra = document.getElementById("progreso");
+            if (barra) {
+                barra.style.width = (paso * 15) + "%";
+            }
+        }
 
     } catch (e) {
-        console.error("❌ Error MAIA");
-        document.getElementById("error_box") && (document.getElementById("error_box").innerText = "❌ Error con MAIA");
+        console.error("❌ Error MAIA:", e);
+
+        let errorBox = document.getElementById("error_box");
+        if (errorBox) {
+            errorBox.innerText = "❌ Error: " + e.message;
+        }
     }
 };
 
@@ -74,14 +116,14 @@ window.guardar = async function() {
     if (estado) estado.innerText = "✅ Guardado";
 };
 
-
 // ==============================
 // 🔥 TU CÓDIGO ORIGINAL (NO SE BORRA)
 // ==============================
 
 // ==============================
-// 🔥 PROTECCIÓN GLOBAL (NO ROMPER OTRAS PÁGINAS)
+// 🔥 PROTECCIÓN GLOBAL
 // ==============================
+
 window.onerror = function(msg, url, line) {
     console.error("💥 JS ERROR:", msg, "en línea", line);
 };
@@ -89,23 +131,27 @@ window.onerror = function(msg, url, line) {
 // ==============================
 // 🔥 ESTADO GLOBAL REAL
 // ==============================
+
 let vozActiva = false;
 let reconocimiento = null;
 let vocesDisponibles = [];
 let historialConversacion = [];
 
 // ==============================
-// 🔥 CARGAR VOCES
+// 🔥 VOCES
 // ==============================
+
 function cargarVoces() {
     vocesDisponibles = speechSynthesis.getVoices();
 }
+
 cargarVoces();
 speechSynthesis.onvoiceschanged = cargarVoces;
 
 // ==============================
-// 🔥 ESPERAR DOM
+// 🔥 DOM READY
 // ==============================
+
 window.addEventListener("DOMContentLoaded", () => {
 
     const vozBtn = document.getElementById("maia-voz-btn");
@@ -142,8 +188,8 @@ window.addEventListener("DOMContentLoaded", () => {
         let div = document.createElement("div");
         div.innerText = texto;
         mensajes.appendChild(div);
-
         mensajes.scrollTop = mensajes.scrollHeight;
+
         historialConversacion.push(texto);
     }
 
@@ -169,7 +215,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (existe(vozBtn)) {
         vozBtn.onclick = () => {
-
             vozActiva = !vozActiva;
 
             vozBtn.style.background = vozActiva ? "green" : "red";
@@ -178,7 +223,6 @@ window.addEventListener("DOMContentLoaded", () => {
             speechSynthesis.resume();
 
             if (vozActiva) {
-
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
                 if (!SpeechRecognition) {
@@ -197,7 +241,6 @@ window.addEventListener("DOMContentLoaded", () => {
                 };
 
                 reconocimiento.start();
-
             } else {
                 if (reconocimiento) reconocimiento.stop();
             }
@@ -226,7 +269,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
     if (existe(uploadInput)) {
         uploadInput.addEventListener("change", () => {
-
             let form = new FormData();
 
             for (let f of uploadInput.files) {

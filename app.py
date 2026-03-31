@@ -2,11 +2,13 @@ from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
+from core.maia_software_generator import generar_software_completo
 
 import os
 import time
 import zipfile
 import json
+import sys
 
 print("🔥 MAIA ULTRA STARTING...")
 
@@ -26,42 +28,69 @@ def add_header(response):
 init_db()
 app.register_blueprint(proyectos_bp)
 
+estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
+resultado_global = {}
+
 # =========================
 # UTILIDADES
 # =========================
 def generar_archivo(ruta, contenido):
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    with open(ruta, "w", encoding="utf-8") as f:
-        f.write(contenido)
+    try:
+        os.makedirs(os.path.dirname(ruta), exist_ok=True)
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(contenido)
+    except Exception as e:
+        print("ERROR generando archivo:", e)
 
+# =========================
+# MODELO 3D
+# =========================
 def generar_modelo_3d(base, peso):
-    path = os.path.join(base, "models")
-    os.makedirs(path, exist_ok=True)
+    try:
+        path = os.path.join(base, "models")
+        os.makedirs(path, exist_ok=True)
 
-    escala = max(1, peso / 3)
+        escala = max(1, peso / 3)
 
-    partes = {
-        "frame.obj": f"o frame\nv {-escala} 0 {-escala}\nv {escala} 0 {-escala}\nv {escala} 0 {escala}\nv {-escala} 0 {escala}",
-    }
+        partes = {
+            "frame.obj": f"o frame\nv {-escala} 0 {-escala}\nv {escala} 0 {-escala}\nv {escala} 0 {escala}\nv {-escala} 0 {escala}",
+            "arm_x.obj": f"o arm\nv {-escala} 0 0\nv {escala} 0 0",
+            "arm_z.obj": f"o arm\nv 0 0 {-escala}\nv 0 0 {escala}",
+        }
 
-    for n, c in partes.items():
-        generar_archivo(os.path.join(path, n), c)
+        for n, c in partes.items():
+            generar_archivo(os.path.join(path, n), c)
 
-    return {"escala": escala}
+        return {
+            "componentes": list(partes.keys()),
+            "escala": escala
+        }
 
+    except Exception as e:
+        print("ERROR modelo 3D:", e)
+        return {}
+
+# =========================
+# ZIP
+# =========================
 def exportar_zip(ruta):
-    if not os.path.exists(ruta):
+    try:
+        if not os.path.exists(ruta):
+            return ""
+
+        zip_path = ruta + ".zip"
+
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            for root, dirs, files in os.walk(ruta):
+                for file in files:
+                    full = os.path.join(root, file)
+                    zipf.write(full, os.path.relpath(full, ruta))
+
+        return zip_path
+
+    except Exception as e:
+        print("ERROR ZIP:", e)
         return ""
-
-    zip_path = ruta + ".zip"
-
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(ruta):
-            for file in files:
-                full = os.path.join(root, file)
-                zipf.write(full, os.path.relpath(full, ruta))
-
-    return zip_path
 
 # =========================
 # CORE
@@ -70,13 +99,24 @@ class MaiaCore:
 
     def ejecutar_paso(self, idea, paso, data):
         try:
+            print(f"➡️ Paso {paso}")
+
             if paso == 0:
                 core = analizar_drone(idea)
                 return {"paso": 1, "data": {"core": core}}
 
             elif paso == 1:
                 analisis = data.get("core", {}).get("analisis", {})
-                data["analisis_pro"] = analisis
+                peso = analisis.get("peso", 1)
+                factor = max(1, peso / 5)
+
+                data["analisis_pro"] = {
+                    **analisis,
+                    "estructura": "Fibra de carbono",
+                    "nivel_autonomia": "Alto" if factor > 2 else "Medio",
+                    "carga_util_kg": round(peso * 0.3 * factor, 2)
+                }
+
                 return {"paso": 2, "data": data}
 
             elif paso == 2:
@@ -91,8 +131,8 @@ class MaiaCore:
                 return {"paso": 4, "data": data}
 
             elif paso == 4:
-                modelos = generar_modelo_3d(data["base"], 1)
-                data["modelos_3d"] = modelos
+                peso = data.get("analisis_pro", {}).get("peso", 1)
+                data["modelos_3d"] = generar_modelo_3d(data["base"], peso)
                 return {"paso": 5, "data": data}
 
             elif paso == 5:
@@ -103,21 +143,34 @@ class MaiaCore:
                 return {"final": True, "resultado": data}
 
         except Exception as e:
-            print("ERROR:", e)
+            print("ERROR paso:", e)
             return {"error": str(e)}
 
 # =========================
-# ENDPOINT
+# ENDPOINTS
 # =========================
+@app.route("/evaluar_drone", methods=["POST"])
+def evaluar_drone():
+    return jsonify({
+        "error": "Sistema antiguo desactivado. Usa /maia_step"
+    })
+
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
-    req = request.get_json() or {}
-    idea = req.get("idea", "")
-    paso = int(req.get("paso", 0))
-    data = req.get("data", {})
+    try:
+        req = request.get_json() or {}
+        idea = req.get("idea", "")
+        paso = int(req.get("paso", 0))
+        data = req.get("data", {})
 
-    core = MaiaCore()
-    return jsonify(core.ejecutar_paso(idea, paso, data))
+        core = MaiaCore()
+        resultado = core.ejecutar_paso(idea, paso, data)
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        print("ERROR /maia_step:", e)
+        return jsonify({"error": str(e)})
 
 # =========================
 # VISTAS

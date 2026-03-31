@@ -3,14 +3,20 @@ from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
-import os, time, threading, zipfile, json, sys
+
+import os
+import time
+import threading
+import zipfile
+import json
+import sys
 
 print("🔥 MAIA ULTRA STARTING...")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
-# 🔥 ANTI CACHE GLOBAL (CORREGIDO)
+# 🔥 ANTI CACHE GLOBAL
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
@@ -19,6 +25,7 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+# INIT
 init_db()
 app.register_blueprint(proyectos_bp)
 

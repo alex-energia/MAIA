@@ -3,8 +3,13 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ FIX REAL THREE -->
+<!-- ✅ FIX REAL THREE (SIN CORCHETES) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+
+<!-- 🔥 ANTI CACHE -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
@@ -59,10 +64,15 @@ pre {
 
 <script>
 
+// 🔥 DEBUG GLOBAL (MUY IMPORTANTE)
+console.log("MAIA FRONTEND CARGADO");
+
 // =========================
-// 🚀 MOTOR STEP (ESTABLE)
+// 🚀 MOTOR STEP
 // =========================
 async function evaluar(){
+
+    console.log("INICIANDO MAIA STEP...");
 
     const idea = document.getElementById("idea").value;
 
@@ -81,6 +91,8 @@ async function evaluar(){
 
         try{
 
+            console.log("STEP:", paso);
+
             let res = await fetch("/maia_step", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
@@ -88,6 +100,8 @@ async function evaluar(){
             });
 
             let json = await res.json();
+
+            console.log("RESPUESTA:", json);
 
             if(json.error){
                 console.error(json.error);
@@ -158,11 +172,16 @@ function renderResultado(data){
 
 
 // =========================
-// 🧊 3D (SEGURO)
+// 🧊 3D
 // =========================
 function render3D(){
 
     try{
+
+        if(typeof THREE === "undefined"){
+            console.error("THREE NO CARGÓ");
+            return;
+        }
 
         const canvas = document.getElementById("viewer3d");
         if(!canvas) return;
@@ -182,7 +201,6 @@ function render3D(){
         scene.add(body);
 
         for(let i=0;i<4;i++){
-
             let angle = i*Math.PI/2;
 
             let arm = new THREE.Mesh(

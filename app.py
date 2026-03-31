@@ -11,6 +11,15 @@ print("🔥 MAIA ULTRA STARTING...")
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
+# 🔥 ANTI CACHE GLOBAL (CLAVE PARA TU PROBLEMA)
+@app.after_request
+def add_header(response):
+    response.cache_control.no_store = True
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 init_db()
 app.register_blueprint(proyectos_bp)
 
@@ -170,12 +179,12 @@ class MaiaCore:
         global resultado_global
         try:
             self.progreso(10, "Analizando...")
-
             core = analizar_drone(idea)
+
             analisis = core.get("analisis", {})
             fisica = core.get("fisica", {})
-
             peso = analisis.get("peso", 1)
+
             factor = max(1, peso / 5)
 
             analisis_pro = {

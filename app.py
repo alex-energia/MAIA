@@ -3,7 +3,6 @@ from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
 from core.maia_software_generator import generar_software_completo
-
 import os, time, threading, zipfile, json, sys
 
 print("🔥 MAIA ULTRA STARTING...")
@@ -11,7 +10,7 @@ print("🔥 MAIA ULTRA STARTING...")
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
-# 🔥 ANTI CACHE GLOBAL (CLAVE PARA TU PROBLEMA)
+# 🔥 ANTI CACHE GLOBAL (CORREGIDO)
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
@@ -118,7 +117,7 @@ class MaiaCore:
         time.sleep(0.05)
 
     # =========================
-    # 🔥 STEP SYSTEM (PRINCIPAL)
+    # 🔥 STEP SYSTEM
     # =========================
     def ejecutar_paso(self, idea, paso, data):
         try:
@@ -172,56 +171,8 @@ class MaiaCore:
             print("ERROR paso:", e)
             return {"error": str(e)}
 
-    # =========================
-    # ⚠️ SISTEMA ANTIGUO (AISLADO)
-    # =========================
-    def ejecutar(self, idea):
-        global resultado_global
-        try:
-            self.progreso(10, "Analizando...")
-            core = analizar_drone(idea)
-
-            analisis = core.get("analisis", {})
-            fisica = core.get("fisica", {})
-            peso = analisis.get("peso", 1)
-
-            factor = max(1, peso / 5)
-
-            analisis_pro = {
-                **analisis,
-                "estructura": "Fibra de carbono",
-                "nivel_autonomia": "Alto" if factor > 2 else "Medio",
-                "carga_util_kg": round(peso * 0.3 * factor, 2)
-            }
-
-            modelos = generar_modelo_3d("tmp", peso)
-
-            self.progreso(100, "Completado")
-
-            resultado_global = {
-                "analisis": analisis_pro,
-                "modelos_3d": modelos
-            }
-
-            guardar_json_seguro("resultado.json", resultado_global)
-            estado_maia["estado"] = "COMPLETADO"
-
-        except Exception as e:
-            print("ERROR MAIA:", e)
-            resultado_global = {"error": str(e)}
-            estado_maia["estado"] = "ERROR"
-
 # =========================
-# THREAD ANTIGUO
-# =========================
-def proceso_maia(idea):
-    try:
-        MaiaCore().ejecutar(idea)
-    except Exception as e:
-        print("ERROR THREAD:", e)
-
-# =========================
-# ⚠️ ENDPOINT ANTIGUO (BLOQUEADO)
+# ENDPOINT BLOQUEADO
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
@@ -230,13 +181,12 @@ def evaluar_drone():
     })
 
 # =========================
-# 🔥 ENDPOINT PRINCIPAL
+# ENDPOINT PRINCIPAL
 # =========================
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
     try:
         req = request.get_json() or {}
-
         idea = req.get("idea", "")
         paso = int(req.get("paso", 0))
         data = req.get("data", {})

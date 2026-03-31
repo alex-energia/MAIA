@@ -3,7 +3,7 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ FIX REAL THREE (SIN CORCHETES) -->
+<!-- ✅ FIX REAL THREE (CORREGIDO) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <!-- 🔥 ANTI CACHE -->
@@ -51,7 +51,8 @@ pre {
 
 <h1>🧠 MAIA INVENT</h1>
 
-<textarea id="idea"></textarea><br><br>
+<textarea id="idea"></textarea>
+<br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
@@ -64,7 +65,7 @@ pre {
 
 <script>
 
-// 🔥 DEBUG GLOBAL (MUY IMPORTANTE)
+// 🔥 DEBUG GLOBAL
 console.log("MAIA FRONTEND CARGADO");
 
 // =========================
@@ -88,7 +89,6 @@ async function evaluar(){
     let barra = document.getElementById("barra");
 
     while(true){
-
         try{
 
             console.log("STEP:", paso);
@@ -133,7 +133,6 @@ async function evaluar(){
     }
 }
 
-
 // =========================
 // 🎯 RESULTADO
 // =========================
@@ -170,7 +169,6 @@ function renderResultado(data){
     setTimeout(render3D, 200);
 }
 
-
 // =========================
 // 🧊 3D
 // =========================
@@ -198,6 +196,7 @@ function render3D(){
             new THREE.BoxGeometry(1,0.3,1),
             new THREE.MeshStandardMaterial({color:0x00ffaa})
         );
+
         scene.add(body);
 
         for(let i=0;i<4;i++){
@@ -207,6 +206,7 @@ function render3D(){
                 new THREE.BoxGeometry(2,0.1,0.1),
                 new THREE.MeshStandardMaterial({color:0xffffff})
             );
+
             arm.rotation.y = angle;
             scene.add(arm);
 
@@ -214,6 +214,7 @@ function render3D(){
                 new THREE.CylinderGeometry(0.2,0.2,0.2,16),
                 new THREE.MeshStandardMaterial({color:0xff0000})
             );
+
             motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
             scene.add(motor);
         }
@@ -232,7 +233,6 @@ function render3D(){
         console.error("ERROR 3D:", e);
     }
 }
-
 
 // =========================
 // 🧹 LIMPIAR

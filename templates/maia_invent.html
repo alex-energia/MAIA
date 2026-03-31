@@ -3,7 +3,7 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ THREE FIX (SIN ERRORES r150+) -->
+<!-- ✅ THREE estable -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
 <!-- 🔥 ANTI CACHE -->
@@ -68,13 +68,14 @@ pre {
 console.log("MAIA FRONTEND CARGADO");
 
 // =========================
-// 🚀 MOTOR STEP (FIX REAL)
+// 🚀 MOTOR STEP (ESTABLE REAL)
 // =========================
 async function evaluar(){
 
     console.log("INICIANDO MAIA STEP...");
 
     const idea = document.getElementById("idea").value;
+
     if(!idea){
         alert("Ingresa una idea válida");
         return;
@@ -86,7 +87,7 @@ async function evaluar(){
     let data = {};
     let barra = document.getElementById("barra");
 
-    let max_iter = 30; // 🔥 anti loop infinito REAL
+    let max_iter = 30; // 🔥 control real anti-loop
 
     while(max_iter-- > 0){
 
@@ -94,7 +95,7 @@ async function evaluar(){
 
             console.log("STEP:", paso);
 
-            let res = await fetch("/maia_step", {
+            const res = await fetch("/maia_step", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
                 body:JSON.stringify({ idea, paso, data })
@@ -104,46 +105,39 @@ async function evaluar(){
                 throw new Error("HTTP " + res.status);
             }
 
-            let json;
-            try{
-                json = await res.json();
-            }catch(e){
-                throw new Error("Respuesta inválida del backend");
+            let json = await res.json();
+
+            if(!json || typeof json !== "object"){
+                throw new Error("Respuesta inválida backend");
             }
 
             console.log("RESPUESTA:", json);
-
-            if(!json || typeof json !== "object"){
-                throw new Error("Respuesta vacía");
-            }
 
             if(json.error){
                 throw new Error(json.error);
             }
 
-            // 🔥 AVANCE SEGURO
+            // 🔥 avance seguro
             paso = json.paso ?? (paso + 1);
             data = json.data ?? data;
 
-            // 🔥 PROGRESO
+            // 🔥 progreso estable
             let progreso = Math.min(95, paso * 12);
             barra.style.width = progreso + "%";
             barra.innerText = progreso + "%";
 
-            // 🔥 FINAL
+            // 🔥 final
             if(json.final){
-
                 barra.style.width = "100%";
                 barra.innerText = "100%";
 
                 renderResultado(json.resultado);
 
                 console.log("✅ MAIA FINALIZADO");
-
                 return;
             }
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 250));
 
         }catch(e){
 
@@ -153,8 +147,7 @@ async function evaluar(){
         }
     }
 
-    alert("MAIA se detuvo (posible loop)");
-
+    alert("MAIA se detuvo (posible loop backend)");
 }
 
 // =========================
@@ -194,7 +187,7 @@ function renderResultado(data){
 }
 
 // =========================
-// 🧊 3D (MEJORADO)
+// 🧊 3D ESTABLE
 // =========================
 function render3D(){
 
@@ -209,7 +202,13 @@ function render3D(){
         if(!canvas) return;
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / 400, 0.1, 1000);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            canvas.clientWidth / 400,
+            0.1,
+            1000
+        );
 
         const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
         renderer.setSize(canvas.clientWidth, 400);
@@ -240,7 +239,12 @@ function render3D(){
                 new THREE.MeshStandardMaterial({color:0xff0000})
             );
 
-            motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
+            motor.position.set(
+                Math.cos(angle)*1,
+                0.2,
+                Math.sin(angle)*1
+            );
+
             scene.add(motor);
         }
 

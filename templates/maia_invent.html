@@ -17,29 +17,12 @@ button {
 }
 .panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
 .bloque { margin-top:20px; padding:12px; background:#020617; border-radius:10px; border:1px solid #1e293b;}
-.ok { color:#22c55e; }
-.bad { color:#ef4444; }
 pre {
     background:black;
     padding:10px;
     border-radius:8px;
     overflow:auto;
     font-size:12px;
-}
-.modulo {
-    background:#0b1220;
-    padding:12px;
-    margin:8px 0;
-    border-radius:8px;
-    cursor:pointer;
-    border:1px solid #1e293b;
-}
-.codigo { display:none; margin-top:10px;}
-.hw-section{
-    margin-bottom:10px;
-    padding:10px;
-    background:#111;
-    border-radius:8px;
 }
 #barra_container {
     width:100%;
@@ -63,8 +46,7 @@ pre {
 
 <h1>🧠 MAIA INVENT</h1>
 
-<textarea id="idea"></textarea>
-<br><br>
+<textarea id="idea"></textarea><br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
@@ -78,7 +60,7 @@ pre {
 <script>
 
 // =========================
-// 🔥 MOTOR STEP FIXED
+// 🚀 MOTOR STEP (ESTABLE)
 // =========================
 async function evaluar(){
 
@@ -102,36 +84,24 @@ async function evaluar(){
             let res = await fetch("/maia_step", {
                 method:"POST",
                 headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({
-                    idea: idea,
-                    paso: paso,
-                    data: data
-                })
+                body:JSON.stringify({ idea, paso, data })
             });
 
             let json = await res.json();
 
             if(json.error){
-                alert("Error MAIA");
                 console.error(json.error);
+                alert("Error en MAIA");
                 break;
             }
 
-            // ✅ CONTROL SEGURO
-            if(typeof json.paso !== "undefined"){
-                paso = json.paso;
-            }
+            paso = json.paso ?? paso;
+            data = json.data ?? data;
 
-            if(json.data){
-                data = json.data;
-            }
-
-            // 🔥 PROGRESO SUAVE
-            let progreso = Math.min(95, (paso + 1) * 15);
+            let progreso = Math.min(95, paso * 15);
             barra.style.width = progreso + "%";
             barra.innerText = progreso + "%";
 
-            // ✅ FINAL
             if(json.final){
                 barra.style.width = "100%";
                 barra.innerText = "100%";
@@ -142,104 +112,112 @@ async function evaluar(){
             await new Promise(r => setTimeout(r, 300));
 
         }catch(e){
-            console.error("ERROR FETCH:", e);
+            console.error("ERROR LOOP:", e);
+            alert("Error de conexión");
             break;
         }
     }
 }
 
+
 // =========================
-// RESULTADO (MEJORADO)
+// 🎯 RESULTADO
 // =========================
 function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    html += `<h2>${data.validacion?.viabilidad || "RESULTADO MAIA"}</h2>`;
+    html += `<h2>${data.validacion?.viabilidad || "RESULTADO GENERADO"}</h2>`;
 
     html += `<div class="bloque">
-        <h3>📦 Ingeniería</h3>
-        <pre>${JSON.stringify(data.analisis_pro || data.analisis || {},null,2)}</pre>
+    <h3>📦 Ingeniería</h3>
+    <pre>${JSON.stringify(data.analisis_pro || {},null,2)}</pre>
     </div>`;
 
     html += `<div class="bloque">
-        <h3>⚡ Física</h3>
-        <pre>${JSON.stringify(data.fisica || {},null,2)}</pre>
+    <h3>⚡ Física</h3>
+    <pre>${JSON.stringify(data.fisica || {},null,2)}</pre>
     </div>`;
 
     html += `<div class="bloque">
-        <h3>🧊 Modelo 3D</h3>
-        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
+    <h3>🧊 Modelo 3D</h3>
+    <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
     </div>`;
 
     html += `<div class="bloque">
-        <h3>📦 ZIP</h3>
-        <pre>${data.zip || "No generado"}</pre>
+    <h3>📦 ZIP</h3>
+    <pre>${data.zip || "No generado"}</pre>
     </div>`;
 
     html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
 
-    render3D();
+    setTimeout(render3D, 200);
 }
 
+
 // =========================
-// 3D FIX
+// 🧊 3D (SEGURO)
 // =========================
 function render3D(){
 
-    const canvas = document.getElementById("viewer3d");
-    if(!canvas || typeof THREE === "undefined") return;
+    try{
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75,2,0.1,1000);
-    const renderer = new THREE.WebGLRenderer({canvas});
+        const canvas = document.getElementById("viewer3d");
+        if(!canvas) return;
 
-    renderer.setSize(canvas.clientWidth,400);
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75,2,0.1,1000);
+        const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 
-    scene.add(new THREE.AmbientLight(0xffffff,0.6));
+        renderer.setSize(canvas.clientWidth,400);
 
-    let body = new THREE.Mesh(
-        new THREE.BoxGeometry(1,0.3,1),
-        new THREE.MeshStandardMaterial({color:0x00ffaa})
-    );
+        scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
-    scene.add(body);
-
-    for(let i=0;i<4;i++){
-        let angle = i*Math.PI/2;
-
-        let arm = new THREE.Mesh(
-            new THREE.BoxGeometry(2,0.1,0.1),
-            new THREE.MeshStandardMaterial({color:0xffffff})
+        let body = new THREE.Mesh(
+            new THREE.BoxGeometry(1,0.3,1),
+            new THREE.MeshStandardMaterial({color:0x00ffaa})
         );
+        scene.add(body);
 
-        arm.rotation.y = angle;
-        scene.add(arm);
+        for(let i=0;i<4;i++){
 
-        let motor = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.2,0.2,0.2,16),
-            new THREE.MeshStandardMaterial({color:0xff0000})
-        );
+            let angle = i*Math.PI/2;
 
-        motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
-        scene.add(motor);
+            let arm = new THREE.Mesh(
+                new THREE.BoxGeometry(2,0.1,0.1),
+                new THREE.MeshStandardMaterial({color:0xffffff})
+            );
+            arm.rotation.y = angle;
+            scene.add(arm);
+
+            let motor = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.2,0.2,0.2,16),
+                new THREE.MeshStandardMaterial({color:0xff0000})
+            );
+            motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
+            scene.add(motor);
+        }
+
+        camera.position.z = 5;
+
+        function animate(){
+            requestAnimationFrame(animate);
+            scene.rotation.y += 0.01;
+            renderer.render(scene,camera);
+        }
+
+        animate();
+
+    }catch(e){
+        console.error("ERROR 3D:", e);
     }
-
-    camera.position.z = 5;
-
-    function animate(){
-        requestAnimationFrame(animate);
-        scene.rotation.y += 0.01;
-        renderer.render(scene,camera);
-    }
-
-    animate();
 }
 
+
 // =========================
-// LIMPIAR
+// 🧹 LIMPIAR
 // =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";

@@ -3,8 +3,8 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ FIX REAL THREE (CORREGIDO) -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<!-- ✅ THREE FIX (SIN ERRORES r150+) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
 <!-- 🔥 ANTI CACHE -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -51,8 +51,7 @@ pre {
 
 <h1>🧠 MAIA INVENT</h1>
 
-<textarea id="idea"></textarea>
-<br><br>
+<textarea id="idea"></textarea><br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
@@ -69,14 +68,13 @@ pre {
 console.log("MAIA FRONTEND CARGADO");
 
 // =========================
-// 🚀 MOTOR STEP
+// 🚀 MOTOR STEP (FIX REAL)
 // =========================
 async function evaluar(){
 
     console.log("INICIANDO MAIA STEP...");
 
     const idea = document.getElementById("idea").value;
-
     if(!idea){
         alert("Ingresa una idea válida");
         return;
@@ -88,7 +86,10 @@ async function evaluar(){
     let data = {};
     let barra = document.getElementById("barra");
 
-    while(true){
+    let max_iter = 30; // 🔥 anti loop infinito REAL
+
+    while(max_iter-- > 0){
+
         try{
 
             console.log("STEP:", paso);
@@ -99,38 +100,61 @@ async function evaluar(){
                 body:JSON.stringify({ idea, paso, data })
             });
 
-            let json = await res.json();
+            if(!res.ok){
+                throw new Error("HTTP " + res.status);
+            }
+
+            let json;
+            try{
+                json = await res.json();
+            }catch(e){
+                throw new Error("Respuesta inválida del backend");
+            }
 
             console.log("RESPUESTA:", json);
 
-            if(json.error){
-                console.error(json.error);
-                alert("Error en MAIA");
-                break;
+            if(!json || typeof json !== "object"){
+                throw new Error("Respuesta vacía");
             }
 
-            paso = json.paso ?? paso;
+            if(json.error){
+                throw new Error(json.error);
+            }
+
+            // 🔥 AVANCE SEGURO
+            paso = json.paso ?? (paso + 1);
             data = json.data ?? data;
 
-            let progreso = Math.min(95, paso * 15);
+            // 🔥 PROGRESO
+            let progreso = Math.min(95, paso * 12);
             barra.style.width = progreso + "%";
             barra.innerText = progreso + "%";
 
+            // 🔥 FINAL
             if(json.final){
+
                 barra.style.width = "100%";
                 barra.innerText = "100%";
+
                 renderResultado(json.resultado);
-                break;
+
+                console.log("✅ MAIA FINALIZADO");
+
+                return;
             }
 
             await new Promise(r => setTimeout(r, 300));
 
         }catch(e){
-            console.error("ERROR LOOP:", e);
-            alert("Error de conexión");
-            break;
+
+            console.error("❌ ERROR LOOP:", e);
+            alert("Error: " + e.message);
+            return;
         }
     }
+
+    alert("MAIA se detuvo (posible loop)");
+
 }
 
 // =========================
@@ -140,16 +164,16 @@ function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    html += `<h2>${data.validacion?.viabilidad || "RESULTADO GENERADO"}</h2>`;
+    html += `<h2>${data?.validacion?.viabilidad || "RESULTADO GENERADO"}</h2>`;
 
     html += `<div class="bloque">
     <h3>📦 Ingeniería</h3>
-    <pre>${JSON.stringify(data.analisis_pro || {},null,2)}</pre>
+    <pre>${JSON.stringify(data?.analisis_pro || {},null,2)}</pre>
     </div>`;
 
     html += `<div class="bloque">
     <h3>⚡ Física</h3>
-    <pre>${JSON.stringify(data.fisica || {},null,2)}</pre>
+    <pre>${JSON.stringify(data?.fisica || {},null,2)}</pre>
     </div>`;
 
     html += `<div class="bloque">
@@ -159,7 +183,7 @@ function renderResultado(data){
 
     html += `<div class="bloque">
     <h3>📦 ZIP</h3>
-    <pre>${data.zip || "No generado"}</pre>
+    <pre>${data?.zip || "No generado"}</pre>
     </div>`;
 
     html += `</div>`;
@@ -170,7 +194,7 @@ function renderResultado(data){
 }
 
 // =========================
-// 🧊 3D
+// 🧊 3D (MEJORADO)
 // =========================
 function render3D(){
 
@@ -185,10 +209,10 @@ function render3D(){
         if(!canvas) return;
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75,2,0.1,1000);
-        const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+        const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / 400, 0.1, 1000);
 
-        renderer.setSize(canvas.clientWidth,400);
+        const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+        renderer.setSize(canvas.clientWidth, 400);
 
         scene.add(new THREE.AmbientLight(0xffffff,0.6));
 
@@ -200,6 +224,7 @@ function render3D(){
         scene.add(body);
 
         for(let i=0;i<4;i++){
+
             let angle = i*Math.PI/2;
 
             let arm = new THREE.Mesh(
@@ -238,11 +263,14 @@ function render3D(){
 // 🧹 LIMPIAR
 // =========================
 function limpiarUI(){
+
     document.getElementById("idea").value = "";
     document.getElementById("resultado").innerHTML = "";
     document.getElementById("barra_container").style.display = "none";
-    document.getElementById("barra").style.width = "0%";
-    document.getElementById("barra").innerText = "0%";
+
+    let barra = document.getElementById("barra");
+    barra.style.width = "0%";
+    barra.innerText = "0%";
 }
 
 </script>

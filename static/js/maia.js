@@ -1,6 +1,9 @@
-// ==============================
+/ ==============================
 // 💥 ANEXO CRÍTICO (FUNCIONES GLOBALES PARA BOTONES)
 // ==============================
+
+window.__maia_running = false;
+
 window.generarDrone = async function() {
     console.log("🚀 generarDrone ejecutado");
 
@@ -8,6 +11,7 @@ window.generarDrone = async function() {
         console.warn("⚠️ MAIA ya está corriendo");
         return;
     }
+
     window.__maia_running = true;
 
     let idea = document.getElementById("idea")?.value;
@@ -23,7 +27,7 @@ window.generarDrone = async function() {
 
     let paso = 0;
     let data = {};
-    let max_iter = 20; // 🔥 evita loops infinitos
+    let max_iter = 25; // 🔥 evita loops infinitos
 
     try {
         while (max_iter-- > 0) {
@@ -49,6 +53,7 @@ window.generarDrone = async function() {
                 throw new Error(response.error);
             }
 
+            // 🔥 FINAL
             if (response.final) {
                 console.log("✅ FINAL:", response.resultado);
 
@@ -59,14 +64,17 @@ window.generarDrone = async function() {
                     salida.innerText = JSON.stringify(response.resultado, null, 2);
                 }
 
-                window.__maia_running = false;
+                let barra = document.getElementById("progreso");
+                if (barra) barra.style.width = "100%";
+
                 return;
             }
 
-            paso = response.paso ?? paso + 1;
+            // 🔥 AVANCE SEGURO
+            paso = response.paso ?? (paso + 1);
             data = response.data ?? data;
 
-            // 🔥 progreso visual estable
+            // 🔥 PROGRESO VISUAL
             let barra = document.getElementById("progreso");
             if (barra) {
                 let progreso = Math.min(95, paso * 15);
@@ -89,26 +97,52 @@ window.generarDrone = async function() {
     }
 };
 
+
+// ==============================
+// 🧹 LIMPIAR
+// ==============================
+
 window.limpiar = function() {
     console.log("🧹 limpiar ejecutado");
+
     if (document.getElementById("idea")) document.getElementById("idea").value = "";
     if (document.getElementById("salida")) document.getElementById("salida").innerText = "";
     if (document.getElementById("estado")) document.getElementById("estado").innerText = "";
-    if (document.getElementById("progreso")) document.getElementById("progreso").style.width = "0%";
+
+    let barra = document.getElementById("progreso");
+    if (barra) barra.style.width = "0%";
 };
+
+
+// ==============================
+// ⚡ PANEL
+// ==============================
 
 window.togglePanel = function() {
     console.log("⚡ togglePanel ejecutado");
+
     let panel = document.getElementById("panel_maia");
     if (!panel) return;
+
     panel.style.display = panel.style.display === "block" ? "none" : "block";
 };
+
+
+// ==============================
+// 📦 DESCARGA
+// ==============================
 
 window.descargarZIP = function() {
     window.open("/descargar_proyecto");
 };
 
+
+// ==============================
+// 💾 GUARDAR
+// ==============================
+
 window.guardar = async function() {
+
     let categoria = document.getElementById("categoria")?.value;
 
     if (!categoria) {
@@ -116,46 +150,60 @@ window.guardar = async function() {
         return;
     }
 
-    await fetch("/guardar_proyecto", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nombre: "Drone MAIA",
-            tecnologia: categoria
-        })
-    });
+    try {
+        await fetch("/guardar_proyecto", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                nombre: "Drone MAIA",
+                tecnologia: categoria
+            })
+        });
 
-    let estado = document.getElementById("estado_guardado");
-    if (estado) estado.innerText = "✅ Guardado";
+        let estado = document.getElementById("estado_guardado");
+        if (estado) estado.innerText = "✅ Guardado";
+
+    } catch (e) {
+        console.error("❌ Error guardando:", e);
+    }
 };
+
 
 // ==============================
 // 🔥 PROTECCIÓN GLOBAL
 // ==============================
+
 window.onerror = function(msg, url, line) {
     console.error("💥 JS ERROR:", msg, "en línea", line);
 };
 
+
 // ==============================
-// 🔥 ESTADO GLOBAL REAL
+// 🔥 ESTADO GLOBAL
 // ==============================
+
 let vozActiva = false;
 let reconocimiento = null;
 let vocesDisponibles = [];
 let historialConversacion = [];
 
+
 // ==============================
-// 🔥 VOCES
+// 🔊 VOCES
 // ==============================
+
 function cargarVoces() {
     vocesDisponibles = speechSynthesis.getVoices();
 }
+
 cargarVoces();
 speechSynthesis.onvoiceschanged = cargarVoces;
+
 
 // ==============================
 // 🔥 DOM READY
 // ==============================
+
 window.addEventListener("DOMContentLoaded", () => {
 
     const vozBtn = document.getElementById("maia-voz-btn");
@@ -179,7 +227,6 @@ window.addEventListener("DOMContentLoaded", () => {
         if (voz) utter.voice = voz;
 
         speechSynthesis.cancel();
-        speechSynthesis.resume();
 
         setTimeout(() => {
             speechSynthesis.speak(utter);
@@ -191,6 +238,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
         let div = document.createElement("div");
         div.innerText = texto;
+
         mensajes.appendChild(div);
         mensajes.scrollTop = mensajes.scrollHeight;
 
@@ -217,14 +265,14 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // 🎤 VOZ
     if (existe(vozBtn)) {
         vozBtn.onclick = () => {
 
             vozActiva = !vozActiva;
+
             vozBtn.style.background = vozActiva ? "green" : "red";
             vozBtn.innerText = vozActiva ? "MAIA ON" : "Activar MAIA";
-
-            speechSynthesis.resume();
 
             if (vozActiva) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -252,6 +300,7 @@ window.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // 💬 CHAT
     if (existe(chatToggle) && existe(chatContainer)) {
         chatToggle.onclick = () => {
             chatContainer.style.display =
@@ -259,6 +308,7 @@ window.addEventListener("DOMContentLoaded", () => {
         };
     }
 
+    // ⌨️ INPUT
     if (existe(input)) {
         input.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
@@ -272,6 +322,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // 📁 UPLOAD
     if (existe(uploadInput)) {
         uploadInput.addEventListener("change", () => {
 

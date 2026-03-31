@@ -109,10 +109,9 @@ class MaiaCore:
         time.sleep(0.05)
 
     # =========================
-    # 🔥 SISTEMA POR PASOS (FREE)
+    # 🔥 STEP SYSTEM (PRINCIPAL)
     # =========================
     def ejecutar_paso(self, idea, paso, data):
-
         try:
             print(f"➡️ Paso {paso}")
 
@@ -123,7 +122,6 @@ class MaiaCore:
             elif paso == 1:
                 analisis = data.get("core", {}).get("analisis", {})
                 peso = analisis.get("peso", 1)
-
                 factor = max(1, peso / 5)
 
                 data["analisis_pro"] = {
@@ -144,14 +142,12 @@ class MaiaCore:
                 nombre = f"drone_{int(time.time())}"
                 base = f"maia_projects/{nombre}"
                 os.makedirs(base, exist_ok=True)
-
                 data["base"] = base
                 return {"paso": 4, "data": data}
 
             elif paso == 4:
                 peso = data.get("analisis_pro", {}).get("peso", 1)
                 modelos = generar_modelo_3d(data["base"], peso)
-
                 data["modelos_3d"] = modelos
                 return {"paso": 5, "data": data}
 
@@ -168,21 +164,18 @@ class MaiaCore:
             return {"error": str(e)}
 
     # =========================
-    # 🔥 SISTEMA ORIGINAL (NO TOCADO)
+    # ⚠️ SISTEMA ANTIGUO (AISLADO)
     # =========================
     def ejecutar(self, idea):
         global resultado_global
-
         try:
             self.progreso(10, "Analizando...")
-            core = analizar_drone(idea)
 
+            core = analizar_drone(idea)
             analisis = core.get("analisis", {})
             fisica = core.get("fisica", {})
 
             peso = analisis.get("peso", 1)
-            empuje = fisica.get("empuje", 0)
-
             factor = max(1, peso / 5)
 
             analisis_pro = {
@@ -210,7 +203,7 @@ class MaiaCore:
             estado_maia["estado"] = "ERROR"
 
 # =========================
-# THREAD ORIGINAL
+# THREAD ANTIGUO
 # =========================
 def proceso_maia(idea):
     try:
@@ -219,36 +212,34 @@ def proceso_maia(idea):
         print("ERROR THREAD:", e)
 
 # =========================
-# ENDPOINT ORIGINAL
+# ⚠️ ENDPOINT ANTIGUO (BLOQUEADO)
 # =========================
 @app.route("/evaluar_drone", methods=["POST"])
 def evaluar_drone():
-    data = request.get_json() or {}
-    idea = data.get("idea","")
-
-    threading.Thread(
-        target=proceso_maia,
-        args=(idea,),
-        daemon=True
-    ).start()
-
-    return jsonify({"ok": True})
+    return jsonify({
+        "error": "Sistema antiguo desactivado. Usa /maia_step"
+    })
 
 # =========================
-# 🔥 ENDPOINT FREE
+# 🔥 ENDPOINT PRINCIPAL
 # =========================
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
-    data = request.get_json() or {}
+    try:
+        req = request.get_json() or {}
 
-    idea = data.get("idea", "")
-    paso = data.get("paso", 0)
-    estado = data.get("data", {})
+        idea = req.get("idea", "")
+        paso = int(req.get("paso", 0))
+        data = req.get("data", {})
 
-    core = MaiaCore()
-    resultado = core.ejecutar_paso(idea, paso, estado)
+        core = MaiaCore()
+        resultado = core.ejecutar_paso(idea, paso, data)
 
-    return jsonify(resultado)
+        return jsonify(resultado)
+
+    except Exception as e:
+        print("ERROR /maia_step:", e)
+        return jsonify({"error": str(e)})
 
 # =========================
 # VISTAS

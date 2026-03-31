@@ -1,17 +1,12 @@
-/ ==============================
-// 💥 ANEXO CRÍTICO (FUNCIONES GLOBALES PARA BOTONES)
+// ==============================
+// 💥 MAIA CORE JS LIMPIO
 // ==============================
 
 window.__maia_running = false;
 
 window.generarDrone = async function() {
-    console.log("🚀 generarDrone ejecutado");
 
-    if (window.__maia_running) {
-        console.warn("⚠️ MAIA ya está corriendo");
-        return;
-    }
-
+    if (window.__maia_running) return;
     window.__maia_running = true;
 
     let idea = document.getElementById("idea")?.value;
@@ -27,35 +22,25 @@ window.generarDrone = async function() {
 
     let paso = 0;
     let data = {};
-    let max_iter = 25; // 🔥 evita loops infinitos
+    let max_iter = 25;
 
     try {
+
         while (max_iter-- > 0) {
 
             let res = await fetch("/maia_step", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    idea: idea,
-                    paso: paso,
-                    data: data
-                })
+                body: JSON.stringify({ idea, paso, data })
             });
 
-            if (!res.ok) {
-                throw new Error("HTTP " + res.status);
-            }
+            if (!res.ok) throw new Error("HTTP " + res.status);
 
             let response = await res.json();
-            console.log("🧠 Paso:", response);
 
-            if (response.error) {
-                throw new Error(response.error);
-            }
+            if (response.error) throw new Error(response.error);
 
-            // 🔥 FINAL
             if (response.final) {
-                console.log("✅ FINAL:", response.resultado);
 
                 if (estado) estado.innerText = "✅ Drone generado";
 
@@ -70,27 +55,23 @@ window.generarDrone = async function() {
                 return;
             }
 
-            // 🔥 AVANCE SEGURO
             paso = response.paso ?? (paso + 1);
             data = response.data ?? data;
 
-            // 🔥 PROGRESO VISUAL
             let barra = document.getElementById("progreso");
             if (barra) {
-                let progreso = Math.min(95, paso * 15);
-                barra.style.width = progreso + "%";
+                barra.style.width = Math.min(95, paso * 15) + "%";
             }
         }
 
-        throw new Error("MAIA se quedó en loop");
+        throw new Error("Loop infinito detectado");
 
     } catch (e) {
-        console.error("❌ Error MAIA:", e);
+
+        console.error(e);
 
         let errorBox = document.getElementById("error_box");
-        if (errorBox) {
-            errorBox.innerText = "❌ Error: " + e.message;
-        }
+        if (errorBox) errorBox.innerText = "❌ " + e.message;
 
     } finally {
         window.__maia_running = false;
@@ -103,11 +84,10 @@ window.generarDrone = async function() {
 // ==============================
 
 window.limpiar = function() {
-    console.log("🧹 limpiar ejecutado");
-
-    if (document.getElementById("idea")) document.getElementById("idea").value = "";
-    if (document.getElementById("salida")) document.getElementById("salida").innerText = "";
-    if (document.getElementById("estado")) document.getElementById("estado").innerText = "";
+    ["idea","salida","estado"].forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.value ? el.value = "" : el.innerText = "";
+    });
 
     let barra = document.getElementById("progreso");
     if (barra) barra.style.width = "0%";
@@ -119,17 +99,14 @@ window.limpiar = function() {
 // ==============================
 
 window.togglePanel = function() {
-    console.log("⚡ togglePanel ejecutado");
-
     let panel = document.getElementById("panel_maia");
     if (!panel) return;
-
     panel.style.display = panel.style.display === "block" ? "none" : "block";
 };
 
 
 // ==============================
-// 📦 DESCARGA
+// 📦 ZIP
 // ==============================
 
 window.descargarZIP = function() {
@@ -164,186 +141,17 @@ window.guardar = async function() {
         if (estado) estado.innerText = "✅ Guardado";
 
     } catch (e) {
-        console.error("❌ Error guardando:", e);
+        console.error(e);
     }
 };
 
 
 // ==============================
-// 🔥 PROTECCIÓN GLOBAL
+// 🔥 DEBUG GLOBAL
 // ==============================
 
 window.onerror = function(msg, url, line) {
-    console.error("💥 JS ERROR:", msg, "en línea", line);
+    console.error("JS ERROR:", msg, "línea", line);
 };
 
-
-// ==============================
-// 🔥 ESTADO GLOBAL
-// ==============================
-
-let vozActiva = false;
-let reconocimiento = null;
-let vocesDisponibles = [];
-let historialConversacion = [];
-
-
-// ==============================
-// 🔊 VOCES
-// ==============================
-
-function cargarVoces() {
-    vocesDisponibles = speechSynthesis.getVoices();
-}
-
-cargarVoces();
-speechSynthesis.onvoiceschanged = cargarVoces;
-
-
-// ==============================
-// 🔥 DOM READY
-// ==============================
-
-window.addEventListener("DOMContentLoaded", () => {
-
-    const vozBtn = document.getElementById("maia-voz-btn");
-    const chatToggle = document.getElementById("abrir-chat");
-    const chatContainer = document.getElementById("maia-chat");
-    const input = document.getElementById("chat-input");
-    const mensajes = document.getElementById("chat-mensajes");
-    const uploadInput = document.getElementById("subir-archivo");
-
-    function existe(el) {
-        return el !== null && el !== undefined;
-    }
-
-    function hablar(texto) {
-        if (!vozActiva) return;
-
-        const utter = new SpeechSynthesisUtterance(texto);
-        utter.lang = "es-ES";
-
-        let voz = vocesDisponibles.find(v => v.lang.includes("es"));
-        if (voz) utter.voice = voz;
-
-        speechSynthesis.cancel();
-
-        setTimeout(() => {
-            speechSynthesis.speak(utter);
-        }, 100);
-    }
-
-    function agregarMensaje(texto) {
-        if (!existe(mensajes)) return;
-
-        let div = document.createElement("div");
-        div.innerText = texto;
-
-        mensajes.appendChild(div);
-        mensajes.scrollTop = mensajes.scrollHeight;
-
-        historialConversacion.push(texto);
-    }
-
-    function enviar(pregunta) {
-        fetch("/maia_voz", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                pregunta: pregunta,
-                historial: historialConversacion
-            })
-        })
-        .then(r => r.json())
-        .then(data => {
-            let respuesta = data.respuesta || "Sin respuesta";
-            agregarMensaje("MAIA: " + respuesta);
-            hablar(respuesta);
-        })
-        .catch(() => {
-            agregarMensaje("MAIA: Error conexión");
-        });
-    }
-
-    // 🎤 VOZ
-    if (existe(vozBtn)) {
-        vozBtn.onclick = () => {
-
-            vozActiva = !vozActiva;
-
-            vozBtn.style.background = vozActiva ? "green" : "red";
-            vozBtn.innerText = vozActiva ? "MAIA ON" : "Activar MAIA";
-
-            if (vozActiva) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-                if (!SpeechRecognition) {
-                    alert("Tu navegador no soporta voz");
-                    return;
-                }
-
-                reconocimiento = new SpeechRecognition();
-                reconocimiento.lang = "es-ES";
-                reconocimiento.continuous = true;
-
-                reconocimiento.onresult = (e) => {
-                    let texto = e.results[e.results.length - 1][0].transcript;
-                    agregarMensaje("Tú: " + texto);
-                    enviar(texto);
-                };
-
-                reconocimiento.start();
-
-            } else {
-                if (reconocimiento) reconocimiento.stop();
-            }
-        };
-    }
-
-    // 💬 CHAT
-    if (existe(chatToggle) && existe(chatContainer)) {
-        chatToggle.onclick = () => {
-            chatContainer.style.display =
-                chatContainer.style.display === "none" ? "block" : "none";
-        };
-    }
-
-    // ⌨️ INPUT
-    if (existe(input)) {
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                let texto = input.value.trim();
-                if (!texto) return;
-
-                agregarMensaje("Tú: " + texto);
-                enviar(texto);
-                input.value = "";
-            }
-        });
-    }
-
-    // 📁 UPLOAD
-    if (existe(uploadInput)) {
-        uploadInput.addEventListener("change", () => {
-
-            let form = new FormData();
-
-            for (let f of uploadInput.files) {
-                form.append("archivos", f);
-            }
-
-            fetch("/maia_subir_archivo", {
-                method: "POST",
-                body: form
-            })
-            .then(() => {
-                agregarMensaje("MAIA: Archivos recibidos");
-            })
-            .catch(() => {
-                agregarMensaje("MAIA: Error subida");
-            });
-        });
-    }
-
-    console.log("✅ maia.js cargado SIN romper la app");
-});
+console.log("✅ MAIA JS limpio cargado");

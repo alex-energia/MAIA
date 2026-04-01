@@ -7,42 +7,44 @@ body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 .topbar-buttons button{margin-left:10px;padding:8px 15px;border-radius:8px;border:none;cursor:pointer;background:#2563eb;color:white;}
 .container{padding:20px;}
 .hidden{display:none;}
-.chat-box{height:60vh;overflow-y:auto;background:#2a2a2a;padding:15px;border-radius:12px;}
-.input-area{margin-top:15px;display:flex;gap:10px;}
-input[type="text"]{flex:1;padding:12px;border-radius:10px;border:none;}
-button.send{padding:12px 20px;border-radius:10px;border:none;background:#2563eb;color:white;cursor:pointer;}
 .modulo-extra{margin-top:30px;display:flex;flex-wrap:wrap;gap:15px;}
 .modulo-extra button{flex:1;min-width:150px;padding:15px;border-radius:10px;border:none;cursor:pointer;background:#10b981;color:white;font-weight:bold;}
-.modulo-extra button:hover{background:#059669;}
-.boton-voz{background:#ff0000;color:white;width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;font-size:18px;box-shadow:0 0 15px red;}
-.boton-plus{background:#2563eb;color:white;width:45px;height:45px;border-radius:50%;border:none;cursor:pointer;font-size:18px;}
+.bloque{
+    margin-top:20px;
+    background:#111;
+    padding:20px;
+    border-radius:12px;
+    border-left:4px solid #00ffcc;
+}
+.boton-maia{
+    background:#ffcc00;
+    color:black;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+    cursor:pointer;
+}
 </style>
 
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
   <div class="topbar-buttons">
-    <button onclick="abrirModulo('ganado')">🐄</button>
-    <button onclick="abrirModulo('plantas')">🌿</button>
-    <button onclick="abrirModulo('traductor')">🌍</button>
-    <button onclick="abrirModulo('proyectos')">📁</button>
     <button onclick="activarDrone()">🚁</button>
     <button onclick="volverHome()">🏠</button>
-    <button class="boton-voz" onclick="activarVoz()">🎤</button>
-    <button class="boton-plus" onclick="abrirChat()">💬</button>
   </div>
 </div>
 
 <div class="container">
 
-  <div id="home">
+<div id="home">
     <h3>🚀 Módulos MAIA</h3>
     <div class="modulo-extra">
       <button onclick="activarDrone()">🚁 Drone</button>
-      <button onclick="abrirModulo('invent')">💡 Invent</button>
     </div>
-  </div>
+</div>
 
-  <div id="moduloDrone" class="hidden">
+<div id="moduloDrone" class="hidden">
     <h3>🚁 MAIA DRONE</h3>
 
     <textarea id="idea" placeholder="Escribe idea..." style="width:100%;height:80px;"></textarea>
@@ -57,160 +59,144 @@ button.send{padding:12px 20px;border-radius:10px;border:none;background:#2563eb;
     <p id="estadoTexto"></p>
 
     <div id="resultadoMAIA"></div>
-  </div>
+</div>
 
 </div>
 
 <script>
-
-// 🔥 GLOBAL
 let intervalo = null;
 
-// 🔥 ERROR GLOBAL
-window.onerror = function(msg, url, line){
-  console.error("💥 JS ERROR:", msg, line);
-};
-
-// =========================
-// 🔹 NAVEGACIÓN
-// =========================
+// NAV
 function ocultarTodo(){
   document.getElementById("home").classList.add("hidden");
   document.getElementById("moduloDrone").classList.add("hidden");
 }
-
 function volverHome(){
   ocultarTodo();
   document.getElementById("home").classList.remove("hidden");
 }
-
 function activarDrone(){
   ocultarTodo();
   document.getElementById("moduloDrone").classList.remove("hidden");
 }
 
-function abrirModulo(nombre){
-  window.location.href = "/maia_" + nombre;
-}
-
-function abrirChat(){
-  window.location.href = "/maia_chat";
-}
-
-function activarVoz(){
-  alert("🎤 Voz MAIA activa (pendiente backend IA voz)");
-}
-
-// =========================
-// 🚀 GENERAR DRONE
-// =========================
+// GENERAR
 async function generarDroneUI(){
-
   let idea = document.getElementById("idea").value;
+  if(!idea){ alert("Escribe algo"); return; }
 
-  if(!idea){
-    alert("Escribe algo");
-    return;
-  }
-
-  // 🔄 RESET LIMPIO
-  if(intervalo){
-    clearInterval(intervalo);
-  }
+  if(intervalo){ clearInterval(intervalo); }
 
   document.getElementById("barraProgreso").style.width = "0%";
   document.getElementById("estadoTexto").innerText = "Iniciando...";
   document.getElementById("resultadoMAIA").innerHTML = "";
 
-  try{
+  await fetch("/evaluar_drone", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json"},
+    body: JSON.stringify({ idea })
+  });
 
-    let res = await fetch("/evaluar_drone", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json"},
-      body: JSON.stringify({ idea })
-    });
-
-    let data = await res.json();
-
-    // 🔴 VALIDACIÓN REAL
-    if(!res.ok || data.error){
-      alert("Error backend: " + (data.error || "desconocido"));
-      return;
-    }
-
-    iniciarMonitoreo();
-
-  }catch(e){
-    console.error(e);
-    alert("❌ Error conexión con servidor");
-  }
+  iniciarMonitoreo();
 }
 
-// =========================
-// 📊 MONITOREO
-// =========================
+// MONITOREO
 function iniciarMonitoreo(){
-
   intervalo = setInterval(async ()=>{
+    let res = await fetch("/maia_progreso");
+    let data = await res.json();
 
-    try{
-      let res = await fetch("/maia_progreso");
-      let data = await res.json();
+    document.getElementById("barraProgreso").style.width = data.progreso + "%";
+    document.getElementById("estadoTexto").innerText = data.mensaje;
 
-      document.getElementById("barraProgreso").style.width = data.progreso + "%";
-      document.getElementById("estadoTexto").innerText = data.mensaje;
-
-      if(data.progreso >= 100){
-        clearInterval(intervalo);
-        cargarResultadoFinal();
-      }
-
-    }catch(e){
-      console.log("❌ Error monitoreo");
+    if(data.progreso >= 100){
       clearInterval(intervalo);
+      cargarResultadoFinal();
     }
-
   }, 800);
 }
 
-// =========================
-// 🧠 RESULTADO PRO
-// =========================
+// RESULTADO PRO
 async function cargarResultadoFinal(){
+  let res = await fetch("/maia_resultado");
+  let data = await res.json();
 
-  try{
+  let html = "";
 
-    let res = await fetch("/maia_resultado");
-    let data = await res.json();
+  // 🔥 BOTON MAIA
+  html += `
+  <button class="boton-maia" onclick="explicarMAIA()">
+  🧠 ¿Qué puede hacer MAIA?
+  </button>
+  `;
 
-    if(!data || Object.keys(data).length === 0){
-      document.getElementById("estadoTexto").innerText = "⚠️ No hay resultado";
-      return;
-    }
+  // 🔹 HARDWARE
+  html += `
+  <div class="bloque">
+    <h3>🔩 Hardware Inteligente</h3>
+    <p>Tipo: ${data.analisis?.tipo}</p>
+    <p>Peso: ${data.analisis?.peso} kg</p>
+    <p>Estructura optimizada para resistencia y carga.</p>
+  </div>
+  `;
 
-    let fisica = data.fisica || {};
+  // 🔹 SOFTWARE (MEJORADO)
+  html += `
+  <div class="bloque">
+    <h3>💻 Software Autónomo</h3>
+    <ul>
+      <li>✔ Controlador de vuelo (PID adaptativo)</li>
+      <li>✔ Sistema de estabilidad inteligente</li>
+      <li>✔ Simulación física integrada</li>
+      <li>✔ Decisiones IA en tiempo real</li>
+      <li>✔ Módulo de visión artificial</li>
+    </ul>
+  </div>
+  `;
 
-    let html = `
-    <div style="margin-top:20px;background:#111;padding:20px;border-radius:12px;">
-      <h2>🧠 MAIA INVENT</h2>
+  // 🔹 FISICA
+  html += `
+  <div class="bloque">
+    <h3>⚙️ Física</h3>
+    <p>Empuje: ${data.fisica?.empuje || "N/A"} N</p>
+    <p>Autonomía: ${data.fisica?.autonomia || "N/A"} min</p>
+  </div>
+  `;
 
-      <p><b>Proyecto generado correctamente</b></p>
+  // 🔹 3D
+  html += `
+  <div class="bloque">
+    <h3>🧱 Modelo 3D</h3>
+    <p>Componentes generados:</p>
+    <pre>${JSON.stringify(data.modelos_3d, null, 2)}</pre>
+  </div>
+  `;
 
-      <hr>
+  // 🔹 SIMULACION
+  html += `
+  <div class="bloque">
+    <h3>📊 Simulación</h3>
+    <pre>${data.salida}</pre>
+  </div>
+  `;
 
-      <pre style="max-height:300px;overflow:auto;background:#000;padding:10px;">
-${JSON.stringify(data, null, 2)}
-      </pre>
-    </div>
-    `;
-
-    document.getElementById("resultadoMAIA").innerHTML = html;
-
-  }catch(e){
-    console.error("❌ Error cargando resultado", e);
-  }
+  document.getElementById("resultadoMAIA").innerHTML = html;
 }
 
+// 🔥 EXPLICACION MAIA
+function explicarMAIA(){
+  alert(`
+🧠 MAIA funciona en 5 fases:
+
+1. ANALIZA tu idea
+2. DISEÑA el drone
+3. VALIDA viabilidad
+4. GENERA software
+5. SIMULA comportamiento real
+
+Todo automático.
+  `);
+}
 </script>
 
 {% endblock %}

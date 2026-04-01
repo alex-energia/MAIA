@@ -3,6 +3,7 @@
 <head>
 <title>MAIA INVENT</title>
 
+<!-- ✅ FIX CDN -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -10,47 +11,13 @@
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
 textarea { width:100%; height:80px; border-radius:8px; padding:10px;}
-button {
-    padding:10px; margin:5px;
-    border-radius:8px; border:none;
-    cursor:pointer;
-    background:#2563eb; color:white;
-}
+button { padding:10px; margin:5px; border-radius:8px; border:none; cursor:pointer; background:#2563eb; color:white;}
 .panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
-.bloque {
-    margin-top:20px;
-    padding:15px;
-    background:#020617;
-    border-radius:10px;
-    border-left:4px solid #22c55e;
-}
-pre {
-    background:black;
-    padding:10px;
-    border-radius:8px;
-    overflow:auto;
-    font-size:12px;
-}
-#barra_container {
-    width:100%;
-    background:#111;
-    margin-top:20px;
-    border-radius:10px;
-    overflow:hidden;
-    display:none;
-}
-#barra {
-    width:0%;
-    height:25px;
-    background:#22c55e;
-    text-align:center;
-    color:white;
-}
-.boton-maia{
-    background:#facc15;
-    color:black;
-    font-weight:bold;
-}
+.bloque { margin-top:20px; padding:15px; background:#020617; border-radius:10px; border-left:4px solid #22c55e;}
+pre { background:black; padding:10px; border-radius:8px; overflow:auto; font-size:12px;}
+#barra_container { width:100%; background:#111; margin-top:20px; border-radius:10px; display:none;}
+#barra { width:0%; height:25px; background:#22c55e; text-align:center;}
+.boton-maia{ background:#facc15; color:black; font-weight:bold;}
 </style>
 </head>
 
@@ -58,8 +25,7 @@ pre {
 
 <h1>🧠 MAIA INVENT</h1>
 
-<textarea id="idea" placeholder="Describe tu drone..."></textarea>
-<br><br>
+<textarea id="idea" placeholder="Describe tu drone..."></textarea><br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
@@ -73,10 +39,9 @@ pre {
 <script>
 
 // =========================
-// 🚀 MOTOR REAL (STEP)
+// 🚀 MOTOR STEP REAL
 // =========================
 async function evaluar(){
-
     const idea = document.getElementById("idea").value;
     if(!idea){ alert("Ingresa una idea"); return; }
 
@@ -101,13 +66,6 @@ async function evaluar(){
             return;
         }
 
-        paso = json.paso ?? paso + 1;
-        data = json.data ?? data;
-
-        let progreso = Math.min(95, paso * 15);
-        barra.style.width = progreso + "%";
-        barra.innerText = progreso + "%";
-
         if(json.final){
             barra.style.width = "100%";
             barra.innerText = "100%";
@@ -115,10 +73,16 @@ async function evaluar(){
             return;
         }
 
+        paso = json.paso ?? paso + 1;
+        data = json.data ?? data;
+
+        let progreso = Math.min(95, paso * 15);
+        barra.style.width = progreso + "%";
+        barra.innerText = progreso + "%";
+
         await new Promise(r => setTimeout(r, 300));
     }
 }
-
 
 // =========================
 // 🎯 RESULTADO COMPLETO
@@ -129,15 +93,23 @@ function renderResultado(data){
 
     html += `<button class="boton-maia" onclick="explicarMAIA()">🧠 ¿Qué puede hacer MAIA?</button>`;
 
-    // 🔩 HARDWARE (REAL)
+    // 🔩 HARDWARE REAL
     html += `
     <div class="bloque">
     <h3>🔩 Hardware</h3>
-    <pre>${JSON.stringify(data.analisis_pro || {}, null, 2)}</pre>
+    <pre>${JSON.stringify(data.hardware || {}, null, 2)}</pre>
     </div>
     `;
 
-    // 💻 SOFTWARE (REAL)
+    // 📦 BOM REAL
+    html += `
+    <div class="bloque">
+    <h3>📦 BOM</h3>
+    <pre>${JSON.stringify(data.bom || {}, null, 2)}</pre>
+    </div>
+    `;
+
+    // 💻 SOFTWARE REAL
     html += `
     <div class="bloque">
     <h3>💻 Software</h3>
@@ -153,15 +125,15 @@ function renderResultado(data){
     </div>
     `;
 
-    // ⚠️ RIESGOS
+    // ⚠️ RIESGOS REAL
     html += `
     <div class="bloque">
     <h3>⚠️ Riesgos</h3>
-    <pre>${JSON.stringify(data.validacion || {}, null, 2)}</pre>
+    <pre>${JSON.stringify(data.riesgos || [], null, 2)}</pre>
     </div>
     `;
 
-    // 🧱 3D
+    // 🧱 MODELO 3D
     html += `
     <div class="bloque">
     <h3>🧱 Modelo 3D</h3>
@@ -185,7 +157,6 @@ function renderResultado(data){
     setTimeout(render3D, 200);
 }
 
-
 // =========================
 // 🧊 3D
 // =========================
@@ -196,8 +167,8 @@ function render3D(){
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth/400, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-    renderer.setSize(canvas.clientWidth,400);
 
+    renderer.setSize(canvas.clientWidth,400);
     scene.add(new THREE.AmbientLight(0xffffff,0.7));
 
     let body = new THREE.Mesh(
@@ -231,28 +202,22 @@ function render3D(){
         scene.rotation.y += 0.01;
         renderer.render(scene,camera);
     }
-
     animate();
 }
-
 
 // =========================
 // 🧠 EXPLICACION
 // =========================
 function explicarMAIA(){
     alert(`MAIA ejecuta:
-
 1. Analiza idea
-2. Diseña arquitectura
-3. Calcula física real
-4. Genera software completo
+2. Diseña hardware
+3. Genera software real
+4. Calcula física
 5. Evalúa riesgos
 6. Genera modelo 3D
-7. Exporta proyecto
-
-Sistema autónomo avanzado.`);
+7. Exporta proyecto`);
 }
-
 
 // =========================
 // 🧹 LIMPIAR

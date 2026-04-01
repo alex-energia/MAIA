@@ -5,72 +5,80 @@ from maia_core_fisico import analizar_drone
 import os
 import time
 import zipfile
+import math
 
-print("🔥 MAIA INDUSTRIAL CORE STARTING...")
+print("🔥 MAIA INDUSTRIAL CORE V3")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
 # =========================
-# 🔥 ANTI CACHE
+# 🔥 NO CACHE
 # =========================
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
 
-# INIT
 init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 📁 UTILIDAD ARCHIVOS
+# 📁 UTIL
 # =========================
-def generar_archivo(ruta, contenido):
-    os.makedirs(os.path.dirname(ruta), exist_ok=True)
-    with open(ruta, "w", encoding="utf-8") as f:
-        f.write(contenido)
+def write_file(path, content):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
 
 # =========================
-# 🔥 SOFTWARE INDUSTRIAL REAL
+# 🧠 SOFTWARE INDUSTRIAL
 # =========================
 def generar_software(base):
     path = os.path.join(base, "software")
 
     archivos = {
-        "main.py": """from control.flight_controller import FlightController
-from navigation.pathfinding import Pathfinder
-from vision.fire_detection import FireDetector
-from failsafe.system import FailSafe
+
+# ================= MAIN =================
+"main.py": """from control.flight_controller import FlightController
+from navigation.astar import AStar
+from perception.fire import FireDetector
+from systems.failsafe import FailSafe
 
 def main():
     fc = FlightController()
-    nav = Pathfinder()
+    nav = AStar()
     vision = FireDetector()
     fs = FailSafe()
 
     while True:
-        estado = fc.update()
-        ruta = nav.compute_path((0,0), (10,10))
-        fuego = vision.detect_fire(75)
+        sensors = {
+            "altitude": 12,
+            "roll": 0.2,
+            "pitch": -0.1
+        }
 
-        if fs.check(15, True):
+        control = fc.update(sensors, 0.02)
+        path = nav.find_path((0,0), (10,10))
+        fire = vision.detect(80)
+
+        if fs.check(18, True) != "OK":
             fc.return_home()
 
 if __name__ == "__main__":
     main()
 """,
 
-        "control/flight_controller.py": """class FlightController:
-    def __init__(self):
-        self.kp = 1.2
-        self.ki = 0.02
-        self.kd = 0.4
+# ================= PID =================
+"control/pid.py": """class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
         self.integral = 0
         self.prev_error = 0
 
-    def pid(self, setpoint, measured, dt):
+    def update(self, setpoint, measured, dt):
         error = setpoint - measured
         self.integral += error * dt
         deriv = (error - self.prev_error) / dt
@@ -78,46 +86,69 @@ if __name__ == "__main__":
         output = self.kp*error + self.ki*self.integral + self.kd*deriv
         self.prev_error = error
         return output
-
-    def update(self):
-        return {"estado": "control estable"}
-
-    def return_home(self):
-        print("🚨 RETURN HOME ACTIVATED")
 """,
 
-        "navigation/pathfinding.py": """import heapq
+# ================= CONTROL =================
+"control/flight_controller.py": """from control.pid import PID
 
-class Pathfinder:
+class FlightController:
+    def __init__(self):
+        self.alt = PID(1.2, 0.01, 0.4)
+        self.roll = PID(0.8, 0.02, 0.3)
+        self.pitch = PID(0.8, 0.02, 0.3)
+
+    def update(self, sensors, dt):
+        return {
+            "throttle": self.alt.update(10, sensors["altitude"], dt),
+            "roll": self.roll.update(0, sensors["roll"], dt),
+            "pitch": self.pitch.update(0, sensors["pitch"], dt)
+        }
+
+    def return_home(self):
+        print("🚨 RETURN HOME")
+""",
+
+# ================= NAV =================
+"navigation/astar.py": """import heapq
+
+class AStar:
     def heuristic(self, a, b):
         return abs(a[0]-b[0]) + abs(a[1]-b[1])
 
-    def compute_path(self, start, goal):
+    def find_path(self, start, goal):
         open_set = [(0, start)]
-        came_from = {}
+        visited = set()
 
         while open_set:
             _, current = heapq.heappop(open_set)
 
             if current == goal:
-                return ["ruta generada"]
+                return ["ruta encontrada"]
+
+            visited.add(current)
 
             for dx, dy in [(1,0),(-1,0),(0,1),(0,-1)]:
                 neighbor = (current[0]+dx, current[1]+dy)
+
+                if neighbor in visited:
+                    continue
+
                 priority = self.heuristic(neighbor, goal)
                 heapq.heappush(open_set, (priority, neighbor))
 
         return []
 """,
 
-        "vision/fire_detection.py": """class FireDetector:
-    def detect_fire(self, temperature):
-        if temperature > 60:
-            return {"fire": True, "confidence": 0.92}
+# ================= VISION =================
+"perception/fire.py": """class FireDetector:
+    def detect(self, temp):
+        if temp > 70:
+            return {"fire": True, "confidence": 0.95}
         return {"fire": False}
 """,
 
-        "failsafe/system.py": """class FailSafe:
+# ================= FAILSAFE =================
+"systems/failsafe.py": """class FailSafe:
     def check(self, battery, signal):
         if battery < 20:
             return "LOW_BATTERY"
@@ -127,14 +158,56 @@ class Pathfinder:
 """
     }
 
-    estructura = {}
+    for name, content in archivos.items():
+        write_file(os.path.join(path, name), content)
 
-    for nombre, contenido in archivos.items():
-        ruta = os.path.join(path, nombre)
-        generar_archivo(ruta, contenido)
-        estructura[nombre] = contenido
+    return archivos
 
-    return estructura
+# =========================
+# ⚙️ FÍSICA REAL
+# =========================
+def calcular_fisica(peso_kg, motores=4):
+    thrust_por_motor = 6.5  # kg empuje
+    thrust_total = motores * thrust_por_motor
+    peso_total = peso_kg * 9.81
+
+    relacion = thrust_total / peso_kg
+
+    estado = "INESTABLE"
+    if thrust_total > peso_kg * 2:
+        estado = "ESTABLE"
+
+    return {
+        "thrust_total_kg": thrust_total,
+        "peso_total_n": round(peso_total, 2),
+        "relacion_empuje_peso": round(relacion, 2),
+        "estado_vuelo": estado,
+        "autonomia_estimada_min": round(40 - peso_kg * 0.5, 2)
+    }
+
+# =========================
+# 🔩 HARDWARE REAL
+# =========================
+def generar_hardware(peso):
+    return {
+        "estructura": "carbon fiber aerospace",
+        "propulsion": {
+            "motor_kv": 1200,
+            "thrust_por_motor_kg": 6.5,
+            "total_motores": 4
+        },
+        "energia": {
+            "bateria": "LiPo 6S 10000mAh",
+            "voltaje": 22.2
+        },
+        "sensores": [
+            "thermal",
+            "lidar",
+            "gps",
+            "imu"
+        ],
+        "peso_total": peso
+    }
 
 # =========================
 # 🧱 MODELO 3D MEJORADO
@@ -143,32 +216,38 @@ def generar_modelo_3d(base, peso):
     path = os.path.join(base, "models")
     os.makedirs(path, exist_ok=True)
 
-    escala = max(1, peso / 3)
+    escala = peso / 2
 
-    partes = {
-        "frame.obj": f"o frame\nv {-escala} 0 {-escala}\nv {escala} 0 {-escala}\nv {escala} 0 {escala}\nv {-escala} 0 {escala}",
-        "arm.obj": f"o arm\nv {-escala} 0 0\nv {escala} 0 0",
-        "motor.obj": f"o motor\nv 0 0 0\nv 0 {escala} 0"
-    }
+    write_file(os.path.join(path, "frame.obj"),
+f"""o frame
+v {-escala} 0 {-escala}
+v {escala} 0 {-escala}
+v {escala} 0 {escala}
+v {-escala} 0 {escala}
+""")
 
-    for n, c in partes.items():
-        generar_archivo(os.path.join(path, n), c)
+    write_file(os.path.join(path, "motor.obj"),
+f"""o motor
+v 0 0 0
+v 0 {escala} 0
+""")
 
     return {
-        "componentes": list(partes.keys()),
-        "escala": escala
+        "tipo": "quad_x",
+        "escala": escala,
+        "componentes": ["frame", "motor x4"]
     }
 
 # =========================
 # 📦 ZIP
 # =========================
-def exportar_zip(ruta):
-    zip_path = ruta + ".zip"
+def exportar_zip(path):
+    zip_path = path + ".zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(ruta):
+        for root, dirs, files in os.walk(path):
             for file in files:
                 full = os.path.join(root, file)
-                zipf.write(full, os.path.relpath(full, ruta))
+                zipf.write(full, os.path.relpath(full, path))
     return zip_path
 
 # =========================
@@ -178,38 +257,18 @@ class MaiaCore:
 
     def ejecutar_paso(self, idea, paso, data):
 
-        print(f"➡️ Paso {paso}")
+        print("➡️ Paso", paso)
 
         if paso == 0:
             core = analizar_drone(idea)
             return {"paso": 1, "data": {"core": core}}
 
         elif paso == 1:
-            analisis = data.get("core", {}).get("analisis", {})
-            peso = analisis.get("peso", 10)
+            analisis = data["core"].get("analisis", {})
+            peso = analisis.get("peso", 12)
 
-            data["analisis_pro"] = {
-                **analisis,
-                "estructura": "Fibra carbono aeronáutica",
-                "autonomia_nivel": "industrial",
-                "carga_util_kg": round(peso * 0.4, 2)
-            }
-
-            data["hardware"] = {
-                "frame": "carbon fiber aerospace",
-                "motores": "brushless 1200kv x4",
-                "bateria": "LiPo 6S 10000mAh",
-                "sensores": ["thermal", "lidar", "gps", "imu"]
-            }
-
-            data["bom"] = [
-                "motores brushless x4",
-                "flight controller",
-                "battery LiPo",
-                "ESC",
-                "GPS",
-                "thermal sensor"
-            ]
+            data["hardware"] = generar_hardware(peso)
+            data["analisis_pro"] = analisis
 
             return {"paso": 2, "data": data}
 
@@ -223,25 +282,24 @@ class MaiaCore:
             return {"paso": 3, "data": data}
 
         elif paso == 3:
-            data["fisica"] = {
-                "empuje": 250,
-                "autonomia": 45,
-                "consumo": "alto"
-            }
+            peso = data["hardware"]["peso_total"]
+            data["fisica"] = calcular_fisica(peso)
+
             return {"paso": 4, "data": data}
 
         elif paso == 4:
             data["riesgos"] = [
                 "viento extremo",
-                "sobrecalentamiento",
+                "sobrecarga térmica",
                 "fallo batería",
-                "interferencia señal"
+                "pérdida señal"
             ]
             return {"paso": 5, "data": data}
 
         elif paso == 5:
-            peso = data.get("analisis_pro", {}).get("peso", 10)
+            peso = data["hardware"]["peso_total"]
             data["modelos_3d"] = generar_modelo_3d(data["base"], peso)
+
             return {"paso": 6, "data": data}
 
         elif paso == 6:
@@ -249,11 +307,12 @@ class MaiaCore:
             return {"final": True, "resultado": data}
 
 # =========================
-# ENDPOINT
+# API
 # =========================
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
     req = request.get_json() or {}
+
     idea = req.get("idea", "")
     paso = int(req.get("paso", 0))
     data = req.get("data", {})

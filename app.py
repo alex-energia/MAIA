@@ -2,12 +2,9 @@ from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 from maia_validator import MaiaValidator
-from core.maia_software_generator import generar_software_completo
 import os
 import time
 import zipfile
-import json
-import sys
 import threading
 
 print("🔥 MAIA ULTRA STARTING...")
@@ -41,6 +38,63 @@ def generar_archivo(ruta, contenido):
             f.write(contenido)
     except Exception as e:
         print("ERROR generando archivo:", e)
+
+# =========================
+# SOFTWARE INDUSTRIAL
+# =========================
+def generar_software(base):
+
+    path = os.path.join(base, "software")
+    os.makedirs(path, exist_ok=True)
+
+    archivos = {
+
+        "controlador_vuelo.py": """
+class PID:
+    def __init__(self, kp, ki, kd):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.integral = 0
+        self.prev_error = 0
+
+    def update(self, setpoint, measured, dt):
+        error = setpoint - measured
+        self.integral += error * dt
+        deriv = (error - self.prev_error) / dt
+        self.prev_error = error
+        return self.kp*error + self.ki*self.integral + self.kd*deriv
+""",
+
+        "navegacion.py": """
+def evitar_obstaculos(sensor_data):
+    if sensor_data < 1:
+        return "girar"
+    return "avanzar"
+""",
+
+        "vision.py": """
+def detectar_incendio(temp):
+    if temp > 60:
+        return True
+    return False
+""",
+
+        "failsafe.py": """
+def sistema_seguridad(bateria, señal):
+    if bateria < 20:
+        return "RETORNAR"
+    if señal == 0:
+        return "HOVER"
+    return "OK"
+"""
+    }
+
+    for nombre, contenido in archivos.items():
+        generar_archivo(os.path.join(path, nombre), contenido)
+
+    return archivos
+
 
 # =========================
 # MODELO 3D
@@ -98,15 +152,16 @@ def exportar_zip(ruta):
 class MaiaCore:
 
     def ejecutar_paso(self, idea, paso, data):
+
         try:
             print(f"➡️ Paso {paso}")
 
-            # 🔹 PASO 0 → ANÁLISIS BASE
+            # PASO 0
             if paso == 0:
                 core = analizar_drone(idea)
                 return {"paso": 1, "data": {"core": core}}
 
-            # 🔹 PASO 1 → INGENIERÍA AVANZADA
+            # PASO 1
             elif paso == 1:
                 analisis = data.get("core", {}).get("analisis", {})
                 peso = analisis.get("peso", 10)
@@ -118,7 +173,6 @@ class MaiaCore:
                     "carga_util_kg": round(peso * 0.4, 2)
                 }
 
-                # 🔥 HARDWARE REAL
                 data["hardware"] = {
                     "frame": "Fibra de carbono",
                     "motores": "Brushless 1200kv x4",
@@ -126,34 +180,29 @@ class MaiaCore:
                     "sensores": ["térmico", "humo", "GPS", "IMU"]
                 }
 
-                # 🔥 BOM
                 data["bom"] = [
                     "4x motores brushless",
-                    "1x flight controller",
-                    "1x batería LiPo 6S",
-                    "ESC 4 en 1",
+                    "flight controller",
+                    "batería LiPo",
+                    "ESC",
                     "GPS",
                     "sensor térmico"
                 ]
 
                 return {"paso": 2, "data": data}
 
-            # 🔹 PASO 2 → SOFTWARE REAL
+            # PASO 2 (🔥 SOFTWARE REAL)
             elif paso == 2:
-                data["software"] = {
-                    "control": "PID adaptativo",
-                    "algoritmos": [
-                        "Control PID",
-                        "Pathfinding A*",
-                        "Detección térmica",
-                        "Evitar obstáculos"
-                    ],
-                    "ia": "detección incendios"
-                }
+
+                base = data.get("base", f"maia_projects/{int(time.time())}")
+                os.makedirs(base, exist_ok=True)
+                data["base"] = base
+
+                data["software"] = generar_software(base)
 
                 return {"paso": 3, "data": data}
 
-            # 🔹 PASO 3 → FÍSICA
+            # PASO 3
             elif paso == 3:
                 data["fisica"] = {
                     "empuje": 250,
@@ -162,7 +211,7 @@ class MaiaCore:
                 }
                 return {"paso": 4, "data": data}
 
-            # 🔹 PASO 4 → RIESGOS
+            # PASO 4
             elif paso == 4:
                 data["riesgos"] = [
                     "viento extremo",
@@ -172,20 +221,15 @@ class MaiaCore:
                 ]
                 return {"paso": 5, "data": data}
 
-            # 🔹 PASO 5 → MODELO 3D
+            # PASO 5
             elif paso == 5:
-                base = f"maia_projects/{int(time.time())}"
-                os.makedirs(base, exist_ok=True)
-                data["base"] = base
-
                 peso = data.get("analisis_pro", {}).get("peso", 10)
-                data["modelos_3d"] = generar_modelo_3d(base, peso)
-
+                data["modelos_3d"] = generar_modelo_3d(data["base"], peso)
                 return {"paso": 6, "data": data}
 
-            # 🔹 PASO 6 → ZIP
+            # PASO 6
             elif paso == 6:
-                data["zip"] = exportar_zip(data.get("base", ""))
+                data["zip"] = exportar_zip(data["base"])
                 return {"final": True, "resultado": data}
 
         except Exception as e:
@@ -193,65 +237,8 @@ class MaiaCore:
             return {"error": str(e)}
 
 # =========================
-# 🔥 MOTOR EN SEGUNDO PLANO
-# =========================
-def ejecutar_maia_background(idea):
-    global estado_maia, resultado_global
-
-    estado_maia["progreso"] = 0
-    estado_maia["mensaje"] = "Iniciando..."
-
-    core = MaiaCore()
-    paso = 0
-    data = {}
-
-    while True:
-        res = core.ejecutar_paso(idea, paso, data)
-
-        if "error" in res:
-            estado_maia["mensaje"] = "Error"
-            resultado_global = res
-            break
-
-        if res.get("final"):
-            estado_maia["progreso"] = 100
-            estado_maia["mensaje"] = "Completado"
-            resultado_global = res["resultado"]
-            break
-
-        paso = res.get("paso", paso + 1)
-        data = res.get("data", {})
-
-        estado_maia["progreso"] += 15
-        estado_maia["mensaje"] = f"Paso {paso}..."
-
-        time.sleep(0.5)
-
-# =========================
 # ENDPOINTS
 # =========================
-@app.route("/evaluar_drone", methods=["POST"])
-def evaluar_drone():
-    try:
-        req = request.get_json() or {}
-        idea = req.get("idea", "")
-
-        hilo = threading.Thread(target=ejecutar_maia_background, args=(idea,))
-        hilo.start()
-
-        return jsonify({"ok": True})
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-@app.route("/maia_progreso")
-def maia_progreso():
-    return jsonify(estado_maia)
-
-@app.route("/maia_resultado")
-def maia_resultado():
-    return jsonify(resultado_global)
-
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
     try:

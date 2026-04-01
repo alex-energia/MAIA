@@ -57,7 +57,6 @@ def procesar_entrada(entrada):
                 "tipo": "error_financiero",
                 "error": str(e)
             }
-
     else:
         try:
             respuesta = motor_conocimiento.responder(entrada)
@@ -79,14 +78,13 @@ def procesar_entrada(entrada):
 
 
 # ==========================================
-# 🧠 CONTROL PID (FIXED REAL)
+# 🧠 CONTROL PID (FIX REAL)
 # ==========================================
 class PID:
     def __init__(self, kp, ki, kd):
-        self.kp = kp   # ✅ FIX REAL
-        self.ki = ki   # ✅ FIX REAL
+        self.kp = kp
+        self.ki = ki
         self.kd = kd
-
         self.integral = 0
         self.prev_error = 0
 
@@ -113,10 +111,8 @@ class Drone:
     def __init__(self):
         self.pos = [0.0, 0.0, 0.0]
         self.vel = [0.0, 0.0, 0.0]
-
         self.mass = 12
         self.battery = 100
-
         self.pid_z = PID(2.5, 0.2, 0.8)
         self.estado = "DESPEGANDO"
 
@@ -131,7 +127,7 @@ class Drone:
             self.vel[2] += az * dt
             self.pos[2] += self.vel[2] * dt
 
-            # Movimiento horizontal suave
+            # Movimiento horizontal
             self.vel[0] += random.uniform(-0.1, 0.1)
             self.vel[1] += random.uniform(-0.1, 0.1)
 
@@ -142,17 +138,14 @@ class Drone:
             consumo = abs(thrust) * 0.0005
             self.battery -= consumo
 
-            # Evitar valores negativos
             if self.battery < 0:
                 self.battery = 0
 
-            # Estados inteligentes
+            # Estados
             if self.pos[2] > 15:
                 self.estado = "EN_MISION"
-
             if self.battery < 30:
                 self.estado = "RETORNO"
-
             if self.battery < 10:
                 self.estado = "CRITICO"
 
@@ -173,7 +166,7 @@ class Drone:
 
 
 # ==========================================
-# 🚀 SIMULADOR OPTIMIZADO
+# 🚀 SIMULADOR
 # ==========================================
 def simular_drone():
     drone = Drone()
@@ -181,8 +174,8 @@ def simular_drone():
 
     dt = 0.1
     max_time = 5
-
     start_time = time.time()
+
     target_altitude = 20
     t = 0
 
@@ -226,10 +219,9 @@ def simular_drone():
 
 
 # ==========================================
-# 🔥 EJECUCIÓN SEGURA (NO BLOQUEA RENDER)
+# 🔥 EJECUCIÓN SEGURA
 # ==========================================
 if os.environ.get("RUN_MAIN_SIM") == "true":
-
     print("🚀 Ejecutando simulación MAIA...")
 
     try:

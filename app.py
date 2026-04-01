@@ -1,35 +1,31 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
-from maia_validator import MaiaValidator
+
 import os
 import time
 import zipfile
-import threading
 
-print("🔥 MAIA ULTRA STARTING...")
+print("🔥 MAIA INDUSTRIAL CORE STARTING...")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
+# =========================
 # 🔥 ANTI CACHE
+# =========================
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
     return response
 
 # INIT
 init_db()
 app.register_blueprint(proyectos_bp)
 
-estado_maia = {"progreso": 0, "estado": "IDLE", "mensaje": ""}
-resultado_global = {}
-
 # =========================
-# UTILIDADES
+# 📁 UTILIDAD ARCHIVOS
 # =========================
 def generar_archivo(ruta, contenido):
     os.makedirs(os.path.dirname(ruta), exist_ok=True)
@@ -37,15 +33,12 @@ def generar_archivo(ruta, contenido):
         f.write(contenido)
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL
+# 🔥 SOFTWARE INDUSTRIAL REAL
 # =========================
 def generar_software(base):
-
-    software_path = os.path.join(base, "software")
-    os.makedirs(software_path, exist_ok=True)
+    path = os.path.join(base, "software")
 
     archivos = {
-
         "main.py": """from control.flight_controller import FlightController
 from navigation.pathfinding import Pathfinder
 from vision.fire_detection import FireDetector
@@ -59,10 +52,10 @@ def main():
 
     while True:
         estado = fc.update()
-        ruta = nav.compute()
-        fuego = vision.detect()
+        ruta = nav.compute_path((0,0), (10,10))
+        fuego = vision.detect_fire(75)
 
-        if fs.check():
+        if fs.check(15, True):
             fc.return_home()
 
 if __name__ == "__main__":
@@ -70,11 +63,10 @@ if __name__ == "__main__":
 """,
 
         "control/flight_controller.py": """class FlightController:
-
     def __init__(self):
         self.kp = 1.2
-        self.ki = 0.01
-        self.kd = 0.5
+        self.ki = 0.02
+        self.kd = 0.4
         self.integral = 0
         self.prev_error = 0
 
@@ -85,48 +77,67 @@ if __name__ == "__main__":
 
         output = self.kp*error + self.ki*self.integral + self.kd*deriv
         self.prev_error = error
-
         return output
 
     def update(self):
-        return "control actualizado"
+        return {"estado": "control estable"}
 
     def return_home(self):
-        print("Returning to base")
+        print("🚨 RETURN HOME ACTIVATED")
 """,
 
         "navigation/pathfinding.py": """import heapq
 
 class Pathfinder:
-
     def heuristic(self, a, b):
         return abs(a[0]-b[0]) + abs(a[1]-b[1])
 
-    def compute(self):
-        return "ruta generada"
+    def compute_path(self, start, goal):
+        open_set = [(0, start)]
+        came_from = {}
+
+        while open_set:
+            _, current = heapq.heappop(open_set)
+
+            if current == goal:
+                return ["ruta generada"]
+
+            for dx, dy in [(1,0),(-1,0),(0,1),(0,-1)]:
+                neighbor = (current[0]+dx, current[1]+dy)
+                priority = self.heuristic(neighbor, goal)
+                heapq.heappush(open_set, (priority, neighbor))
+
+        return []
 """,
 
         "vision/fire_detection.py": """class FireDetector:
-
-    def detect(self):
-        return False
+    def detect_fire(self, temperature):
+        if temperature > 60:
+            return {"fire": True, "confidence": 0.92}
+        return {"fire": False}
 """,
 
         "failsafe/system.py": """class FailSafe:
-
-    def check(self):
-        return False
+    def check(self, battery, signal):
+        if battery < 20:
+            return "LOW_BATTERY"
+        if not signal:
+            return "SIGNAL_LOSS"
+        return "OK"
 """
     }
 
-    for nombre, contenido in archivos.items():
-        ruta = os.path.join(software_path, nombre)
-        generar_archivo(ruta, contenido)
+    estructura = {}
 
-    return archivos
+    for nombre, contenido in archivos.items():
+        ruta = os.path.join(path, nombre)
+        generar_archivo(ruta, contenido)
+        estructura[nombre] = contenido
+
+    return estructura
 
 # =========================
-# MODELO 3D
+# 🧱 MODELO 3D MEJORADO
 # =========================
 def generar_modelo_3d(base, peso):
     path = os.path.join(base, "models")
@@ -136,8 +147,8 @@ def generar_modelo_3d(base, peso):
 
     partes = {
         "frame.obj": f"o frame\nv {-escala} 0 {-escala}\nv {escala} 0 {-escala}\nv {escala} 0 {escala}\nv {-escala} 0 {escala}",
-        "arm_x.obj": f"o arm\nv {-escala} 0 0\nv {escala} 0 0",
-        "arm_z.obj": f"o arm\nv 0 0 {-escala}\nv 0 0 {escala}",
+        "arm.obj": f"o arm\nv {-escala} 0 0\nv {escala} 0 0",
+        "motor.obj": f"o motor\nv 0 0 0\nv 0 {escala} 0"
     }
 
     for n, c in partes.items():
@@ -149,24 +160,19 @@ def generar_modelo_3d(base, peso):
     }
 
 # =========================
-# ZIP
+# 📦 ZIP
 # =========================
 def exportar_zip(ruta):
-    if not os.path.exists(ruta):
-        return ""
-
     zip_path = ruta + ".zip"
-
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(ruta):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, ruta))
-
     return zip_path
 
 # =========================
-# CORE
+# 🧠 CORE
 # =========================
 class MaiaCore:
 
@@ -184,25 +190,25 @@ class MaiaCore:
 
             data["analisis_pro"] = {
                 **analisis,
-                "estructura": "Fibra de carbono reforzada",
-                "nivel_autonomia": "Alto",
+                "estructura": "Fibra carbono aeronáutica",
+                "autonomia_nivel": "industrial",
                 "carga_util_kg": round(peso * 0.4, 2)
             }
 
             data["hardware"] = {
-                "frame": "Fibra de carbono",
-                "motores": "Brushless 1200kv x4",
+                "frame": "carbon fiber aerospace",
+                "motores": "brushless 1200kv x4",
                 "bateria": "LiPo 6S 10000mAh",
-                "sensores": ["térmico", "humo", "GPS", "IMU"]
+                "sensores": ["thermal", "lidar", "gps", "imu"]
             }
 
             data["bom"] = [
-                "4x motores brushless",
+                "motores brushless x4",
                 "flight controller",
-                "batería LiPo",
+                "battery LiPo",
                 "ESC",
                 "GPS",
-                "sensor térmico"
+                "thermal sensor"
             ]
 
             return {"paso": 2, "data": data}
@@ -210,8 +216,8 @@ class MaiaCore:
         elif paso == 2:
             base = f"maia_projects/{int(time.time())}"
             os.makedirs(base, exist_ok=True)
-            data["base"] = base
 
+            data["base"] = base
             data["software"] = generar_software(base)
 
             return {"paso": 3, "data": data}
@@ -243,7 +249,7 @@ class MaiaCore:
             return {"final": True, "resultado": data}
 
 # =========================
-# ENDPOINTS
+# ENDPOINT
 # =========================
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
@@ -253,9 +259,7 @@ def maia_step():
     data = req.get("data", {})
 
     core = MaiaCore()
-    resultado = core.ejecutar_paso(idea, paso, data)
-
-    return jsonify(resultado)
+    return jsonify(core.ejecutar_paso(idea, paso, data))
 
 # =========================
 # VISTAS
@@ -272,5 +276,4 @@ def home():
 # RUN
 # =========================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)

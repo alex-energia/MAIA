@@ -3,21 +3,68 @@
 <head>
 <title>MAIA INVENT</title>
 
-<!-- ✅ FIX CDN -->
+<!-- ✅ FIX REAL CDN (QUITÉ LOS CORCHETES QUE LO ROMPEN) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
+
 textarea { width:100%; height:80px; border-radius:8px; padding:10px;}
-button { padding:10px; margin:5px; border-radius:8px; border:none; cursor:pointer; background:#2563eb; color:white;}
+
+button {
+    padding:10px; margin:5px;
+    border-radius:8px; border:none;
+    cursor:pointer;
+    background:#2563eb; color:white;
+}
+
 .panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
-.bloque { margin-top:20px; padding:15px; background:#020617; border-radius:10px; border-left:4px solid #22c55e;}
-pre { background:black; padding:10px; border-radius:8px; overflow:auto; font-size:12px;}
-#barra_container { width:100%; background:#111; margin-top:20px; border-radius:10px; display:none;}
-#barra { width:0%; height:25px; background:#22c55e; text-align:center;}
-.boton-maia{ background:#facc15; color:black; font-weight:bold;}
+
+.bloque {
+    margin-top:20px;
+    padding:15px;
+    background:#020617;
+    border-radius:10px;
+    border-left:4px solid #22c55e;
+}
+
+.subbloque {
+    display:none;
+    margin-top:10px;
+    padding:10px;
+    background:#111827;
+    border-radius:8px;
+}
+
+.toggle {
+    cursor:pointer;
+    margin-top:10px;
+    display:block;
+    font-weight:bold;
+}
+
+#barra_container {
+    width:100%;
+    background:#111;
+    margin-top:20px;
+    border-radius:10px;
+    display:none;
+}
+
+#barra {
+    width:0%;
+    height:25px;
+    background:#22c55e;
+    text-align:center;
+}
+
+.boton-maia{
+    background:#facc15;
+    color:black;
+    font-weight:bold;
+}
 </style>
 </head>
 
@@ -25,7 +72,9 @@ pre { background:black; padding:10px; border-radius:8px; overflow:auto; font-siz
 
 <h1>🧠 MAIA INVENT</h1>
 
-<textarea id="idea" placeholder="Describe tu drone..."></textarea><br><br>
+<textarea id="idea" placeholder="Describe tu drone..."></textarea>
+
+<br><br>
 
 <button onclick="evaluar()">🚀 Generar Ingeniería</button>
 <button onclick="limpiarUI()">🧹 Limpiar</button>
@@ -42,6 +91,7 @@ pre { background:black; padding:10px; border-radius:8px; overflow:auto; font-siz
 // 🚀 MOTOR STEP REAL
 // =========================
 async function evaluar(){
+
     const idea = document.getElementById("idea").value;
     if(!idea){ alert("Ingresa una idea"); return; }
 
@@ -84,69 +134,111 @@ async function evaluar(){
     }
 }
 
+
 // =========================
-// 🎯 RESULTADO COMPLETO
+// 🔽 TOGGLE REAL
+// =========================
+function toggle(id){
+    let el = document.getElementById(id);
+    el.style.display = (el.style.display === "none") ? "block" : "none";
+}
+
+
+// =========================
+// 🎯 RENDER INDUSTRIAL
 // =========================
 function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    html += `<button class="boton-maia" onclick="explicarMAIA()">🧠 ¿Qué puede hacer MAIA?</button>`;
+    html += `<button class="boton-maia" onclick="explicarMAIA()">🧠 MAIA ENGINE</button>`;
 
-    // 🔩 HARDWARE REAL
+
+    // 🔩 HARDWARE
     html += `
     <div class="bloque">
-    <h3>🔩 Hardware</h3>
-    <pre>${JSON.stringify(data.hardware || {}, null, 2)}</pre>
+        <h3>🔩 Hardware</h3>
+
+        <span class="toggle" onclick="toggle('hw1')">▶ Componentes</span>
+        <div id="hw1" class="subbloque">
+            ${Object.entries(data.hardware || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
+        </div>
+
+        <span class="toggle" onclick="toggle('hw2')">▶ Ingeniería</span>
+        <div id="hw2" class="subbloque">
+            ${Object.entries(data.analisis_pro || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
+        </div>
     </div>
     `;
 
-    // 📦 BOM REAL
+
+    // 📦 BOM
     html += `
     <div class="bloque">
-    <h3>📦 BOM</h3>
-    <pre>${JSON.stringify(data.bom || {}, null, 2)}</pre>
+        <h3>📦 BOM</h3>
+        <div class="subbloque" style="display:block;">
+            ${(data.bom || []).map(i => `<p>• ${i}</p>`).join("")}
+        </div>
     </div>
     `;
 
-    // 💻 SOFTWARE REAL
+
+    // 💻 SOFTWARE
     html += `
     <div class="bloque">
-    <h3>💻 Software</h3>
-    <pre>${JSON.stringify(data.software || {}, null, 2)}</pre>
+        <h3>💻 Software</h3>
+
+        <span class="toggle" onclick="toggle('sw1')">▶ Control</span>
+        <div id="sw1" class="subbloque">
+            <p>${data.software?.control || "N/A"}</p>
+        </div>
+
+        <span class="toggle" onclick="toggle('sw2')">▶ Algoritmos</span>
+        <div id="sw2" class="subbloque">
+            ${(data.software?.algoritmos || []).map(a => `<p>• ${a}</p>`).join("")}
+        </div>
+
+        <span class="toggle" onclick="toggle('sw3')">▶ IA</span>
+        <div id="sw3" class="subbloque">
+            <p>${data.software?.ia || "N/A"}</p>
+        </div>
+
     </div>
     `;
+
 
     // ⚙️ FISICA
     html += `
     <div class="bloque">
-    <h3>⚙️ Física</h3>
-    <pre>${JSON.stringify(data.fisica || {}, null, 2)}</pre>
+        <h3>⚙️ Física</h3>
+        ${Object.entries(data.fisica || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
     </div>
     `;
 
-    // ⚠️ RIESGOS REAL
+
+    // ⚠️ RIESGOS
     html += `
     <div class="bloque">
-    <h3>⚠️ Riesgos</h3>
-    <pre>${JSON.stringify(data.riesgos || [], null, 2)}</pre>
+        <h3>⚠️ Riesgos</h3>
+        ${(data.riesgos || []).map(r => `<p>⚠️ ${r}</p>`).join("")}
     </div>
     `;
 
-    // 🧱 MODELO 3D
+
+    // 🧱 3D
     html += `
     <div class="bloque">
-    <h3>🧱 Modelo 3D</h3>
-    <pre>${JSON.stringify(data.modelos_3d || {}, null, 2)}</pre>
-    <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
+        <h3>🧱 Modelo 3D</h3>
+        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
     </div>
     `;
 
-    // 📦 ZIP
+
+    // 📦 EXPORT
     html += `
     <div class="bloque">
-    <h3>📦 Proyecto Exportado</h3>
-    <pre>${data.zip || "No generado"}</pre>
+        <h3>📦 Proyecto Exportado</h3>
+        <p>${data.zip || "No generado"}</p>
     </div>
     `;
 
@@ -157,10 +249,12 @@ function renderResultado(data){
     setTimeout(render3D, 200);
 }
 
+
 // =========================
 // 🧊 3D
 // =========================
 function render3D(){
+
     const canvas = document.getElementById("viewer3d");
     if(!canvas || typeof THREE === "undefined") return;
 
@@ -169,31 +263,15 @@ function render3D(){
     const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 
     renderer.setSize(canvas.clientWidth,400);
+
     scene.add(new THREE.AmbientLight(0xffffff,0.7));
 
     let body = new THREE.Mesh(
         new THREE.BoxGeometry(1.5,0.3,1.5),
         new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
+
     scene.add(body);
-
-    for(let i=0;i<4;i++){
-        let angle = i*Math.PI/2;
-
-        let arm = new THREE.Mesh(
-            new THREE.BoxGeometry(2,0.1,0.1),
-            new THREE.MeshStandardMaterial({color:0xffffff})
-        );
-        arm.rotation.y = angle;
-        scene.add(arm);
-
-        let motor = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.25,0.25,0.3,16),
-            new THREE.MeshStandardMaterial({color:0xff0000})
-        );
-        motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
-        scene.add(motor);
-    }
 
     camera.position.z = 5;
 
@@ -202,22 +280,24 @@ function render3D(){
         scene.rotation.y += 0.01;
         renderer.render(scene,camera);
     }
+
     animate();
 }
+
 
 // =========================
 // 🧠 EXPLICACION
 // =========================
 function explicarMAIA(){
     alert(`MAIA ejecuta:
-1. Analiza idea
-2. Diseña hardware
-3. Genera software real
-4. Calcula física
-5. Evalúa riesgos
-6. Genera modelo 3D
-7. Exporta proyecto`);
+1. Ingeniería hardware
+2. Software autónomo
+3. Física real
+4. Evaluación de riesgos
+5. Modelo 3D
+6. Exportación completa`);
 }
+
 
 // =========================
 // 🧹 LIMPIAR

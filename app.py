@@ -5,15 +5,14 @@ from maia_core_fisico import analizar_drone
 import os
 import time
 import zipfile
-import math
 
-print("🔥 MAIA INDUSTRIAL CORE V3")
+print("🔥 MAIA INDUSTRIAL CORE FINAL")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
 
 # =========================
-# 🔥 NO CACHE
+# NO CACHE
 # =========================
 @app.after_request
 def add_header(response):
@@ -24,7 +23,7 @@ init_db()
 app.register_blueprint(proyectos_bp)
 
 # =========================
-# 📁 UTIL
+# FILE WRITER
 # =========================
 def write_file(path, content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -32,17 +31,17 @@ def write_file(path, content):
         f.write(content)
 
 # =========================
-# 🧠 SOFTWARE INDUSTRIAL
+# SOFTWARE INDUSTRIAL REAL
 # =========================
 def generar_software(base):
-    path = os.path.join(base, "software")
 
-    archivos = {
+    root = os.path.join(base, "software")
 
-# ================= MAIN =================
-"main.py": """from control.flight_controller import FlightController
-from navigation.astar import AStar
-from perception.fire import FireDetector
+    estructura = {
+
+        "main.py": """from control.flight_controller import FlightController
+from navigation.a_star import AStar
+from perception.fire_detection import FireDetector
 from systems.failsafe import FailSafe
 
 def main():
@@ -52,12 +51,7 @@ def main():
     fs = FailSafe()
 
     while True:
-        sensors = {
-            "altitude": 12,
-            "roll": 0.2,
-            "pitch": -0.1
-        }
-
+        sensors = {"altitude": 12, "roll": 0.2, "pitch": -0.1}
         control = fc.update(sensors, 0.02)
         path = nav.find_path((0,0), (10,10))
         fire = vision.detect(80)
@@ -69,8 +63,8 @@ if __name__ == "__main__":
     main()
 """,
 
-# ================= PID =================
-"control/pid.py": """class PID:
+        "control": {
+            "pid.py": """class PID:
     def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
@@ -82,14 +76,11 @@ if __name__ == "__main__":
         error = setpoint - measured
         self.integral += error * dt
         deriv = (error - self.prev_error) / dt
-
-        output = self.kp*error + self.ki*self.integral + self.kd*deriv
         self.prev_error = error
-        return output
+        return self.kp*error + self.ki*self.integral + self.kd*deriv
 """,
 
-# ================= CONTROL =================
-"control/flight_controller.py": """from control.pid import PID
+            "flight_controller.py": """from control.pid import PID
 
 class FlightController:
     def __init__(self):
@@ -106,10 +97,11 @@ class FlightController:
 
     def return_home(self):
         print("🚨 RETURN HOME")
-""",
+"""
+        },
 
-# ================= NAV =================
-"navigation/astar.py": """import heapq
+        "navigation": {
+            "a_star.py": """import heapq
 
 class AStar:
     def heuristic(self, a, b):
@@ -123,7 +115,7 @@ class AStar:
             _, current = heapq.heappop(open_set)
 
             if current == goal:
-                return ["ruta encontrada"]
+                return ["path found"]
 
             visited.add(current)
 
@@ -137,18 +129,20 @@ class AStar:
                 heapq.heappush(open_set, (priority, neighbor))
 
         return []
-""",
+"""
+        },
 
-# ================= VISION =================
-"perception/fire.py": """class FireDetector:
+        "perception": {
+            "fire_detection.py": """class FireDetector:
     def detect(self, temp):
         if temp > 70:
             return {"fire": True, "confidence": 0.95}
         return {"fire": False}
-""",
+"""
+        },
 
-# ================= FAILSAFE =================
-"systems/failsafe.py": """class FailSafe:
+        "systems": {
+            "failsafe.py": """class FailSafe:
     def check(self, battery, signal):
         if battery < 20:
             return "LOW_BATTERY"
@@ -156,37 +150,51 @@ class AStar:
             return "SIGNAL_LOSS"
         return "OK"
 """
+        },
+
+        "simulation": {
+            "environment.py": """class Environment:
+    def __init__(self):
+        self.wind = 5
+        self.temperature = 30
+
+    def update(self):
+        return {
+            "wind": self.wind,
+            "temperature": self.temperature
+        }
+"""
+        }
     }
 
-    for name, content in archivos.items():
-        write_file(os.path.join(path, name), content)
+    # crear archivos recursivo
+    def crear(ruta, contenido):
+        if isinstance(contenido, dict):
+            for k, v in contenido.items():
+                crear(os.path.join(ruta, k), v)
+        else:
+            write_file(ruta, contenido)
 
-    return archivos
+    crear(root, estructura)
+
+    return estructura
 
 # =========================
-# ⚙️ FÍSICA REAL
+# FISICA
 # =========================
-def calcular_fisica(peso_kg, motores=4):
-    thrust_por_motor = 6.5  # kg empuje
-    thrust_total = motores * thrust_por_motor
-    peso_total = peso_kg * 9.81
-
+def calcular_fisica(peso_kg):
+    thrust_total = 26
     relacion = thrust_total / peso_kg
-
-    estado = "INESTABLE"
-    if thrust_total > peso_kg * 2:
-        estado = "ESTABLE"
 
     return {
         "thrust_total_kg": thrust_total,
-        "peso_total_n": round(peso_total, 2),
         "relacion_empuje_peso": round(relacion, 2),
-        "estado_vuelo": estado,
+        "estado_vuelo": "ESTABLE" if relacion > 2 else "INESTABLE",
         "autonomia_estimada_min": round(40 - peso_kg * 0.5, 2)
     }
 
 # =========================
-# 🔩 HARDWARE REAL
+# HARDWARE
 # =========================
 def generar_hardware(peso):
     return {
@@ -200,58 +208,24 @@ def generar_hardware(peso):
             "bateria": "LiPo 6S 10000mAh",
             "voltaje": 22.2
         },
-        "sensores": [
-            "thermal",
-            "lidar",
-            "gps",
-            "imu"
-        ],
+        "sensores": ["thermal","lidar","gps","imu"],
         "peso_total": peso
     }
 
 # =========================
-# 🧱 MODELO 3D MEJORADO
-# =========================
-def generar_modelo_3d(base, peso):
-    path = os.path.join(base, "models")
-    os.makedirs(path, exist_ok=True)
-
-    escala = peso / 2
-
-    write_file(os.path.join(path, "frame.obj"),
-f"""o frame
-v {-escala} 0 {-escala}
-v {escala} 0 {-escala}
-v {escala} 0 {escala}
-v {-escala} 0 {escala}
-""")
-
-    write_file(os.path.join(path, "motor.obj"),
-f"""o motor
-v 0 0 0
-v 0 {escala} 0
-""")
-
-    return {
-        "tipo": "quad_x",
-        "escala": escala,
-        "componentes": ["frame", "motor x4"]
-    }
-
-# =========================
-# 📦 ZIP
+# ZIP
 # =========================
 def exportar_zip(path):
     zip_path = path + ".zip"
     with zipfile.ZipFile(zip_path, 'w') as zipf:
-        for root, dirs, files in os.walk(path):
+        for root, _, files in os.walk(path):
             for file in files:
                 full = os.path.join(root, file)
                 zipf.write(full, os.path.relpath(full, path))
     return zip_path
 
 # =========================
-# 🧠 CORE
+# CORE
 # =========================
 class MaiaCore:
 
@@ -297,12 +271,6 @@ class MaiaCore:
             return {"paso": 5, "data": data}
 
         elif paso == 5:
-            peso = data["hardware"]["peso_total"]
-            data["modelos_3d"] = generar_modelo_3d(data["base"], peso)
-
-            return {"paso": 6, "data": data}
-
-        elif paso == 6:
             data["zip"] = exportar_zip(data["base"])
             return {"final": True, "resultado": data}
 
@@ -312,7 +280,6 @@ class MaiaCore:
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
     req = request.get_json() or {}
-
     idea = req.get("idea", "")
     paso = int(req.get("paso", 0))
     data = req.get("data", {})

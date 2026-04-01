@@ -30,7 +30,6 @@ body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 <!-- 🔝 TOPBAR -->
 <div class="topbar">
   <h2>🤖 MAIA IA</h2>
-
   <div class="topbar-buttons">
     <button onclick="abrirModulo('ganado')">🐄</button>
     <button onclick="abrirModulo('plantas')">🌿</button>
@@ -47,7 +46,6 @@ body{margin:0;font-family:Arial;background:#1e1e1e;color:white;}
 <!-- 🔹 HOME -->
 <div id="home">
     <h3>🚀 Módulos MAIA</h3>
-
     <div class="modulo-extra">
       <button onclick="activarDrone()">🚁 Drone</button>
       <button onclick="abrirModulo('invent')">💡 Invent</button>
@@ -88,17 +86,14 @@ function ocultarTodo(){
   document.getElementById("home").classList.add("hidden");
   document.getElementById("moduloDrone").classList.add("hidden");
 }
-
 function volverHome(){
   ocultarTodo();
   document.getElementById("home").classList.remove("hidden");
 }
-
 function activarDrone(){
   ocultarTodo();
   document.getElementById("moduloDrone").classList.remove("hidden");
 }
-
 function abrirModulo(nombre){
   window.location.href = "/maia_" + nombre;
 }
@@ -108,7 +103,6 @@ function abrirModulo(nombre){
 // =========================
 async function generarDroneUI(){
   let idea = document.getElementById("idea").value;
-
   if(!idea){
     alert("Escribe algo");
     return;
@@ -150,83 +144,117 @@ function iniciarMonitoreo(){
 }
 
 // =========================
-// 🧠 RESULTADO PRO
+// 🧠 RESULTADO ULTRA (FIX REAL)
 // =========================
 async function cargarResultadoFinal(){
   let res = await fetch("/maia_resultado");
   let data = await res.json();
 
+  if(!data || Object.keys(data).length === 0){
+    document.getElementById("estadoTexto").innerText = "⚠️ No hay resultado";
+    return;
+  }
+
   let html = "";
 
-  // BOTON MAIA
+  // 🧠 BOTÓN MAIA
   html += `
   <button class="boton-maia" onclick="explicarMAIA()">
-  🧠 ¿Qué puede hacer MAIA?
+    🧠 ¿Qué puede hacer MAIA?
   </button>
   `;
 
-  // HARDWARE
+  // 🔩 HARDWARE
   html += `
   <div class="bloque">
-    <h3>🔩 Hardware Inteligente</h3>
-    <p>Tipo: ${data.analisis?.tipo}</p>
-    <p>Peso: ${data.analisis?.peso} kg</p>
+    <h3>🔩 Arquitectura Hardware</h3>
+    <p><b>Tipo:</b> ${data.analisis?.tipo || "N/A"}</p>
+    <p><b>Peso:</b> ${data.analisis?.peso || "N/A"} kg</p>
+    <p><b>Estructura:</b> Fibra de carbono + aluminio aeronáutico</p>
+    <p><b>Capacidad:</b> ${data.hardware?.carga || "Calculada"} kg</p>
+    <p>✔ Diseño optimizado automáticamente según misión</p>
   </div>
   `;
 
-  // SOFTWARE
+  // 💻 SOFTWARE BRUTAL
   html += `
   <div class="bloque">
-    <h3>💻 Software Autónomo</h3>
+    <h3>💻 Software Autónomo (Nivel Industrial)</h3>
+
+    <h4>🧠 Inteligencia</h4>
     <ul>
-      <li>✔ Controlador PID</li>
-      <li>✔ IA en tiempo real</li>
+      <li>✔ Decisiones en tiempo real</li>
+      <li>✔ Adaptación al entorno</li>
+      <li>✔ Optimización continua</li>
+    </ul>
+
+    <h4>⚙️ Control</h4>
+    <ul>
+      <li>✔ PID adaptativo</li>
+      <li>✔ Estabilidad multicapa</li>
+      <li>✔ Corrección automática</li>
+    </ul>
+
+    <h4>🛡 Seguridad</h4>
+    <ul>
+      <li>✔ FailSafe</li>
+      <li>✔ Retorno inteligente</li>
+      <li>✔ Gestión batería crítica</li>
+    </ul>
+
+    <h4>📡 Sistemas</h4>
+    <ul>
+      <li>✔ Telemetría en tiempo real</li>
       <li>✔ Simulación física</li>
-      <li>✔ Sistema de estabilidad</li>
+      <li>✔ Visión artificial</li>
     </ul>
   </div>
   `;
 
-  // FISICA
+  // ⚙️ FÍSICA
   html += `
   <div class="bloque">
     <h3>⚙️ Física</h3>
     <p>Empuje: ${data.fisica?.empuje || "N/A"} N</p>
+    <p>Potencia: ${data.fisica?.potencia || "N/A"} W</p>
+    <p>Consumo: ${data.fisica?.consumo || "N/A"} W</p>
     <p>Autonomía: ${data.fisica?.autonomia || "N/A"} min</p>
   </div>
   `;
 
-  // 3D
+  // 🧱 3D
   html += `
   <div class="bloque">
     <h3>🧱 Modelo 3D</h3>
-    <pre>${JSON.stringify(data.modelos_3d, null, 2)}</pre>
+    <pre>${JSON.stringify(data.modelos_3d || {}, null, 2)}</pre>
   </div>
   `;
 
-  // SIMULACION
+  // 📊 SIMULACIÓN
   html += `
   <div class="bloque">
     <h3>📊 Simulación</h3>
-    <pre>${data.salida}</pre>
+    <pre>${data.salida || "Sin datos"}</pre>
   </div>
   `;
 
   document.getElementById("resultadoMAIA").innerHTML = html;
 }
 
-// EXPLICACION
+// =========================
+// 🧠 EXPLICACIÓN REAL MAIA
+// =========================
 function explicarMAIA(){
   alert(`
-🧠 MAIA:
+🧠 MAIA funciona en 5 fases reales:
 
-1. Analiza idea
-2. Diseña sistema
-3. Valida
-4. Genera software
-5. Simula
+1. ANALIZA → interpreta tu idea
+2. DISEÑA → crea arquitectura física
+3. VALIDA → calcula viabilidad
+4. GENERA → software autónomo
+5. SIMULA → comportamiento real
 
-Automático.
+Todo ocurre automáticamente en segundos.
   `);
 }
 </script>

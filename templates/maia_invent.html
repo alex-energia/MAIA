@@ -1,311 +1,221 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>MAIA INVENT</title>
+<title>MAIA INDUSTRIAL</title>
 
-<!-- ✅ FIX REAL CDN (QUITÉ LOS CORCHETES QUE LO ROMPEN) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-
 <style>
-body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
-
-textarea { width:100%; height:80px; border-radius:8px; padding:10px;}
-
-button {
-    padding:10px; margin:5px;
-    border-radius:8px; border:none;
-    cursor:pointer;
-    background:#2563eb; color:white;
+body {
+    font-family: Arial;
+    background:#0f172a;
+    color:#e5e7eb;
 }
 
-.panel { background:#020617; padding:15px; border-radius:10px; margin-top:20px;}
+textarea {
+    width:100%;
+    height:80px;
+    padding:10px;
+}
+
+button {
+    padding:10px;
+    margin:5px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+.panel {
+    margin-top:20px;
+}
 
 .bloque {
-    margin-top:20px;
-    padding:15px;
     background:#020617;
-    border-radius:10px;
+    margin-top:15px;
+    padding:15px;
     border-left:4px solid #22c55e;
 }
 
-.subbloque {
-    display:none;
-    margin-top:10px;
-    padding:10px;
-    background:#111827;
-    border-radius:8px;
-}
-
-.toggle {
+.item {
+    margin-left:15px;
     cursor:pointer;
+}
+
+.codigo {
+    background:black;
+    padding:10px;
     margin-top:10px;
-    display:block;
-    font-weight:bold;
-}
-
-#barra_container {
-    width:100%;
-    background:#111;
-    margin-top:20px;
-    border-radius:10px;
     display:none;
-}
-
-#barra {
-    width:0%;
-    height:25px;
-    background:#22c55e;
-    text-align:center;
-}
-
-.boton-maia{
-    background:#facc15;
-    color:black;
-    font-weight:bold;
+    white-space:pre;
+    font-size:12px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🧠 MAIA INVENT</h1>
+<h1>🧠 MAIA INDUSTRIAL</h1>
 
 <textarea id="idea" placeholder="Describe tu drone..."></textarea>
 
-<br><br>
+<br>
 
-<button onclick="evaluar()">🚀 Generar Ingeniería</button>
-<button onclick="limpiarUI()">🧹 Limpiar</button>
-
-<div id="barra_container">
-    <div id="barra">0%</div>
-</div>
+<button onclick="evaluar()">🚀 Generar</button>
 
 <div id="resultado"></div>
 
 <script>
 
 // =========================
-// 🚀 MOTOR STEP REAL
+// MOTOR
 // =========================
 async function evaluar(){
 
-    const idea = document.getElementById("idea").value;
-    if(!idea){ alert("Ingresa una idea"); return; }
-
-    document.getElementById("barra_container").style.display = "block";
+    let idea = document.getElementById("idea").value;
 
     let paso = 0;
     let data = {};
-    let barra = document.getElementById("barra");
 
     while(true){
 
         let res = await fetch("/maia_step", {
             method:"POST",
             headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ idea, paso, data })
+            body: JSON.stringify({idea, paso, data})
         });
 
         let json = await res.json();
 
-        if(json.error){
-            alert(json.error);
-            return;
-        }
-
         if(json.final){
-            barra.style.width = "100%";
-            barra.innerText = "100%";
-            renderResultado(json.resultado);
+            render(json.resultado);
             return;
         }
 
-        paso = json.paso ?? paso + 1;
-        data = json.data ?? data;
-
-        let progreso = Math.min(95, paso * 15);
-        barra.style.width = progreso + "%";
-        barra.innerText = progreso + "%";
-
-        await new Promise(r => setTimeout(r, 300));
+        paso = json.paso;
+        data = json.data;
     }
 }
 
-
 // =========================
-// 🔽 TOGGLE REAL
+// RENDER GENERAL
 // =========================
-function toggle(id){
-    let el = document.getElementById(id);
-    el.style.display = (el.style.display === "none") ? "block" : "none";
-}
-
-
-// =========================
-// 🎯 RENDER INDUSTRIAL
-// =========================
-function renderResultado(data){
+function render(data){
 
     let html = `<div class="panel">`;
 
-    html += `<button class="boton-maia" onclick="explicarMAIA()">🧠 MAIA ENGINE</button>`;
-
-
-    // 🔩 HARDWARE
-    html += `
-    <div class="bloque">
-        <h3>🔩 Hardware</h3>
-
-        <span class="toggle" onclick="toggle('hw1')">▶ Componentes</span>
-        <div id="hw1" class="subbloque">
-            ${Object.entries(data.hardware || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
-        </div>
-
-        <span class="toggle" onclick="toggle('hw2')">▶ Ingeniería</span>
-        <div id="hw2" class="subbloque">
-            ${Object.entries(data.analisis_pro || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
-        </div>
-    </div>
-    `;
-
-
-    // 📦 BOM
-    html += `
-    <div class="bloque">
-        <h3>📦 BOM</h3>
-        <div class="subbloque" style="display:block;">
-            ${(data.bom || []).map(i => `<p>• ${i}</p>`).join("")}
-        </div>
-    </div>
-    `;
-
-
-    // 💻 SOFTWARE
-    html += `
-    <div class="bloque">
-        <h3>💻 Software</h3>
-
-        <span class="toggle" onclick="toggle('sw1')">▶ Control</span>
-        <div id="sw1" class="subbloque">
-            <p>${data.software?.control || "N/A"}</p>
-        </div>
-
-        <span class="toggle" onclick="toggle('sw2')">▶ Algoritmos</span>
-        <div id="sw2" class="subbloque">
-            ${(data.software?.algoritmos || []).map(a => `<p>• ${a}</p>`).join("")}
-        </div>
-
-        <span class="toggle" onclick="toggle('sw3')">▶ IA</span>
-        <div id="sw3" class="subbloque">
-            <p>${data.software?.ia || "N/A"}</p>
-        </div>
-
-    </div>
-    `;
-
-
-    // ⚙️ FISICA
-    html += `
-    <div class="bloque">
-        <h3>⚙️ Física</h3>
-        ${Object.entries(data.fisica || {}).map(([k,v]) => `<p><b>${k}:</b> ${v}</p>`).join("")}
-    </div>
-    `;
-
-
-    // ⚠️ RIESGOS
-    html += `
-    <div class="bloque">
-        <h3>⚠️ Riesgos</h3>
-        ${(data.riesgos || []).map(r => `<p>⚠️ ${r}</p>`).join("")}
-    </div>
-    `;
-
-
-    // 🧱 3D
-    html += `
-    <div class="bloque">
-        <h3>🧱 Modelo 3D</h3>
-        <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
-    </div>
-    `;
-
-
-    // 📦 EXPORT
-    html += `
-    <div class="bloque">
-        <h3>📦 Proyecto Exportado</h3>
-        <p>${data.zip || "No generado"}</p>
-    </div>
-    `;
+    html += renderHardware(data.hardware);
+    html += renderSoftware(data.software);
+    html += renderFisica(data.fisica);
+    html += renderRiesgos(data.riesgos);
 
     html += `</div>`;
 
     document.getElementById("resultado").innerHTML = html;
-
-    setTimeout(render3D, 200);
 }
 
+// =========================
+// 🔩 HARDWARE REAL
+// =========================
+function renderHardware(hw){
+
+    let html = `<div class="bloque"><h3>🔩 Hardware</h3>`;
+
+    html += renderObject(hw);
+
+    html += `</div>`;
+    return html;
+}
 
 // =========================
-// 🧊 3D
+// 💻 SOFTWARE TIPO VS CODE
 // =========================
-function render3D(){
+function renderSoftware(sw){
 
-    const canvas = document.getElementById("viewer3d");
-    if(!canvas || typeof THREE === "undefined") return;
+    let html = `<div class="bloque"><h3>💻 Software</h3>`;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth/400, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+    for(let archivo in sw){
 
-    renderer.setSize(canvas.clientWidth,400);
+        let id = "code_" + Math.random();
 
-    scene.add(new THREE.AmbientLight(0xffffff,0.7));
-
-    let body = new THREE.Mesh(
-        new THREE.BoxGeometry(1.5,0.3,1.5),
-        new THREE.MeshStandardMaterial({color:0x00ffaa})
-    );
-
-    scene.add(body);
-
-    camera.position.z = 5;
-
-    function animate(){
-        requestAnimationFrame(animate);
-        scene.rotation.y += 0.01;
-        renderer.render(scene,camera);
+        html += `
+        <div class="item" onclick="toggle('${id}')">
+            📄 ${archivo}
+        </div>
+        <div id="${id}" class="codigo">${escapeHtml(sw[archivo])}</div>
+        `;
     }
 
-    animate();
+    html += `</div>`;
+    return html;
 }
 
+// =========================
+// ⚙️ FISICA
+// =========================
+function renderFisica(f){
 
-// =========================
-// 🧠 EXPLICACION
-// =========================
-function explicarMAIA(){
-    alert(`MAIA ejecuta:
-1. Ingeniería hardware
-2. Software autónomo
-3. Física real
-4. Evaluación de riesgos
-5. Modelo 3D
-6. Exportación completa`);
+    let html = `<div class="bloque"><h3>⚙️ Física</h3>`;
+    html += renderObject(f);
+    html += `</div>`;
+    return html;
 }
 
+// =========================
+// ⚠️ RIESGOS
+// =========================
+function renderRiesgos(r){
+
+    let html = `<div class="bloque"><h3>⚠️ Riesgos</h3>`;
+
+    r.forEach(x=>{
+        html += `<div class="item">⚠️ ${x}</div>`;
+    });
+
+    html += `</div>`;
+    return html;
+}
 
 // =========================
-// 🧹 LIMPIAR
+// 🔁 RENDER PROFUNDO (CLAVE)
 // =========================
-function limpiarUI(){
-    document.getElementById("idea").value = "";
-    document.getElementById("resultado").innerHTML = "";
-    document.getElementById("barra_container").style.display = "none";
+function renderObject(obj){
+
+    let html = "";
+
+    for(let key in obj){
+
+        let val = obj[key];
+
+        if(typeof val === "object"){
+
+            html += `<div class="item">▶ ${key}</div>`;
+            html += `<div class="item">${renderObject(val)}</div>`;
+
+        }else{
+            html += `<div class="item">${key}: ${val}</div>`;
+        }
+    }
+
+    return html;
+}
+
+// =========================
+// TOGGLE
+// =========================
+function toggle(id){
+    let el = document.getElementById(id);
+    el.style.display = el.style.display === "block" ? "none" : "block";
+}
+
+// =========================
+// ESCAPE
+// =========================
+function escapeHtml(text){
+    return text
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 </script>

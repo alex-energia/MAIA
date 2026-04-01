@@ -6,8 +6,6 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
 
 <style>
 body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
@@ -74,92 +72,92 @@ pre {
 
 <script>
 
+// =========================
+// 🚀 MOTOR REAL (STEP)
+// =========================
 async function evaluar(){
+
     const idea = document.getElementById("idea").value;
     if(!idea){ alert("Ingresa una idea"); return; }
 
     document.getElementById("barra_container").style.display = "block";
 
+    let paso = 0;
+    let data = {};
     let barra = document.getElementById("barra");
 
-    try{
-        let res = await fetch("/maia_resultado");
-        let data = await res.json();
+    while(true){
 
-        barra.style.width = "100%";
-        barra.innerText = "100%";
+        let res = await fetch("/maia_step", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ idea, paso, data })
+        });
 
-        renderResultado(data);
+        let json = await res.json();
 
-    }catch(e){
-        alert("Error backend");
-        console.error(e);
+        if(json.error){
+            alert(json.error);
+            return;
+        }
+
+        paso = json.paso ?? paso + 1;
+        data = json.data ?? data;
+
+        let progreso = Math.min(95, paso * 15);
+        barra.style.width = progreso + "%";
+        barra.innerText = progreso + "%";
+
+        if(json.final){
+            barra.style.width = "100%";
+            barra.innerText = "100%";
+            renderResultado(json.resultado);
+            return;
+        }
+
+        await new Promise(r => setTimeout(r, 300));
     }
 }
 
-function renderResultado(data){
 
-    // 🔥 FALLBACK (SI BACKEND FALLA)
-    data = data || {};
-    data.analisis = data.analisis || {tipo:"Drone autónomo", peso:12};
-    data.fisica = data.fisica || {empuje:120, autonomia:35};
-    data.modelos_3d = data.modelos_3d || {estructura:"quad frame"};
-    data.salida = data.salida || "Simulación generada";
+// =========================
+// 🎯 RESULTADO COMPLETO
+// =========================
+function renderResultado(data){
 
     let html = `<div class="panel">`;
 
-    // 🔥 BOTON MAIA
-    html += `
-    <button class="boton-maia" onclick="explicarMAIA()">
-    🧠 ¿Qué puede hacer MAIA?
-    </button>
-    `;
+    html += `<button class="boton-maia" onclick="explicarMAIA()">🧠 ¿Qué puede hacer MAIA?</button>`;
 
-    // 🔩 HARDWARE
+    // 🔩 HARDWARE (REAL)
     html += `
     <div class="bloque">
-    <h3>🔩 Hardware Inteligente</h3>
-    <p><b>Tipo:</b> ${data.analisis.tipo}</p>
-    <p><b>Peso:</b> ${data.analisis.peso} kg</p>
-    <p>✔ Estructura optimizada con materiales compuestos</p>
-    <p>✔ Sistema modular adaptable</p>
-    <p>✔ Motores brushless de alta eficiencia</p>
+    <h3>🔩 Hardware</h3>
+    <pre>${JSON.stringify(data.analisis_pro || {}, null, 2)}</pre>
     </div>
     `;
 
-    // 💻 SOFTWARE (BRUTAL)
+    // 💻 SOFTWARE (REAL)
     html += `
     <div class="bloque">
-    <h3>💻 Software Autónomo</h3>
-    <ul>
-    <li>✔ Control PID adaptativo en tiempo real</li>
-    <li>✔ IA predictiva de estabilidad</li>
-    <li>✔ Sistema FailSafe automático</li>
-    <li>✔ Optimización energética dinámica</li>
-    <li>✔ Motor de decisiones basado en entorno</li>
-    <li>✔ Integración con visión artificial</li>
-    </ul>
+    <h3>💻 Software</h3>
+    <pre>${JSON.stringify(data.software || {}, null, 2)}</pre>
     </div>
     `;
 
     // ⚙️ FISICA
     html += `
     <div class="bloque">
-    <h3>⚙️ Física Avanzada</h3>
-    <p><b>Empuje:</b> ${data.fisica.empuje} N</p>
-    <p><b>Autonomía:</b> ${data.fisica.autonomia} min</p>
-    <p>✔ Simulación de fuerzas reales</p>
-    <p>✔ Control dinámico de masa</p>
+    <h3>⚙️ Física</h3>
+    <pre>${JSON.stringify(data.fisica || {}, null, 2)}</pre>
     </div>
     `;
 
-    // 🤖 IA
+    // ⚠️ RIESGOS
     html += `
     <div class="bloque">
-    <h3>🤖 Inteligencia Artificial</h3>
-    <p>✔ Toma decisiones en tiempo real</p>
-    <p>✔ Analiza entorno</p>
-    <p>✔ Aprende patrones de vuelo</p>
+    <h3>⚠️ Riesgos</h3>
+    <pre>${JSON.stringify(data.validacion || {}, null, 2)}</pre>
     </div>
     `;
 
@@ -167,15 +165,16 @@ function renderResultado(data){
     html += `
     <div class="bloque">
     <h3>🧱 Modelo 3D</h3>
+    <pre>${JSON.stringify(data.modelos_3d || {}, null, 2)}</pre>
     <canvas id="viewer3d" style="width:100%; height:400px;"></canvas>
     </div>
     `;
 
-    // 📊 SIMULACION
+    // 📦 ZIP
     html += `
     <div class="bloque">
-    <h3>📊 Simulación</h3>
-    <pre>${data.salida}</pre>
+    <h3>📦 Proyecto Exportado</h3>
+    <pre>${data.zip || "No generado"}</pre>
     </div>
     `;
 
@@ -186,7 +185,10 @@ function renderResultado(data){
     setTimeout(render3D, 200);
 }
 
-// 🔥 3D MEJORADO
+
+// =========================
+// 🧊 3D
+// =========================
 function render3D(){
     const canvas = document.getElementById("viewer3d");
     if(!canvas || typeof THREE === "undefined") return;
@@ -198,14 +200,12 @@ function render3D(){
 
     scene.add(new THREE.AmbientLight(0xffffff,0.7));
 
-    // cuerpo
     let body = new THREE.Mesh(
         new THREE.BoxGeometry(1.5,0.3,1.5),
         new THREE.MeshStandardMaterial({color:0x00ffaa})
     );
     scene.add(body);
 
-    // brazos + motores
     for(let i=0;i<4;i++){
         let angle = i*Math.PI/2;
 
@@ -220,7 +220,6 @@ function render3D(){
             new THREE.CylinderGeometry(0.25,0.25,0.3,16),
             new THREE.MeshStandardMaterial({color:0xff0000})
         );
-
         motor.position.set(Math.cos(angle)*1,0.2,Math.sin(angle)*1);
         scene.add(motor);
     }
@@ -232,23 +231,32 @@ function render3D(){
         scene.rotation.y += 0.01;
         renderer.render(scene,camera);
     }
+
     animate();
 }
 
-// 🧠 EXPLICACION REAL
+
+// =========================
+// 🧠 EXPLICACION
+// =========================
 function explicarMAIA(){
-    alert(`MAIA funciona así:
+    alert(`MAIA ejecuta:
 
-1. Analiza tu idea
-2. Diseña arquitectura del drone
+1. Analiza idea
+2. Diseña arquitectura
 3. Calcula física real
-4. Genera software autónomo
-5. Integra inteligencia artificial
-6. Simula comportamiento real
+4. Genera software completo
+5. Evalúa riesgos
+6. Genera modelo 3D
+7. Exporta proyecto
 
-Todo automático y optimizado.`);
+Sistema autónomo avanzado.`);
 }
 
+
+// =========================
+// 🧹 LIMPIAR
+// =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";
     document.getElementById("resultado").innerHTML = "";

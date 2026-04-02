@@ -3,7 +3,7 @@
 <head>
 <title>MAIA INDUSTRIAL</title>
 
-<!-- ✅ FIX THREE -->
+<!-- THREE LOCAL FIX (si falla CDN no rompe) -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
@@ -28,13 +28,10 @@ button {
     cursor:pointer;
 }
 
-.btn-danger{
-    background:#ef4444;
-}
+.btn-danger{ background:#ef4444; }
+.btn-info{ background:#0ea5e9; }
 
-.panel {
-    margin-top:20px;
-}
+.panel { margin-top:20px; }
 
 .bloque {
     background:#020617;
@@ -57,12 +54,37 @@ button {
     font-size:12px;
 }
 
-.folder {
-    color:#38bdf8;
+.folder { color:#38bdf8; }
+.file { color:#22c55e; }
+
+/* 🔥 PROGRESO */
+.progress {
+    width:100%;
+    background:#1e293b;
+    margin-top:10px;
 }
 
-.file {
-    color:#22c55e;
+.progress-bar {
+    height:10px;
+    width:0%;
+    background:#22c55e;
+}
+
+/* 🔥 MODAL */
+.modal {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    display:none;
+    padding:40px;
+}
+
+.modal-content {
+    background:#020617;
+    padding:20px;
 }
 </style>
 </head>
@@ -75,8 +97,23 @@ button {
 
 <button onclick="evaluar()">🚀 Generar</button>
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
+<button class="btn-info" onclick="abrirInfo()">🧠 ¿Qué puede hacer MAIA?</button>
+
+<!-- 🔥 PROGRESO -->
+<div class="progress">
+    <div id="bar" class="progress-bar"></div>
+</div>
 
 <div id="resultado"></div>
+
+<!-- 🔥 MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h2>🚀 Capacidades MAIA</h2>
+        <div id="capacidades"></div>
+        <button onclick="cerrarInfo()">Cerrar</button>
+    </div>
+</div>
 
 <script>
 
@@ -84,18 +121,17 @@ button {
 // MOTOR
 // =========================
 async function evaluar(){
-
     let idea = document.getElementById("idea").value;
-
-    if(!idea){
-        alert("Ingresa una idea");
-        return;
-    }
+    if(!idea){ alert("Ingresa una idea"); return; }
 
     let paso = 0;
     let data = {};
+    let progreso = 0;
 
     while(true){
+
+        progreso += 15;
+        actualizarBarra(progreso);
 
         let res = await fetch("/maia_step", {
             method:"POST",
@@ -111,7 +147,9 @@ async function evaluar(){
         }
 
         if(json.final){
+            actualizarBarra(100);
             render(json.resultado);
+            actualizarCapacidades(json.resultado);
             return;
         }
 
@@ -121,11 +159,19 @@ async function evaluar(){
 }
 
 // =========================
+// PROGRESO
+// =========================
+function actualizarBarra(p){
+    document.getElementById("bar").style.width = p + "%";
+}
+
+// =========================
 // LIMPIAR
 // =========================
 function limpiarUI(){
     document.getElementById("idea").value = "";
     document.getElementById("resultado").innerHTML = "";
+    actualizarBarra(0);
 }
 
 // =========================
@@ -135,10 +181,15 @@ function render(data){
 
     let html = `<div class="panel">`;
 
-    html += renderHardware(data.hardware);
-    html += renderSoftware(data.software);
-    html += renderFisica(data.fisica);
-    html += renderRiesgos(data.riesgos);
+    html += renderBloque("🧠 Viabilidad", data.viabilidad);
+    html += renderBloque("🔩 Hardware", data.hardware);
+    html += renderBloque("📦 BOM", data.bom);
+    html += renderBloque("💻 Software", data.software);
+    html += renderBloque("📡 Comunicaciones", data.comunicaciones);
+    html += renderBloque("📡 Telemetría", data.telemetria);
+    html += renderBloque("⚙️ Física", data.fisica);
+    html += renderBloque("⚠️ Riesgos", data.riesgos);
+    html += renderBloque("🧱 Modelo 3D", data.modelos_3d);
 
     html += `</div>`;
 
@@ -146,52 +197,20 @@ function render(data){
 }
 
 // =========================
-// 🔩 HARDWARE INDUSTRIAL
+// BLOQUE UNIVERSAL
 // =========================
-function renderHardware(hw){
+function renderBloque(titulo, data){
 
-    let html = `<div class="bloque"><h3>🔩 Hardware</h3>`;
-    html += renderTree(hw);
-    html += `</div>`;
+    if(!data) return "";
 
-    return html;
-}
+    let html = `<div class="bloque"><h3>${titulo}</h3>`;
 
-// =========================
-// 💻 SOFTWARE INDUSTRIAL (TIPO IDE)
-// =========================
-function renderSoftware(sw){
-
-    let html = `<div class="bloque"><h3>💻 Software</h3>`;
-    html += renderTree(sw);
-    html += `</div>`;
-
-    return html;
-}
-
-// =========================
-// ⚙️ FISICA
-// =========================
-function renderFisica(f){
-
-    let html = `<div class="bloque"><h3>⚙️ Física</h3>`;
-    html += renderTree(f);
-    html += `</div>`;
-
-    return html;
-}
-
-// =========================
-// ⚠️ RIESGOS
-// =========================
-function renderRiesgos(r){
-
-    let html = `<div class="bloque"><h3>⚠️ Riesgos</h3>`;
-
-    if(Array.isArray(r)){
-        r.forEach(x=>{
-            html += `<div class="item">⚠️ ${x}</div>`;
+    if(Array.isArray(data)){
+        data.forEach(x=>{
+            html += `<div class="item">• ${escapeHtml(x)}</div>`;
         });
+    }else{
+        html += renderTree(data);
     }
 
     html += `</div>`;
@@ -199,9 +218,9 @@ function renderRiesgos(r){
 }
 
 // =========================
-// 🌳 RENDER TREE (CLAVE INDUSTRIAL)
+// TREE INDUSTRIAL
 // =========================
-function renderTree(obj, nivel = 0){
+function renderTree(obj){
 
     let html = "";
 
@@ -217,7 +236,7 @@ function renderTree(obj, nivel = 0){
                 📁 ${key}
             </div>
             <div id="${id}" style="display:none; margin-left:15px;">
-                ${renderTree(val, nivel + 1)}
+                ${renderTree(val)}
             </div>
             `;
 
@@ -227,9 +246,7 @@ function renderTree(obj, nivel = 0){
             <div class="item file" onclick="toggle('${id}')">
                 📄 ${key}
             </div>
-            <pre id="${id}" class="codigo">
-${escapeHtml(val)}
-            </pre>
+            <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>
             `;
         }
     }
@@ -247,7 +264,7 @@ function toggle(id){
 }
 
 // =========================
-// ESCAPE (FIX ERROR CRÍTICO)
+// ESCAPE
 // =========================
 function escapeHtml(text){
 
@@ -265,7 +282,39 @@ function escapeHtml(text){
         .replace(/>/g,"&gt;");
 }
 
-</script>
+// =========================
+// MODAL
+// =========================
+function abrirInfo(){
+    document.getElementById("modal").style.display = "block";
+}
 
+function cerrarInfo(){
+    document.getElementById("modal").style.display = "none";
+}
+
+// =========================
+// CAPACIDADES DINÁMICAS
+// =========================
+function actualizarCapacidades(data){
+
+    let capacidades = [];
+
+    if(data.hardware) capacidades.push("Diseño de hardware aeronáutico");
+    if(data.software) capacidades.push("Arquitectura de software autónomo");
+    if(data.fisica) capacidades.push("Simulación física realista");
+    if(data.comunicaciones) capacidades.push("Sistemas de comunicación dron-control");
+    if(data.telemetria) capacidades.push("Monitoreo en tiempo real");
+    if(data.modelos_3d) capacidades.push("Generación de modelos 3D");
+
+    let html = "";
+    capacidades.forEach(c=>{
+        html += `<div>✔ ${c}</div>`;
+    });
+
+    document.getElementById("capacidades").innerHTML = html;
+}
+
+</script>
 </body>
 </html>

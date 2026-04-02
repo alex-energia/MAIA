@@ -3,7 +3,7 @@
 <head>
 <title>MAIA INDUSTRIAL</title>
 
-<!-- 🔥 THREE REAL -->
+<!-- ✅ FIX REAL THREE -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
@@ -74,24 +74,6 @@ button {
     margin-top:5px;
 }
 
-/* MODAL */
-.modal {
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.85);
-    display:none;
-    padding:40px;
-}
-
-.modal-content {
-    background:#020617;
-    padding:20px;
-    max-width:800px;
-}
-
 /* 3D */
 #viewer3d{
     width:100%;
@@ -112,22 +94,13 @@ button {
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 <button class="btn-info" onclick="abrirInfo()">🧠 ¿Qué puede hacer MAIA?</button>
 
-<!-- PROGRESO -->
 <div class="progress">
     <div id="bar" class="progress-bar">0%</div>
 </div>
+
 <div id="progressText" class="progress-text">Esperando...</div>
 
 <div id="resultado"></div>
-
-<!-- MODAL -->
-<div id="modal" class="modal">
-    <div class="modal-content">
-        <h2>🚀 Capacidades MAIA NIVEL 3</h2>
-        <div id="capacidades"></div>
-        <button onclick="cerrarInfo()">Cerrar</button>
-    </div>
-</div>
 
 <script>
 
@@ -135,7 +108,6 @@ button {
 // MOTOR
 // =========================
 async function evaluar(){
-
     let idea = document.getElementById("idea").value;
     if(!idea){ alert("Ingresa una idea"); return; }
 
@@ -169,7 +141,6 @@ async function evaluar(){
         if(json.final){
             actualizarBarra(100, "Completado");
             render(json.resultado);
-            actualizarCapacidades(json.resultado);
             return;
         }
 
@@ -207,18 +178,17 @@ function render(data){
     html += `<div class="bloque"><h2>🚀 ${data.nivel_maia || "NIVEL 1"}</h2></div>`;
 
     html += renderBloque("🧠 Viabilidad", data.viabilidad);
-    html += renderBloque("🔩 Hardware", data.hardware);
-    html += renderBloque("💻 Software", data.software);
+    html += renderBloque("🔩 Hardware", data.hardware, true);
+    html += renderBloque("💻 Software", data.software, true);
     html += renderBloque("📡 Comunicaciones", data.comunicaciones);
     html += renderBloque("📡 Telemetría", data.telemetria);
     html += renderBloque("⚙️ Física", data.fisica);
     html += renderBloque("⚠️ Riesgos", data.riesgos);
 
-    // 🔥 MODELO 3D + VISOR
     if(data.modelo_3d){
         html += `<div class="bloque">
             <h3>🧱 Modelo 3D</h3>
-            ${renderTree(data.modelo_3d)}
+            ${renderTree(data.modelo_3d,0,true)}
             <div id="viewer3d"></div>
         </div>`;
     }
@@ -227,7 +197,6 @@ function render(data){
 
     document.getElementById("resultado").innerHTML = html;
 
-    // iniciar 3D
     if(data.modelo_3d){
         iniciar3D();
     }
@@ -236,37 +205,61 @@ function render(data){
 // =========================
 // BLOQUES
 // =========================
-function renderBloque(titulo, data){
+function renderBloque(titulo, data, expandir=false){
     if(!data) return "";
+
     let html = `<div class="bloque"><h3>${titulo}</h3>`;
+
     if(Array.isArray(data)){
         data.forEach(x=>{
             html += `<div class="item">• ${escapeHtml(x)}</div>`;
         });
     }else{
-        html += renderTree(data);
+        html += renderTree(data, 0, expandir);
     }
+
     html += `</div>`;
     return html;
 }
 
 // =========================
-// TREE
+// TREE MEJORADO
 // =========================
-function renderTree(obj){
+function renderTree(obj, nivel=0, expandir=false){
+
     let html = "";
+
     for(let key in obj){
+
         let val = obj[key];
         let id = "node_" + Math.random();
+
+        let autoOpen = expandir && nivel < 1;
+
         if(typeof val === "object" && val !== null){
-            html += `<div class="item folder" onclick="toggle('${id}')">📁 ${key}</div>
-            <div id="${id}" style="display:none;margin-left:15px;">
-            ${renderTree(val)}</div>`;
+
+            html += `
+            <div class="item folder" onclick="toggle('${id}')">
+                📁 ${key}
+            </div>
+
+            <div id="${id}" style="display:${autoOpen ? 'block':'none'}; margin-left:15px;">
+                ${renderTree(val, nivel+1, expandir)}
+            </div>
+            `;
+
         }else{
-            html += `<div class="item file" onclick="toggle('${id}')">📄 ${key}</div>
-            <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>`;
+
+            html += `
+            <div class="item file" onclick="toggle('${id}')">
+                📄 ${key}
+            </div>
+
+            <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>
+            `;
         }
     }
+
     return html;
 }
 
@@ -284,37 +277,47 @@ function toggle(id){
 // =========================
 function escapeHtml(text){
     if(typeof text !== "string"){
-        try{return JSON.stringify(text,null,2);}catch(e){return "N/A";}
+        try{ return JSON.stringify(text,null,2); }
+        catch(e){ return "N/A"; }
     }
-    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    return text
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
 }
 
 // =========================
-// 🔥 VISOR 3D REAL
+// 3D FIX SEGURO
 // =========================
 function iniciar3D(){
+
+    if(typeof THREE === "undefined"){
+        console.warn("THREE no cargó");
+        return;
+    }
 
     let container = document.getElementById("viewer3d");
 
     let scene = new THREE.Scene();
     let camera = new THREE.PerspectiveCamera(75, container.clientWidth / 300, 0.1, 1000);
-    let renderer = new THREE.WebGLRenderer();
 
+    let renderer = new THREE.WebGLRenderer();
     renderer.setSize(container.clientWidth, 300);
+
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
     let geometry = new THREE.BoxGeometry(2,0.2,2);
     let material = new THREE.MeshBasicMaterial({wireframe:true});
-    let cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    let drone = new THREE.Mesh(geometry, material);
 
+    scene.add(drone);
     camera.position.z = 5;
 
     function animate(){
         requestAnimationFrame(animate);
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+        drone.rotation.x += 0.01;
+        drone.rotation.y += 0.01;
         renderer.render(scene,camera);
     }
 
@@ -322,31 +325,13 @@ function iniciar3D(){
 }
 
 // =========================
-// MODAL
+// MODAL (sin romper)
 // =========================
 function abrirInfo(){
-    document.getElementById("modal").style.display="block";
-}
-
-function cerrarInfo(){
-    document.getElementById("modal").style.display="none";
-}
-
-// =========================
-// CAPACIDADES
-// =========================
-function actualizarCapacidades(data){
-    document.getElementById("capacidades").innerHTML = `
-    <p><b>MAIA NIVEL 3:</b> Plataforma de ingeniería autónoma completa.</p>
-    <p>✔ Diseño aeronáutico</p>
-    <p>✔ Software autónomo</p>
-    <p>✔ Simulación física</p>
-    <p>✔ Comunicaciones reales</p>
-    <p>✔ Telemetría industrial</p>
-    <p>✔ Modelado 3D</p>
-    `;
+    alert("MAIA diseña sistemas autónomos completos nivel industrial.");
 }
 
 </script>
+
 </body>
 </html>

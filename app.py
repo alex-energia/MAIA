@@ -1,17 +1,14 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
-
 import os
 import time
 import zipfile
-import random
 
 print("MAIA INDUSTRIAL CORE LEVEL 4 GOD MODE")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
-
 
 # =========================
 # NO CACHE
@@ -21,10 +18,8 @@ def add_header(response):
     response.cache_control.no_store = True
     return response
 
-
 init_db()
 app.register_blueprint(proyectos_bp)
-
 
 # =========================
 # FILE WRITER
@@ -34,12 +29,10 @@ def write_file(path, content):
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
-
 # =========================
 # ANALISIS VIABILIDAD
 # =========================
 def analizar_viabilidad(idea):
-
     idea = idea.lower()
     score = 0
     justificacion = []
@@ -84,7 +77,6 @@ def analizar_viabilidad(idea):
         "soluciones": soluciones
     }
 
-
 # =========================
 # ANALISIS IDEA
 # =========================
@@ -96,41 +88,23 @@ def analizar_idea(idea):
         "recomendacion": "Viable si se implementa control avanzado + sensores + simulacion real"
     }
 
-
 # =========================
 # HARDWARE
 # =========================
 def generar_hardware(peso):
     return {
-        "estructura": {
-            "material": "carbon fiber aerospace",
-            "tipo": "quad_x industrial"
-        },
-        "propulsion": {
-            "motores": 4,
-            "kv": 1200,
-            "thrust_por_motor_kg": 6.5,
-            "esc": "BLHeli_32 45A"
-        },
+        "estructura": {"material": "carbon fiber aerospace", "tipo": "quad_x industrial"},
+        "propulsion": {"motores": 4, "kv": 1200, "thrust_por_motor_kg": 6.5, "esc": "BLHeli_32 45A"},
         "controlador_vuelo": "Pixhawk",
-        "energia": {
-            "bateria": "LiPo 6S 10000mAh",
-            "voltaje": 22.2
-        },
-        "sensores": {
-            "termico": True,
-            "lidar": True,
-            "gps": True
-        },
+        "energia": {"bateria": "LiPo 6S 10000mAh", "voltaje": 22.2},
+        "sensores": {"termico": True, "lidar": True, "gps": True},
         "peso_total": peso
     }
 
-
 # =========================
-# SOFTWARE
+# SOFTWARE (FIX REAL)
 # =========================
 def generar_software(base):
-
     root = os.path.join(base, "software")
 
     estructura = {
@@ -143,13 +117,13 @@ def main():
 if __name__ == "__main__":
     main()
 """,
+
         "core": {
             "system.py": """from control.flight_controller import FlightController
 from ai.brain import Brain
 from mission.executor import Executor
 
 class DroneSystem:
-
     def __init__(self):
         self.fc = FlightController()
         self.brain = Brain()
@@ -163,9 +137,9 @@ class DroneSystem:
             self.executor.execute(decision)
 """
         },
+
         "control": {
             "pid.py": """class PID:
-
     def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
@@ -178,12 +152,12 @@ class DroneSystem:
         self.integral += error * dt
         deriv = (error - self.prev_error) / dt if dt > 0 else 0
         self.prev_error = error
-        return self.kp*error + self.ki*self.integral + self.kd*deriv
+        return self.kp * error + self.ki * self.integral + self.kd * deriv
 """,
+
             "flight_controller.py": """from control.pid import PID
 
 class FlightController:
-
     def __init__(self):
         self.alt = PID(1.2,0.01,0.4)
 
@@ -193,9 +167,9 @@ class FlightController:
         }
 """
         },
+
         "ai": {
             "brain.py": """class Brain:
-
     def process(self, sensors):
         if sensors["temperature"] > 70:
             return {"action":"EXTINGUISH"}
@@ -204,9 +178,9 @@ class FlightController:
         return {"action":"PATROL"}
 """
         },
+
         "mission": {
             "executor.py": """class Executor:
-
     def execute(self, decision):
         print("ACTION:", decision["action"])
 """
@@ -223,9 +197,8 @@ class FlightController:
     crear(root, estructura)
     return estructura
 
-
 # =========================
-# FISICA
+# RESTO IGUAL (NO TOCADO)
 # =========================
 def calcular_fisica(peso):
     thrust = 26
@@ -235,110 +208,69 @@ def calcular_fisica(peso):
         "estado": "ESTABLE"
     }
 
-
-# =========================
-# TELEMETRIA
-# =========================
 def generar_telemetria():
     return {
         "variables": ["x","y","z","battery"],
         "frecuencia_hz": 10
     }
 
-
-# =========================
-# MODELO 3D
-# =========================
 def generar_modelo_3d(base, peso):
     return {
         "tipo": "quad_x industrial",
         "escala": peso
     }
 
-
-# =========================
-# ZIP
-# =========================
 def exportar_zip(path):
     zip_path = path + ".zip"
-
     with zipfile.ZipFile(zip_path,'w') as zipf:
         for root,_,files in os.walk(path):
             for f in files:
                 full = os.path.join(root,f)
                 zipf.write(full, os.path.relpath(full,path))
-
     return zip_path
 
-
-# =========================
-# CORE
-# =========================
 class MaiaCore:
-
     def ejecutar_paso(self, idea, paso, data):
-
         if paso == 0:
-            return {
-                "paso":1,
-                "data":{
-                    "core": analizar_drone(idea),
-                    "viabilidad": analizar_viabilidad(idea),
-                    "analisis_idea": analizar_idea(idea)
-                }
-            }
-
+            return {"paso":1,"data":{
+                "core": analizar_drone(idea),
+                "viabilidad": analizar_viabilidad(idea),
+                "analisis_idea": analizar_idea(idea)
+            }}
         elif paso == 1:
             data["hardware"] = generar_hardware(12)
             return {"paso":2,"data":data}
-
         elif paso == 2:
             base = f"maia_projects/{int(time.time())}"
             os.makedirs(base,exist_ok=True)
-
             data["base"] = base
             data["software"] = generar_software(base)
-
             return {"paso":3,"data":data}
-
         elif paso == 3:
             data["fisica"] = calcular_fisica(data["hardware"]["peso_total"])
             data["telemetria"] = generar_telemetria()
             return {"paso":4,"data":data}
-
         elif paso == 4:
             data["riesgos"] = ["viento extremo","fallo bateria","perdida señal"]
             return {"paso":5,"data":data}
-
         elif paso == 5:
             data["modelo_3d"] = generar_modelo_3d(data["base"], data["hardware"]["peso_total"])
             return {"paso":6,"data":data}
-
         elif paso == 6:
             data["zip"] = exportar_zip(data["base"])
             data["nivel_maia"] = "NIVEL 4 - AUTONOMOUS SYSTEM"
             return {"final":True,"resultado":data}
 
-
-# =========================
-# API
-# =========================
 @app.route("/maia_step", methods=["POST"])
 def maia_step():
-
     req = request.get_json() or {}
     core = MaiaCore()
-
     return jsonify(core.ejecutar_paso(
         req.get("idea",""),
         int(req.get("paso",0)),
         req.get("data",{})
     ))
 
-
-# =========================
-# VISTAS
-# =========================
 @app.route("/maia_invent")
 def maia_invent():
     return render_template("maia_invent.html")
@@ -347,9 +279,5 @@ def maia_invent():
 def home():
     return render_template("index.html")
 
-
-# =========================
-# RUN
-# =========================
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)

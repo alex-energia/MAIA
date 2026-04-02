@@ -3,7 +3,8 @@
 <head>
 <title>MAIA INDUSTRIAL</title>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<!-- ✅ FIX THREE -->
+<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
 body {
@@ -25,6 +26,10 @@ button {
     color:white;
     border:none;
     cursor:pointer;
+}
+
+.btn-danger{
+    background:#ef4444;
 }
 
 .panel {
@@ -51,6 +56,14 @@ button {
     white-space:pre;
     font-size:12px;
 }
+
+.folder {
+    color:#38bdf8;
+}
+
+.file {
+    color:#22c55e;
+}
 </style>
 </head>
 
@@ -58,11 +71,10 @@ button {
 
 <h1>🧠 MAIA INDUSTRIAL</h1>
 
-<textarea id="idea" placeholder="Describe tu drone..."></textarea>
-
-<br>
+<textarea id="idea" placeholder="Describe tu drone..."></textarea><br>
 
 <button onclick="evaluar()">🚀 Generar</button>
+<button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 
 <div id="resultado"></div>
 
@@ -74,6 +86,11 @@ button {
 async function evaluar(){
 
     let idea = document.getElementById("idea").value;
+
+    if(!idea){
+        alert("Ingresa una idea");
+        return;
+    }
 
     let paso = 0;
     let data = {};
@@ -88,6 +105,11 @@ async function evaluar(){
 
         let json = await res.json();
 
+        if(json.error){
+            alert(json.error);
+            return;
+        }
+
         if(json.final){
             render(json.resultado);
             return;
@@ -96,6 +118,14 @@ async function evaluar(){
         paso = json.paso;
         data = json.data;
     }
+}
+
+// =========================
+// LIMPIAR
+// =========================
+function limpiarUI(){
+    document.getElementById("idea").value = "";
+    document.getElementById("resultado").innerHTML = "";
 }
 
 // =========================
@@ -116,38 +146,26 @@ function render(data){
 }
 
 // =========================
-// 🔩 HARDWARE REAL
+// 🔩 HARDWARE INDUSTRIAL
 // =========================
 function renderHardware(hw){
 
     let html = `<div class="bloque"><h3>🔩 Hardware</h3>`;
-
-    html += renderObject(hw);
-
+    html += renderTree(hw);
     html += `</div>`;
+
     return html;
 }
 
 // =========================
-// 💻 SOFTWARE TIPO VS CODE
+// 💻 SOFTWARE INDUSTRIAL (TIPO IDE)
 // =========================
 function renderSoftware(sw){
 
     let html = `<div class="bloque"><h3>💻 Software</h3>`;
-
-    for(let archivo in sw){
-
-        let id = "code_" + Math.random();
-
-        html += `
-        <div class="item" onclick="toggle('${id}')">
-            📄 ${archivo}
-        </div>
-        <div id="${id}" class="codigo">${escapeHtml(sw[archivo])}</div>
-        `;
-    }
-
+    html += renderTree(sw);
     html += `</div>`;
+
     return html;
 }
 
@@ -157,8 +175,9 @@ function renderSoftware(sw){
 function renderFisica(f){
 
     let html = `<div class="bloque"><h3>⚙️ Física</h3>`;
-    html += renderObject(f);
+    html += renderTree(f);
     html += `</div>`;
+
     return html;
 }
 
@@ -169,32 +188,49 @@ function renderRiesgos(r){
 
     let html = `<div class="bloque"><h3>⚠️ Riesgos</h3>`;
 
-    r.forEach(x=>{
-        html += `<div class="item">⚠️ ${x}</div>`;
-    });
+    if(Array.isArray(r)){
+        r.forEach(x=>{
+            html += `<div class="item">⚠️ ${x}</div>`;
+        });
+    }
 
     html += `</div>`;
     return html;
 }
 
 // =========================
-// 🔁 RENDER PROFUNDO (CLAVE)
+// 🌳 RENDER TREE (CLAVE INDUSTRIAL)
 // =========================
-function renderObject(obj){
+function renderTree(obj, nivel = 0){
 
     let html = "";
 
     for(let key in obj){
 
         let val = obj[key];
+        let id = "node_" + Math.random();
 
-        if(typeof val === "object"){
+        if(typeof val === "object" && val !== null){
 
-            html += `<div class="item">▶ ${key}</div>`;
-            html += `<div class="item">${renderObject(val)}</div>`;
+            html += `
+            <div class="item folder" onclick="toggle('${id}')">
+                📁 ${key}
+            </div>
+            <div id="${id}" style="display:none; margin-left:15px;">
+                ${renderTree(val, nivel + 1)}
+            </div>
+            `;
 
         }else{
-            html += `<div class="item">${key}: ${val}</div>`;
+
+            html += `
+            <div class="item file" onclick="toggle('${id}')">
+                📄 ${key}
+            </div>
+            <pre id="${id}" class="codigo">
+${escapeHtml(val)}
+            </pre>
+            `;
         }
     }
 
@@ -206,16 +242,27 @@ function renderObject(obj){
 // =========================
 function toggle(id){
     let el = document.getElementById(id);
+    if(!el) return;
     el.style.display = el.style.display === "block" ? "none" : "block";
 }
 
 // =========================
-// ESCAPE
+// ESCAPE (FIX ERROR CRÍTICO)
 // =========================
 function escapeHtml(text){
+
+    if(typeof text !== "string"){
+        try{
+            return JSON.stringify(text, null, 2);
+        }catch(e){
+            return "N/A";
+        }
+    }
+
     return text
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
 }
 
 </script>

@@ -12,13 +12,11 @@ body {
     background:#0f172a;
     color:#e5e7eb;
 }
-
 textarea {
     width:100%;
     height:80px;
     padding:10px;
 }
-
 button {
     padding:10px;
     margin:5px;
@@ -27,7 +25,6 @@ button {
     border:none;
     cursor:pointer;
 }
-
 .btn-danger{ background:#ef4444; }
 .btn-info{ background:#0ea5e9; }
 
@@ -54,13 +51,11 @@ button {
 .folder { color:#38bdf8; }
 .file { color:#22c55e; }
 
-/* PROGRESO */
 .progress {
     width:100%;
     background:#1e293b;
     margin-top:10px;
 }
-
 .progress-bar {
     height:14px;
     width:0%;
@@ -68,7 +63,6 @@ button {
     text-align:center;
     font-size:10px;
 }
-
 .progress-text{
     font-size:12px;
     margin-top:5px;
@@ -85,7 +79,6 @@ button {
     display:none;
     padding:40px;
 }
-
 .modal-content {
     background:#020617;
     padding:20px;
@@ -211,8 +204,11 @@ function render(data){
     html += `<div class="bloque"><h2>🚀 ${data.nivel_maia}</h2></div>`;
 
     html += renderBloque("🧠 Viabilidad", data.viabilidad);
-    html += renderBloque("🔩 Hardware", data.hardware);
-    html += renderBloque("💻 Software", data.software);
+    html += renderBloque("📊 Analisis de Idea", data.analisis_idea);
+
+    html += renderBloque("🔩 Hardware", data.hardware, true);
+    html += renderBloque("💻 Software", data.software, true);
+
     html += renderBloque("📡 Telemetría", data.telemetria);
     html += renderBloque("⚙️ Física", data.fisica);
     html += renderBloque("⚠️ Riesgos", data.riesgos);
@@ -220,7 +216,7 @@ function render(data){
     if(data.modelo_3d){
         html += `<div class="bloque">
             <h3>🧱 Modelo 3D</h3>
-            ${renderTree(data.modelo_3d)}
+            ${renderTree(data.modelo_3d,0,true)}
             <div id="viewer3d"></div>
         </div>`;
     }
@@ -237,7 +233,7 @@ function render(data){
 // =========================
 // BLOQUES
 // =========================
-function renderBloque(titulo, data){
+function renderBloque(titulo, data, expandir=false){
 
     if(!data) return "";
 
@@ -248,7 +244,7 @@ function renderBloque(titulo, data){
             html += `<div class="item">• ${x}</div>`;
         });
     }else{
-        html += renderTree(data);
+        html += renderTree(data,0,expandir);
     }
 
     html += `</div>`;
@@ -256,9 +252,9 @@ function renderBloque(titulo, data){
 }
 
 // =========================
-// TREE
+// TREE (FIX SUBBLOQUES)
 // =========================
-function renderTree(obj){
+function renderTree(obj, nivel=0, expandir=false){
 
     let html = "";
 
@@ -267,12 +263,14 @@ function renderTree(obj){
         let val = obj[key];
         let id = "node_" + Math.random();
 
+        let autoOpen = expandir && nivel < 2;
+
         if(typeof val === "object" && val !== null){
 
             html += `
             <div class="item folder" onclick="toggle('${id}')">📁 ${key}</div>
-            <div id="${id}" style="display:none;margin-left:15px;">
-                ${renderTree(val)}
+            <div id="${id}" style="display:${autoOpen ? 'block':'none'};margin-left:15px;">
+                ${renderTree(val, nivel+1, expandir)}
             </div>
             `;
 
@@ -298,7 +296,7 @@ function toggle(id){
 }
 
 // =========================
-// 3D
+// 3D MEJORADO
 // =========================
 function iniciar3D(){
 
@@ -314,17 +312,31 @@ function iniciar3D(){
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
 
-    let geometry = new THREE.BoxGeometry(2,0.2,2);
     let material = new THREE.MeshBasicMaterial({wireframe:true});
-    let drone = new THREE.Mesh(geometry, material);
 
-    scene.add(drone);
-    camera.position.z = 5;
+    let body = new THREE.Mesh(new THREE.BoxGeometry(1,0.3,1), material);
+    scene.add(body);
+
+    let arm1 = new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2), material);
+    scene.add(arm1);
+
+    let arm2 = new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2), material);
+    arm2.rotation.y = Math.PI/2;
+    scene.add(arm2);
+
+    let motorGeo = new THREE.SphereGeometry(0.2);
+
+    [[1.5,0,0],[-1.5,0,0],[0,0,1.5],[0,0,-1.5]].forEach(p=>{
+        let m = new THREE.Mesh(motorGeo, material);
+        m.position.set(...p);
+        scene.add(m);
+    });
+
+    camera.position.z = 6;
 
     function animate(){
         requestAnimationFrame(animate);
-        drone.rotation.x += 0.01;
-        drone.rotation.y += 0.01;
+        scene.rotation.y += 0.01;
         renderer.render(scene,camera);
     }
 
@@ -337,37 +349,36 @@ function iniciar3D(){
 function abrirInfo(){
     document.getElementById("modal").style.display = "block";
 }
-
 function cerrarInfo(){
     document.getElementById("modal").style.display = "none";
 }
 
 // =========================
-// CAPACIDADES
+// CAPACIDADES PRO
 // =========================
 function actualizarCapacidades(){
-
     document.getElementById("capacidades").innerHTML = `
     <h3>🧠 Análisis</h3>
-    <p>Evalúa viabilidad con lógica real.</p>
+    <p>Evalúa viabilidad técnica con justificación real.</p>
 
     <h3>🔩 Hardware</h3>
-    <p>Diseño físico completo.</p>
+    <p>Diseño estructural completo del dron.</p>
 
     <h3>💻 Software</h3>
-    <p>Sistema autónomo modular.</p>
+    <p>Sistema autónomo modular escalable.</p>
 
     <h3>📡 Telemetría</h3>
-    <p>Datos en tiempo real.</p>
+    <p>Monitoreo en tiempo real.</p>
 
     <h3>⚙️ Física</h3>
     <p>Simulación de estabilidad.</p>
 
     <h3>🧱 3D</h3>
-    <p>Visualización básica del dron.</p>
+    <p>Modelo estructural del drone.</p>
     `;
 }
 
 </script>
+
 </body>
 </html>

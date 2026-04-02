@@ -1,13 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
-import os
-import time
-import zipfile
-import math
-import random
+import os, time, zipfile, random
 
-print("🔥 MAIA INDUSTRIAL CORE LEVEL 3 GOD MODE")
+print("🔥 MAIA INDUSTRIAL CORE LEVEL 4 GOD MODE")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
@@ -43,8 +39,8 @@ def analizar_viabilidad(idea):
     if "incendio" in idea:
         score += 3
     else:
-        problemas.append("No enfocado a problema crítico real")
-        soluciones.append("Aplicar a emergencias reales")
+        problemas.append("No enfocado a problema crítico")
+        soluciones.append("Aplicar a incendios o rescate")
 
     if "autonom" in idea:
         score += 2
@@ -55,13 +51,8 @@ def analizar_viabilidad(idea):
     if "camara" in idea or "sensor" in idea:
         score += 2
     else:
-        problemas.append("Sin percepción del entorno")
-        soluciones.append("Agregar sensores térmicos o LIDAR")
-
-    if "agua" in idea or "carga" in idea:
-        score += 2
-    else:
-        soluciones.append("Agregar sistema de carga útil")
+        problemas.append("Sin percepción")
+        soluciones.append("Agregar sensores térmicos")
 
     if score >= 7:
         estado = "ALTAMENTE VIABLE"
@@ -78,13 +69,45 @@ def analizar_viabilidad(idea):
     }
 
 # =========================
-# 💻 SOFTWARE NIVEL 3 BRUTAL
+# 🔩 HARDWARE NIVEL 4
+# =========================
+def generar_hardware(peso):
+    return {
+        "estructura": {
+            "material": "carbon fiber aerospace",
+            "tipo": "quad_x industrial"
+        },
+        "propulsion": {
+            "motores": 4,
+            "kv": 1200,
+            "thrust_por_motor_kg": 6.5,
+            "esc": "BLHeli_32 45A"
+        },
+        "controlador_vuelo": "Pixhawk",
+        "energia": {
+            "bateria": "LiPo 6S 10000mAh",
+            "voltaje": 22.2
+        },
+        "carga_util": {
+            "tipo": "retardante incendios",
+            "capacidad_l": 5
+        },
+        "sensores": {
+            "termico": True,
+            "lidar": True,
+            "gps": True,
+            "imu": True
+        },
+        "peso_total": peso
+    }
+
+# =========================
+# 💻 SOFTWARE NIVEL 4 REAL
 # =========================
 def generar_software(base):
     root = os.path.join(base, "software")
 
     estructura = {
-
         "main.py": """from core.system import DroneSystem
 
 def main():
@@ -98,25 +121,37 @@ if __name__ == "__main__":
         "core": {
             "system.py": """from control.flight_controller import FlightController
 from ai.brain import Brain
-from mission.mission import Mission
+from mission.executor import Executor
 from simulation.environment import Environment
+from telemetry.stream import Telemetry
+from core.event_bus import EventBus
 
 class DroneSystem:
-
     def __init__(self):
         self.fc = FlightController()
         self.brain = Brain()
-        self.mission = Mission()
+        self.executor = Executor()
         self.env = Environment()
+        self.telemetry = Telemetry()
+        self.bus = EventBus()
 
     def run(self):
         while True:
             sensors = self.env.update()
             decision = self.brain.process(sensors)
             control = self.fc.update(sensors, decision)
-            self.mission.execute(decision)
+            state = self.executor.execute(decision)
+            self.telemetry.send(state)
+
+            if state["fire"]:
+                self.bus.emit("FIRE_DETECTED")
 """
         },
+
+        "core/event_bus.py": """class EventBus:
+    def emit(self, event):
+        print("EVENT:", event)
+""",
 
         "control": {
             "pid.py": """class PID:
@@ -134,45 +169,57 @@ class DroneSystem:
         self.prev_error = error
         return self.kp*error + self.ki*self.integral + self.kd*deriv
 """,
-
             "flight_controller.py": """from control.pid import PID
 
 class FlightController:
-
     def __init__(self):
         self.alt = PID(1.2,0.01,0.4)
-        self.roll = PID(0.8,0.02,0.3)
-        self.pitch = PID(0.8,0.02,0.3)
 
     def update(self, sensors, decision):
         return {
-            "throttle": self.alt.update(10, sensors["altitude"], 0.02),
-            "roll": self.roll.update(0, sensors["roll"], 0.02),
-            "pitch": self.pitch.update(0, sensors["pitch"], 0.02)
+            "throttle": self.alt.update(10, sensors["altitude"], 0.02)
         }
 """
         },
 
         "ai": {
             "brain.py": """class Brain:
-
     def process(self, sensors):
         if sensors["temperature"] > 70:
-            return {"action": "FIRE_DETECTED"}
+            return {"action":"EXTINGUISH"}
         if sensors["battery"] < 20:
-            return {"action": "RETURN_HOME"}
-        return {"action": "PATROL"}
+            return {"action":"RETURN"}
+        return {"action":"PATROL"}
 """
         },
 
         "mission": {
-            "mission.py": """class Mission:
+            "executor.py": """import random
+
+class Executor:
+    def __init__(self):
+        self.x=0
+        self.y=0
 
     def execute(self, decision):
-        if decision["action"] == "FIRE_DETECTED":
-            print("🔥 Actuar sobre incendio")
-        elif decision["action"] == "RETURN_HOME":
-            print("🚨 Regresando a base")
+        self.x += random.uniform(0,1)
+        self.y += random.uniform(0,1)
+
+        return {
+            "x": self.x,
+            "y": self.y,
+            "z": 10,
+            "battery": random.randint(40,100),
+            "fire": random.choice([True, False]),
+            "action": decision["action"]
+        }
+"""
+        },
+
+        "telemetry": {
+            "stream.py": """class Telemetry:
+    def send(self, state):
+        print("TELEMETRY:", state)
 """
         },
 
@@ -180,47 +227,31 @@ class FlightController:
             "environment.py": """import random
 
 class Environment:
-
     def update(self):
         return {
             "altitude": 10,
-            "roll": random.uniform(-0.2,0.2),
-            "pitch": random.uniform(-0.2,0.2),
             "temperature": random.randint(20,100),
-            "battery": random.randint(10,100),
-            "signal": True
+            "battery": random.randint(20,100)
         }
+"""
+        },
+
+        "logs": {
+            "system_log.py": """def log(msg):
+    print("LOG:", msg)
 """
         }
     }
 
     def crear(ruta, contenido):
         if isinstance(contenido, dict):
-            for k, v in contenido.items():
-                crear(os.path.join(ruta, k), v)
+            for k,v in contenido.items():
+                crear(os.path.join(ruta,k), v)
         else:
             write_file(ruta, contenido)
 
     crear(root, estructura)
     return estructura
-
-# =========================
-# HARDWARE
-# =========================
-def generar_hardware(peso):
-    return {
-        "estructura": "carbon fiber aerospace",
-        "propulsion": {
-            "motores": 4,
-            "kv": 1200,
-            "thrust_por_motor_kg": 6.5
-        },
-        "energia": {
-            "bateria": "LiPo 6S 10000mAh",
-            "voltaje": 22.2
-        },
-        "peso_total": peso
-    }
 
 # =========================
 # FISICA
@@ -231,50 +262,31 @@ def calcular_fisica(peso):
     return {
         "thrust_total": thrust,
         "relacion": round(relacion,2),
-        "estado": "ESTABLE" if relacion > 2 else "INESTABLE",
-        "autonomia": round(40 - peso*0.5,2)
+        "estado": "ESTABLE" if relacion > 2 else "INESTABLE"
+    }
+
+# =========================
+# TELEMETRIA
+# =========================
+def generar_telemetria():
+    return {
+        "variables": ["x","y","z","battery","fire"],
+        "frecuencia_hz": 10
     }
 
 # =========================
 # MODELO 3D
 # =========================
 def generar_modelo_3d(base, peso):
-    path = os.path.join(base,"models")
-    os.makedirs(path,exist_ok=True)
-
-    size = peso
-
-    write_file(os.path.join(path,"drone.obj"), f"""
-o drone
-v {-size} 0 {-size}
-v {size} 0 {-size}
-v {size} 0 {size}
-v {-size} 0 {size}
-v 0 {size} 0
-""")
-
     return {
-        "tipo":"quad industrial",
-        "escala": size
+        "tipo": "quad_x industrial",
+        "escala": peso
     }
-
-# =========================
-# ZIP
-# =========================
-def exportar_zip(path):
-    zip_path = path + ".zip"
-    with zipfile.ZipFile(zip_path,'w') as zipf:
-        for root,_,files in os.walk(path):
-            for f in files:
-                full=os.path.join(root,f)
-                zipf.write(full, os.path.relpath(full,path))
-    return zip_path
 
 # =========================
 # CORE
 # =========================
 class MaiaCore:
-
     def ejecutar_paso(self, idea, paso, data):
 
         if paso == 0:
@@ -284,8 +296,7 @@ class MaiaCore:
             }}
 
         elif paso == 1:
-            peso = 12
-            data["hardware"] = generar_hardware(peso)
+            data["hardware"] = generar_hardware(12)
             return {"paso":2,"data":data}
 
         elif paso == 2:
@@ -297,6 +308,7 @@ class MaiaCore:
 
         elif paso == 3:
             data["fisica"] = calcular_fisica(data["hardware"]["peso_total"])
+            data["telemetria"] = generar_telemetria()
             return {"paso":4,"data":data}
 
         elif paso == 4:
@@ -309,8 +321,20 @@ class MaiaCore:
 
         elif paso == 6:
             data["zip"] = exportar_zip(data["base"])
-            data["nivel_maia"] = "NIVEL 3 - GOD MODE"
+            data["nivel_maia"] = "NIVEL 4 - AUTONOMOUS SYSTEM"
             return {"final":True,"resultado":data}
+
+# =========================
+# ZIP
+# =========================
+def exportar_zip(path):
+    zip_path = path + ".zip"
+    with zipfile.ZipFile(zip_path,'w') as zipf:
+        for root,_,files in os.walk(path):
+            for f in files:
+                full=os.path.join(root,f)
+                zipf.write(full, os.path.relpath(full,path))
+    return zip_path
 
 # =========================
 # API

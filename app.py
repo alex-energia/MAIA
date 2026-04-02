@@ -6,7 +6,7 @@ import time
 import zipfile
 import math
 
-print("🔥 MAIA INDUSTRIAL CORE GOD MODE")
+print("🔥 MAIA INDUSTRIAL CORE LEVEL 3")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
@@ -31,71 +31,83 @@ def write_file(path, content):
         f.write(content)
 
 # =========================
-# 🧠 ANALISIS REAL DE IDEA
+# 🧠 ANALISIS AVANZADO REAL
 # =========================
 def analizar_viabilidad(idea):
     idea = idea.lower()
 
     score = 0
     problemas = []
-    mejoras = []
+    soluciones = []
 
     if "incendio" in idea:
         score += 3
     else:
-        problemas.append("No está enfocado a un problema crítico")
+        problemas.append("No enfocado a problema crítico real")
+        soluciones.append("Aplicar a emergencias (incendios, rescate, vigilancia)")
 
-    if "autonomo" in idea:
+    if "autonom" in idea:
         score += 2
     else:
-        mejoras.append("Agregar autonomía inteligente")
+        problemas.append("Falta autonomía inteligente")
+        soluciones.append("Implementar navegación autónoma con IA")
+
+    if "camara" in idea or "sensor" in idea:
+        score += 2
+    else:
+        problemas.append("Falta percepción del entorno")
+        soluciones.append("Agregar sensores térmicos / LIDAR / visión")
 
     if "carga" in idea or "agua" in idea:
         score += 2
     else:
-        mejoras.append("Definir sistema de carga útil (agua/extintor)")
+        soluciones.append("Agregar sistema de carga útil (extinción o logística)")
 
-    if score >= 6:
-        estado = "VIABLE"
-    elif score >= 3:
-        estado = "MEJORABLE"
+    if score >= 7:
+        estado = "ALTAMENTE VIABLE"
+    elif score >= 4:
+        estado = "VIABLE CON MEJORAS"
     else:
         estado = "NO VIABLE"
 
     return {
         "estado": estado,
         "score": score,
-        "problemas": problemas,
-        "mejoras": mejoras,
-        "conclusion": f"Proyecto {estado} con puntuación {score}/10"
+        "problemas_detectados": problemas,
+        "soluciones_propuestas": soluciones,
+        "analisis": f"Evaluación técnica basada en misión, autonomía, percepción y carga útil."
     }
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL
+# 💻 SOFTWARE INDUSTRIAL NIVEL 3
 # =========================
 def generar_software(base):
     root = os.path.join(base, "software")
 
     estructura = {
-
         "main.py": """from control.flight_controller import FlightController
 from navigation.a_star import AStar
 from perception.fire_detection import FireDetector
 from systems.failsafe import FailSafe
+from simulation.environment import Environment
 
 def main():
     fc = FlightController()
     nav = AStar()
     vision = FireDetector()
     fs = FailSafe()
+    env = Environment()
 
     while True:
-        sensors = {"altitude": 10, "roll": 0.1, "pitch": -0.1}
+        sensors = env.update()
+
         control = fc.update(sensors, 0.02)
         path = nav.find_path((0,0),(10,10))
-        fire = vision.detect(80)
+        fire = vision.detect(sensors["temperature"])
 
-        if fs.check(18, True) != "OK":
+        status = fs.check(sensors["battery"], sensors["signal"])
+
+        if status != "OK":
             fc.return_home()
 
 if __name__ == "__main__":
@@ -114,18 +126,20 @@ if __name__ == "__main__":
     def update(self, setpoint, measured, dt):
         error = setpoint - measured
         self.integral += error * dt
-        deriv = (error - self.prev_error) / dt
-        self.prev_error = error
-        return self.kp*error + self.ki*self.integral + self.kd*deriv
-""",
+        deriv = (error - self.prev_error) / dt if dt > 0 else 0
 
+        output = self.kp * error + self.ki * self.integral + self.kd * deriv
+        self.prev_error = error
+
+        return output
+""",
             "flight_controller.py": """from control.pid import PID
 
 class FlightController:
     def __init__(self):
-        self.alt = PID(1.2,0.01,0.4)
-        self.roll = PID(0.8,0.02,0.3)
-        self.pitch = PID(0.8,0.02,0.3)
+        self.alt = PID(1.2, 0.01, 0.4)
+        self.roll = PID(0.8, 0.02, 0.3)
+        self.pitch = PID(0.8, 0.02, 0.3)
 
     def update(self, sensors, dt):
         return {
@@ -135,7 +149,7 @@ class FlightController:
         }
 
     def return_home(self):
-        print("🚨 RETURN HOME")
+        print("🚨 RETURN HOME ACTIVATED")
 """
         },
 
@@ -143,25 +157,29 @@ class FlightController:
             "a_star.py": """import heapq
 
 class AStar:
-    def heuristic(self,a,b):
+    def heuristic(self, a, b):
         return abs(a[0]-b[0]) + abs(a[1]-b[1])
 
-    def find_path(self,start,goal):
-        open_set=[(0,start)]
-        visited=set()
+    def find_path(self, start, goal):
+        open_set = [(0, start)]
+        visited = set()
 
         while open_set:
-            _,current=heapq.heappop(open_set)
-            if current==goal:
+            _, current = heapq.heappop(open_set)
+
+            if current == goal:
                 return ["PATH_OK"]
 
             visited.add(current)
 
-            for dx,dy in [(1,0),(-1,0),(0,1),(0,-1)]:
-                n=(current[0]+dx,current[1]+dy)
-                if n in visited:
+            for dx, dy in [(1,0),(-1,0),(0,1),(0,-1)]:
+                neighbor = (current[0]+dx, current[1]+dy)
+
+                if neighbor in visited:
                     continue
-                heapq.heappush(open_set,(self.heuristic(n,goal),n))
+
+                priority = self.heuristic(neighbor, goal)
+                heapq.heappush(open_set, (priority, neighbor))
 
         return []
 """
@@ -169,17 +187,17 @@ class AStar:
 
         "perception": {
             "fire_detection.py": """class FireDetector:
-    def detect(self,temp):
-        if temp>70:
-            return {"fire":True,"confidence":0.96}
-        return {"fire":False}
+    def detect(self, temp):
+        if temp > 70:
+            return {"fire": True, "confidence": 0.97}
+        return {"fire": False}
 """
         },
 
         "systems": {
             "failsafe.py": """class FailSafe:
-    def check(self,battery,signal):
-        if battery<20:
+    def check(self, battery, signal):
+        if battery < 20:
             return "LOW_BATTERY"
         if not signal:
             return "SIGNAL_LOSS"
@@ -188,21 +206,30 @@ class AStar:
         },
 
         "simulation": {
-            "environment.py": """class Environment:
+            "environment.py": """import random
+
+class Environment:
     def __init__(self):
-        self.wind=5
-        self.temperature=30
+        self.wind = 5
+        self.temperature = 30
 
     def update(self):
-        return {"wind":self.wind,"temp":self.temperature}
+        return {
+            "altitude": 10,
+            "roll": random.uniform(-0.2,0.2),
+            "pitch": random.uniform(-0.2,0.2),
+            "temperature": self.temperature,
+            "battery": 80,
+            "signal": True
+        }
 """
         }
     }
 
     def crear(ruta, contenido):
         if isinstance(contenido, dict):
-            for k,v in contenido.items():
-                crear(os.path.join(ruta,k), v)
+            for k, v in contenido.items():
+                crear(os.path.join(ruta, k), v)
         else:
             write_file(ruta, contenido)
 
@@ -229,7 +256,7 @@ def generar_hardware(peso):
     }
 
 # =========================
-# FISICA REAL
+# FISICA
 # =========================
 def calcular_fisica(peso):
     thrust_total = 26
@@ -246,9 +273,9 @@ def calcular_fisica(peso):
 # =========================
 def generar_telemetria():
     return {
+        "protocolo": "MAVLink",
         "frecuencia_hz": 10,
-        "datos": ["altitude","gps","battery","imu"],
-        "protocolo": "MAVLink"
+        "datos": ["gps","imu","battery","altitude"]
     }
 
 # =========================
@@ -256,7 +283,7 @@ def generar_telemetria():
 # =========================
 def generar_comunicaciones():
     return {
-        "tipo": "RF + LTE fallback",
+        "tipo": "RF + LTE",
         "alcance_km": 15,
         "latencia_ms": 120
     }
@@ -268,9 +295,9 @@ def generar_modelo_3d(base, peso):
     path = os.path.join(base,"models")
     os.makedirs(path,exist_ok=True)
 
-    size = peso/2
+    size = peso
 
-    write_file(os.path.join(path,"drone.obj"),f"""
+    write_file(os.path.join(path,"drone.obj"), f"""
 o drone
 v {-size} 0 {-size}
 v {size} 0 {-size}
@@ -280,9 +307,9 @@ v 0 {size} 0
 """)
 
     return {
-        "tipo":"quad_x",
-        "detalle":"estructura base exportable CAD",
-        "escala":size
+        "tipo":"quad_x industrial",
+        "detalle":"modelo base exportable CAD",
+        "escala": size
     }
 
 # =========================
@@ -301,19 +328,17 @@ def exportar_zip(path):
 # CORE
 # =========================
 class MaiaCore:
+
     def ejecutar_paso(self, idea, paso, data):
 
         if paso == 0:
             core = analizar_drone(idea)
             viabilidad = analizar_viabilidad(idea)
 
-            return {
-                "paso":1,
-                "data":{
-                    "core":core,
-                    "viabilidad":viabilidad
-                }
-            }
+            return {"paso":1,"data":{
+                "core":core,
+                "viabilidad":viabilidad
+            }}
 
         elif paso == 1:
             analisis = data["core"].get("analisis",{})
@@ -335,6 +360,7 @@ class MaiaCore:
 
         elif paso == 3:
             peso = data["hardware"]["peso_total"]
+
             data["fisica"] = calcular_fisica(peso)
             data["telemetria"] = generar_telemetria()
             data["comunicaciones"] = generar_comunicaciones()
@@ -353,11 +379,12 @@ class MaiaCore:
         elif paso == 5:
             peso = data["hardware"]["peso_total"]
             data["modelo_3d"] = generar_modelo_3d(data["base"], peso)
+
             return {"paso":6,"data":data}
 
         elif paso == 6:
             data["zip"] = exportar_zip(data["base"])
-            data["nivel_maia"] = "NIVEL 2 - INDUSTRIAL VALIDADO"
+            data["nivel_maia"] = "NIVEL 3 - INDUSTRIAL GOD MODE"
 
             return {"final":True,"resultado":data}
 

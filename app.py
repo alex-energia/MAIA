@@ -3,30 +3,13 @@
 <head>
 <title>MAIA INDUSTRIAL</title>
 
+<!-- ✅ FIX REAL THREE -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
-body {
-    font-family: Arial;
-    background:#0f172a;
-    color:#e5e7eb;
-}
-
-textarea {
-    width:100%;
-    height:80px;
-    padding:10px;
-}
-
-button {
-    padding:10px;
-    margin:5px;
-    background:#2563eb;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-
+body { font-family: Arial; background:#0f172a; color:#e5e7eb;}
+textarea { width:100%; height:80px; padding:10px;}
+button { padding:10px; margin:5px; background:#2563eb; color:white; border:none; cursor:pointer;}
 .btn-danger{ background:#ef4444; }
 .btn-info{ background:#0ea5e9; }
 
@@ -116,8 +99,10 @@ button {
 </div>
 
 <div id="progressText" class="progress-text">Esperando...</div>
+
 <div id="resultado"></div>
 
+<!-- MODAL -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <h2>🚀 Capacidades MAIA NIVEL 4</h2>
@@ -196,7 +181,7 @@ function limpiarUI(){
 // RENDER
 // =========================
 function render(data){
-    window.__DATA__ = data; // 🔥 debug real
+    window.__DATA__ = data;
 
     let html = `<div class="panel">`;
 
@@ -210,7 +195,8 @@ function render(data){
     html += renderBloque("⚠️ Riesgos", data.riesgos);
 
     if(data.modelo_3d){
-        html += `<div class="bloque">
+        html += `
+        <div class="bloque">
             <h3>🧱 Modelo 3D</h3>
             ${renderTree(data.modelo_3d,0,true)}
             <div id="viewer3d"></div>
@@ -218,6 +204,7 @@ function render(data){
     }
 
     html += `</div>`;
+
     document.getElementById("resultado").innerHTML = html;
 
     if(data.modelo_3d) iniciar3D();
@@ -244,23 +231,26 @@ function renderBloque(titulo, data, expandir=false){
 }
 
 // =========================
-// TREE 🔥 FIX REAL
+// 🔥 TREE FIX DEFINITIVO
 // =========================
 function renderTree(obj, nivel=0, expandir=false){
+
+    if(!obj || typeof obj !== "object") return "";
+
     let html = "";
 
-    Object.entries(obj).forEach(([key,val])=>{
+    Object.keys(obj).forEach(key => {
 
-        let id = "node_" + Math.random().toString(36).substr(2,9);
-
-        // 🔥 clave del fix:
+        let val = obj[key];
+        let id = "node_" + Math.random().toString(36).substring(2,9);
         let autoOpen = expandir && nivel < 10;
 
+        // 🔥 SI ES OBJETO
         if(typeof val === "object" && val !== null){
 
             html += `
             <div class="item folder" onclick="toggle('${id}')">📁 ${key}</div>
-            <div id="${id}" style="display:${autoOpen ? 'block':'none'};margin-left:15px;">
+            <div id="${id}" style="display:${autoOpen?'block':'none'}; margin-left:15px;">
                 ${renderTree(val, nivel+1, expandir)}
             </div>
             `;
@@ -269,11 +259,12 @@ function renderTree(obj, nivel=0, expandir=false){
 
             html += `
             <div class="item file" onclick="toggle('${id}')">📄 ${key}</div>
-            <pre id="${id}" class="codigo" style="display:${autoOpen ? 'block':'none'};">
+            <pre id="${id}" class="codigo" style="display:${autoOpen?'block':'none'};">
 ${escapeHtml(val)}
             </pre>
             `;
         }
+
     });
 
     return html;
@@ -302,6 +293,8 @@ function toggle(id){
 // 3D
 // =========================
 function iniciar3D(){
+    if(typeof THREE === "undefined") return;
+
     let container = document.getElementById("viewer3d");
 
     let scene = new THREE.Scene();

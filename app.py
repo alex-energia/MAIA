@@ -1,283 +1,375 @@
-from flask import Flask, render_template, request, jsonify
-from proyectos import proyectos_bp, init_db
-from maia_core_fisico import analizar_drone
-import os
-import time
-import zipfile
+<!DOCTYPE html>
+<html>
+<head>
+<title>MAIA INDUSTRIAL</title>
 
-print("MAIA INDUSTRIAL CORE LEVEL 4 GOD MODE")
+<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
-app = Flask(__name__, template_folder="templates")
-app.secret_key = "maia_ultra"
+<style>
+body {
+    font-family: Arial;
+    background:#0f172a;
+    color:#e5e7eb;
+}
 
-# =========================
-# NO CACHE
-# =========================
-@app.after_request
-def add_header(response):
-    response.cache_control.no_store = True
-    return response
+textarea {
+    width:100%;
+    height:80px;
+    padding:10px;
+}
 
-init_db()
-app.register_blueprint(proyectos_bp)
+button {
+    padding:10px;
+    margin:5px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
 
-# =========================
-# FILE WRITER
-# =========================
-def write_file(path, content):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+.btn-danger{ background:#ef4444; }
+.btn-info{ background:#0ea5e9; }
 
-# =========================
-# ANALISIS VIABILIDAD
-# =========================
-def analizar_viabilidad(idea):
-    idea = idea.lower()
-    score = 0
-    justificacion = []
-    problemas = []
-    soluciones = []
+.panel { margin-top:20px; }
 
-    if "incendio" in idea:
-        score += 2
-        justificacion.append("Aplicacion a emergencia real")
-    else:
-        problemas.append("No enfocado a problema critico")
-        soluciones.append("Aplicar a incendios o rescate")
+.bloque {
+    background:#020617;
+    margin-top:15px;
+    padding:15px;
+    border-left:4px solid #22c55e;
+}
 
-    if "autonom" in idea:
-        score += 2
-        justificacion.append("Sistema autonomo considerado")
-    else:
-        score += 1
-        problemas.append("Falta autonomia")
-        soluciones.append("Implementar navegacion autonoma")
+.item {
+    margin-left:15px;
+    cursor:pointer;
+}
 
-    if "sensor" in idea or "camara" in idea:
-        score += 2
-        justificacion.append("Sistema de percepcion incluido")
-    else:
-        score += 1
-        problemas.append("Sin percepcion")
-        soluciones.append("Agregar sensores termicos")
+.codigo {
+    background:black;
+    padding:10px;
+    margin-top:10px;
+    display:none;
+    white-space:pre;
+    font-size:12px;
+}
 
-    if score >= 6:
-        estado = "ALTAMENTE VIABLE"
-    elif score >= 4:
-        estado = "VIABLE"
-    else:
-        estado = "VIABLE CON MEJORAS"
+.folder { color:#38bdf8; }
+.file { color:#22c55e; }
 
-    return {
-        "estado": estado,
-        "score": score,
-        "justificacion": justificacion,
-        "problemas": problemas,
-        "soluciones": soluciones
-    }
+.progress {
+    width:100%;
+    background:#1e293b;
+    margin-top:10px;
+}
 
-# =========================
-# ANALISIS IDEA
-# =========================
-def analizar_idea(idea):
-    return {
-        "tipo_mision": "Extincion de incendios" if "incendio" in idea.lower() else "General",
-        "complejidad": "Alta",
-        "riesgo_tecnico": "Integracion de multiples sistemas",
-        "recomendacion": "Viable si se implementa control avanzado + sensores + simulacion real"
-    }
+.progress-bar {
+    height:14px;
+    width:0%;
+    background:#22c55e;
+    text-align:center;
+    font-size:10px;
+}
 
-# =========================
-# HARDWARE
-# =========================
-def generar_hardware(peso):
-    return {
-        "estructura": {"material": "carbon fiber aerospace", "tipo": "quad_x industrial"},
-        "propulsion": {"motores": 4, "kv": 1200, "thrust_por_motor_kg": 6.5, "esc": "BLHeli_32 45A"},
-        "controlador_vuelo": "Pixhawk",
-        "energia": {"bateria": "LiPo 6S 10000mAh", "voltaje": 22.2},
-        "sensores": {"termico": True, "lidar": True, "gps": True},
-        "peso_total": peso
-    }
+.progress-text{
+    font-size:12px;
+    margin-top:5px;
+}
 
-# =========================
-# SOFTWARE (FIX REAL)
-# =========================
-def generar_software(base):
-    root = os.path.join(base, "software")
+.modal {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.85);
+    display:none;
+    padding:40px;
+}
 
-    estructura = {
-        "main.py": """from core.system import DroneSystem
+.modal-content {
+    background:#020617;
+    padding:20px;
+    max-width:800px;
+}
 
-def main():
-    drone = DroneSystem()
-    drone.run()
+#viewer3d{
+    width:100%;
+    height:300px;
+    background:black;
+    margin-top:10px;
+}
+</style>
+</head>
 
-if __name__ == "__main__":
-    main()
-""",
+<body>
 
-        "core": {
-            "system.py": """from control.flight_controller import FlightController
-from ai.brain import Brain
-from mission.executor import Executor
+<h1>🧠 MAIA INDUSTRIAL</h1>
 
-class DroneSystem:
-    def __init__(self):
-        self.fc = FlightController()
-        self.brain = Brain()
-        self.executor = Executor()
+<textarea id="idea" placeholder="Describe tu drone..."></textarea><br>
 
-    def run(self):
-        while True:
-            sensors = {"altitude":10,"temperature":50,"battery":80}
-            decision = self.brain.process(sensors)
-            control = self.fc.update(sensors, decision)
-            self.executor.execute(decision)
-"""
-        },
+<button onclick="evaluar()">🚀 Generar</button>
+<button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
+<button class="btn-info" onclick="abrirInfo()">🧠 ¿Qué puede hacer MAIA?</button>
 
-        "control": {
-            "pid.py": """class PID:
-    def __init__(self, kp, ki, kd):
-        self.kp = kp
-        self.ki = ki
-        self.kd = kd
-        self.integral = 0
-        self.prev_error = 0
+<div class="progress">
+    <div id="bar" class="progress-bar">0%</div>
+</div>
 
-    def update(self, setpoint, measured, dt):
-        error = setpoint - measured
-        self.integral += error * dt
-        deriv = (error - self.prev_error) / dt if dt > 0 else 0
-        self.prev_error = error
-        return self.kp * error + self.ki * self.integral + self.kd * deriv
-""",
+<div id="progressText" class="progress-text">Esperando...</div>
+<div id="resultado"></div>
 
-            "flight_controller.py": """from control.pid import PID
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h2>🚀 Capacidades MAIA NIVEL 4</h2>
+        <div id="capacidades"></div>
+        <button onclick="cerrarInfo()">Cerrar</button>
+    </div>
+</div>
 
-class FlightController:
-    def __init__(self):
-        self.alt = PID(1.2,0.01,0.4)
+<script>
 
-    def update(self, sensors, decision):
-        return {
-            "throttle": self.alt.update(10, sensors["altitude"], 0.02)
+// =========================
+// MOTOR
+// =========================
+async function evaluar(){
+    let idea = document.getElementById("idea").value;
+    if(!idea){ alert("Ingresa una idea"); return; }
+
+    let paso = 0;
+    let data = {};
+    let progreso = 0;
+
+    const estados = [
+        "Analizando idea...",
+        "Diseñando hardware...",
+        "Generando software...",
+        "Simulando física...",
+        "Integrando sistemas...",
+        "Modelo 3D...",
+        "Finalizando..."
+    ];
+
+    while(true){
+        progreso = Math.min(progreso + 14, 95);
+        actualizarBarra(progreso, estados[paso]);
+
+        let res = await fetch("/maia_step", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({idea, paso, data})
+        });
+
+        let json = await res.json();
+
+        if(json.final){
+            actualizarBarra(100,"Completado");
+            render(json.resultado);
+            actualizarCapacidades();
+            return;
         }
-"""
-        },
 
-        "ai": {
-            "brain.py": """class Brain:
-    def process(self, sensors):
-        if sensors["temperature"] > 70:
-            return {"action":"EXTINGUISH"}
-        if sensors["battery"] < 20:
-            return {"action":"RETURN"}
-        return {"action":"PATROL"}
-"""
-        },
+        paso = json.paso;
+        data = json.data;
+    }
+}
 
-        "mission": {
-            "executor.py": """class Executor:
-    def execute(self, decision):
-        print("ACTION:", decision["action"])
-"""
+// =========================
+// PROGRESO
+// =========================
+function actualizarBarra(p, txt){
+    let bar = document.getElementById("bar");
+    bar.style.width = p + "%";
+    bar.innerText = p + "%";
+    document.getElementById("progressText").innerText = txt;
+}
+
+// =========================
+// LIMPIAR
+// =========================
+function limpiarUI(){
+    document.getElementById("idea").value = "";
+    document.getElementById("resultado").innerHTML = "";
+    actualizarBarra(0,"Esperando...");
+}
+
+// =========================
+// RENDER
+// =========================
+function render(data){
+    window.__DATA__ = data; // 🔥 debug real
+
+    let html = `<div class="panel">`;
+
+    html += `<div class="bloque"><h2>🚀 ${data.nivel_maia}</h2></div>`;
+    html += renderBloque("🧠 Viabilidad", data.viabilidad);
+    html += renderBloque("📊 Analisis de Idea", data.analisis_idea);
+    html += renderBloque("🔩 Hardware", data.hardware, true);
+    html += renderBloque("💻 Software", data.software, true);
+    html += renderBloque("📡 Telemetría", data.telemetria);
+    html += renderBloque("⚙️ Física", data.fisica);
+    html += renderBloque("⚠️ Riesgos", data.riesgos);
+
+    if(data.modelo_3d){
+        html += `<div class="bloque">
+            <h3>🧱 Modelo 3D</h3>
+            ${renderTree(data.modelo_3d,0,true)}
+            <div id="viewer3d"></div>
+        </div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById("resultado").innerHTML = html;
+
+    if(data.modelo_3d) iniciar3D();
+}
+
+// =========================
+// BLOQUES
+// =========================
+function renderBloque(titulo, data, expandir=false){
+    if(!data) return "";
+
+    let html = `<div class="bloque"><h3>${titulo}</h3>`;
+
+    if(Array.isArray(data)){
+        data.forEach(x=>{
+            html += `<div class="item">• ${x}</div>`;
+        });
+    }else{
+        html += renderTree(data,0,expandir);
+    }
+
+    html += `</div>`;
+    return html;
+}
+
+// =========================
+// TREE 🔥 FIX REAL
+// =========================
+function renderTree(obj, nivel=0, expandir=false){
+    let html = "";
+
+    Object.entries(obj).forEach(([key,val])=>{
+
+        let id = "node_" + Math.random().toString(36).substr(2,9);
+
+        // 🔥 clave del fix:
+        let autoOpen = expandir && nivel < 10;
+
+        if(typeof val === "object" && val !== null){
+
+            html += `
+            <div class="item folder" onclick="toggle('${id}')">📁 ${key}</div>
+            <div id="${id}" style="display:${autoOpen ? 'block':'none'};margin-left:15px;">
+                ${renderTree(val, nivel+1, expandir)}
+            </div>
+            `;
+
+        } else {
+
+            html += `
+            <div class="item file" onclick="toggle('${id}')">📄 ${key}</div>
+            <pre id="${id}" class="codigo" style="display:${autoOpen ? 'block':'none'};">
+${escapeHtml(val)}
+            </pre>
+            `;
         }
+    });
+
+    return html;
+}
+
+// =========================
+// ESCAPE
+// =========================
+function escapeHtml(text){
+    if(typeof text !== "string"){
+        return JSON.stringify(text,null,2);
+    }
+    return text.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// =========================
+// TOGGLE
+// =========================
+function toggle(id){
+    let el = document.getElementById(id);
+    if(!el) return;
+    el.style.display = el.style.display === "block" ? "none":"block";
+}
+
+// =========================
+// 3D
+// =========================
+function iniciar3D(){
+    let container = document.getElementById("viewer3d");
+
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(75, container.clientWidth/300, 0.1, 1000);
+    let renderer = new THREE.WebGLRenderer({antialias:true});
+
+    renderer.setSize(container.clientWidth,300);
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
+
+    let material = new THREE.MeshNormalMaterial();
+
+    let body = new THREE.Mesh(new THREE.BoxGeometry(1,0.3,1), material);
+    scene.add(body);
+
+    let arm1 = new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2), material);
+    scene.add(arm1);
+
+    let arm2 = new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2), material);
+    arm2.rotation.y = Math.PI/2;
+    scene.add(arm2);
+
+    let motorGeo = new THREE.CylinderGeometry(0.2,0.2,0.1);
+
+    [[1.5,0,0],[-1.5,0,0],[0,0,1.5],[0,0,-1.5]].forEach(p=>{
+        let m = new THREE.Mesh(motorGeo, material);
+        m.position.set(...p);
+        scene.add(m);
+    });
+
+    camera.position.z = 6;
+
+    function animate(){
+        requestAnimationFrame(animate);
+        scene.rotation.y += 0.01;
+        renderer.render(scene,camera);
     }
 
-    def crear(ruta, contenido):
-        if isinstance(contenido, dict):
-            for k, v in contenido.items():
-                crear(os.path.join(ruta, k), v)
-        else:
-            write_file(ruta, contenido)
+    animate();
+}
 
-    crear(root, estructura)
-    return estructura
+// =========================
+// MODAL
+// =========================
+function abrirInfo(){ document.getElementById("modal").style.display="block"; }
+function cerrarInfo(){ document.getElementById("modal").style.display="none"; }
 
-# =========================
-# RESTO IGUAL (NO TOCADO)
-# =========================
-def calcular_fisica(peso):
-    thrust = 26
-    return {
-        "thrust_total": thrust,
-        "relacion": round(thrust/peso,2),
-        "estado": "ESTABLE"
-    }
+// =========================
+// CAPACIDADES
+// =========================
+function actualizarCapacidades(){
+    document.getElementById("capacidades").innerHTML = `
+    <h3>🧠 Análisis</h3>
+    <p>Evalúa viabilidad técnica real.</p>
+    <h3>🔩 Hardware</h3>
+    <p>Diseño estructural completo.</p>
+    <h3>💻 Software</h3>
+    <p>Arquitectura autónoma modular.</p>
+    <h3>📡 Telemetría</h3>
+    <p>Datos en tiempo real.</p>
+    <h3>⚙️ Física</h3>
+    <p>Simulación de estabilidad.</p>
+    <h3>🧱 3D</h3>
+    <p>Modelo del dron.</p>
+    `;
+}
 
-def generar_telemetria():
-    return {
-        "variables": ["x","y","z","battery"],
-        "frecuencia_hz": 10
-    }
+</script>
 
-def generar_modelo_3d(base, peso):
-    return {
-        "tipo": "quad_x industrial",
-        "escala": peso
-    }
-
-def exportar_zip(path):
-    zip_path = path + ".zip"
-    with zipfile.ZipFile(zip_path,'w') as zipf:
-        for root,_,files in os.walk(path):
-            for f in files:
-                full = os.path.join(root,f)
-                zipf.write(full, os.path.relpath(full,path))
-    return zip_path
-
-class MaiaCore:
-    def ejecutar_paso(self, idea, paso, data):
-        if paso == 0:
-            return {"paso":1,"data":{
-                "core": analizar_drone(idea),
-                "viabilidad": analizar_viabilidad(idea),
-                "analisis_idea": analizar_idea(idea)
-            }}
-        elif paso == 1:
-            data["hardware"] = generar_hardware(12)
-            return {"paso":2,"data":data}
-        elif paso == 2:
-            base = f"maia_projects/{int(time.time())}"
-            os.makedirs(base,exist_ok=True)
-            data["base"] = base
-            data["software"] = generar_software(base)
-            return {"paso":3,"data":data}
-        elif paso == 3:
-            data["fisica"] = calcular_fisica(data["hardware"]["peso_total"])
-            data["telemetria"] = generar_telemetria()
-            return {"paso":4,"data":data}
-        elif paso == 4:
-            data["riesgos"] = ["viento extremo","fallo bateria","perdida señal"]
-            return {"paso":5,"data":data}
-        elif paso == 5:
-            data["modelo_3d"] = generar_modelo_3d(data["base"], data["hardware"]["peso_total"])
-            return {"paso":6,"data":data}
-        elif paso == 6:
-            data["zip"] = exportar_zip(data["base"])
-            data["nivel_maia"] = "NIVEL 4 - AUTONOMOUS SYSTEM"
-            return {"final":True,"resultado":data}
-
-@app.route("/maia_step", methods=["POST"])
-def maia_step():
-    req = request.get_json() or {}
-    core = MaiaCore()
-    return jsonify(core.ejecutar_paso(
-        req.get("idea",""),
-        int(req.get("paso",0)),
-        req.get("data",{})
-    ))
-
-@app.route("/maia_invent")
-def maia_invent():
-    return render_template("maia_invent.html")
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+</body>
+</html>

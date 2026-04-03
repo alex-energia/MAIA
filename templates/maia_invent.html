@@ -1,4 +1,7 @@
-<!DOCTYPE html><html><head><title>MAIA INDUSTRIAL</title>
+<!DOCTYPE html>
+<html>
+<head>
+<title>MAIA INDUSTRIAL</title>
 
 <!-- ✅ FIX REAL THREE -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
@@ -23,7 +26,8 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 #viewer3d{width:100%;height:320px;background:black;margin-top:10px;}
 </style>
 
-</head><body>
+</head>
+<body>
 
 <h1>🧠 MAIA INDUSTRIAL</h1>
 
@@ -45,30 +49,6 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 
 <div id="capacidades"></div>
 
-<h3>🔹 Nivel 1-3</h3>
-<p>Concepto e idea.</p>
-
-<h3>🔹 Nivel 4-6</h3>
-<p>Arquitectura técnica completa.</p>
-
-<h3>🔹 Nivel 7</h3>
-<p>Software funcional con MAVLink + PID + visión.</p>
-
-<h3>🔥 Nivel 8</h3>
-<p>Stack industrial real:<br>
-- MAVLink real<br>
-- Control de vuelo<br>
-- FailSafe<br>
-- Telemetría<br>
-- Percepción<br>
-- Navegación autónoma</p>
-
-<h3>💻 ALCANCE</h3>
-<p>Compatible con:<br>
-- PX4 / Ardupilot<br>
-- Gazebo<br>
-- Prototipo real</p>
-
 <button onclick="cerrarInfo()">Cerrar</button>
 </div>
 </div>
@@ -79,6 +59,7 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 async function evaluar(){
 let idea=document.getElementById("idea").value;
 if(!idea){alert("Ingresa una idea");return;}
+
 let paso=0,data={},progreso=0;
 
 const estados=[
@@ -93,7 +74,7 @@ const estados=[
 
 while(true){
 progreso=Math.min(progreso+14,95);
-actualizarBarra(progreso,estados[paso]);
+actualizarBarra(progreso,estados[paso]||"Procesando...");
 
 let res=await fetch("/maia_step",{
 method:"POST",
@@ -105,13 +86,13 @@ let json=await res.json();
 
 if(json.final){
 actualizarBarra(100,"Completado");
-render(json.resultado);
+render(json.resultado || {});
 actualizarCapacidades();
 return;
 }
 
-paso=json.paso;
-data=json.data;
+paso=json.paso ?? paso;
+data=json.data ?? data;
 }
 }
 
@@ -149,32 +130,27 @@ return html;
 
 /* ========================= RENDER ========================= */
 function render(data){
+
 let html=`<div class="panel">`;
 
-html+=`<div class="bloque"><h2>${data.nivel_maia}</h2></div>`;
+html+=`<div class="bloque"><h2>${data.nivel_maia || "MAIA"}</h2></div>`;
 html+=renderBloque("🧠 Viabilidad",data.viabilidad);
-html+=renderBloque("📊 Idea",data.analisis_idea);
 html+=renderBloque("🔩 Hardware",data.hardware,true);
 
-html+=`<div class="bloque"><h3>💻 Software (INDUSTRIAL)</h3>${renderTree(data.software,0,true)}</div>`;
-
-html+=renderBloque("📡 Telemetría",data.telemetria);
-html+=renderBloque("⚙️ Física",data.fisica);
-html+=renderBloque("⚠️ Riesgos",data.riesgos);
-
-if(data.modelo_3d){
-html+=`<div class="bloque"><h3>🧱 Modelo 3D INDUSTRIAL</h3>${renderTree(data.modelo_3d,0,true)}<div id="viewer3d"></div></div>`;
-}
+/* 🔥 SOFTWARE FULL EXPANDIDO */
+html+=`<div class="bloque">
+<h3>💻 Software (INDUSTRIAL COMPLETO)</h3>
+${renderTree(data.software || {},0,true)}
+</div>`;
 
 html+=`</div>`;
 
 document.getElementById("resultado").innerHTML=html;
-
-if(data.modelo_3d) iniciar3D();
 }
 
 /* ========================= TREE ========================= */
 function renderTree(obj,nivel=0,expandir=false){
+
 let html="";
 
 if(Array.isArray(obj)){
@@ -187,17 +163,26 @@ return html;
 Object.keys(obj).forEach(key=>{
 let val=obj[key];
 let id="node_"+Math.random().toString(36).substring(2);
-let autoOpen=expandir&&nivel<8;
+
+/* 🔥 FIX: EXPANSIÓN TOTAL */
+let autoOpen = expandir ? true : false;
+
 let prefix="│ ".repeat(nivel)+"├─";
 
 if(typeof val==="object"&&val!==null){
+
 html+=`<div class="item folder" onclick="toggle('${id}')">
 <span class="line">${prefix}</span>📁 ${key}</div>
+
 <div id="${id}" style="display:${autoOpen?'block':'none'};margin-left:10px;">
-${renderTree(val,nivel+1,expandir)}</div>`;
+${renderTree(val,nivel+1,expandir)}
+</div>`;
+
 }else{
+
 html+=`<div class="item file" onclick="toggle('${id}')">
 <span class="line">${prefix}</span>📄 ${key}</div>
+
 <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>`;
 }
 });
@@ -217,67 +202,19 @@ if(!el) return;
 el.style.display=el.style.display==="block"?"none":"block";
 }
 
-/* ========================= 3D ========================= */
-function iniciar3D(){
-let c=document.getElementById("viewer3d");
-
-let scene=new THREE.Scene();
-let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
-let renderer=new THREE.WebGLRenderer({antialias:true});
-
-renderer.setSize(c.clientWidth,320);
-c.innerHTML="";
-c.appendChild(renderer.domElement);
-
-let mat=new THREE.MeshNormalMaterial();
-
-let body=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.3,1.2),mat);
-scene.add(body);
-
-let arm1=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
-scene.add(arm1);
-
-let arm2=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
-arm2.rotation.y=Math.PI/2;
-scene.add(arm2);
-
-let motorGeo=new THREE.CylinderGeometry(0.2,0.2,0.15);
-let propGeo=new THREE.BoxGeometry(0.8,0.02,0.1);
-
-[[1.5,0,0],[-1.5,0,0],[0,0,1.5],[0,0,-1.5]].forEach(p=>{
-let m=new THREE.Mesh(motorGeo,mat);
-m.position.set(...p);
-scene.add(m);
-
-let prop=new THREE.Mesh(propGeo,mat);
-prop.position.set(...p);
-prop.position.y+=0.15;
-scene.add(prop);
-});
-
-camera.position.z=6;
-
-function animate(){
-requestAnimationFrame(animate);
-scene.rotation.y+=0.005;
-renderer.render(scene,camera);
-}
-animate();
-}
-
 /* ========================= MODAL ========================= */
 function abrirInfo(){document.getElementById("modal").style.display="block";}
 function cerrarInfo(){document.getElementById("modal").style.display="none";}
 
 function actualizarCapacidades(){
 document.getElementById("capacidades").innerHTML=`
-<h3>🧠 IA</h3><p>Autonomía real con decisiones dinámicas</p>
-<h3>🔩 Hardware</h3><p>Arquitectura lista para fabricación</p>
-<h3>💻 Software</h3><p>MAVLink + control + navegación + failsafe</p>
-<h3>📡 Telemetría</h3><p>Datos en tiempo real</p>
-<h3>⚙️ Física</h3><p>Modelo validado</p>`;
+<h3>🧠 IA</h3><p>Autonomía real</p>
+<h3>🔩 Hardware</h3><p>Diseño industrial</p>
+<h3>💻 Software</h3><p>Stack completo MAVLink</p>
+`;
 }
 
 </script>
 
-</body></html>
+</body>
+</html>

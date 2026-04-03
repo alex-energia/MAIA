@@ -1,19 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
-import os, time, zipfile
+import os,time,zipfile
 
-print("MAIA INDUSTRIAL CORE LEVEL 5")
+print("MAIA INDUSTRIAL CORE LEVEL 6")
 
-app = Flask(__name__, template_folder="templates")
-app.secret_key = "maia_ultra"
+app=Flask(__name__,template_folder="templates")
+app.secret_key="maia_ultra"
 
 # =========================
 # NO CACHE
 # =========================
 @app.after_request
 def add_header(response):
-    response.cache_control.no_store = True
+    response.cache_control.no_store=True
     return response
 
 init_db()
@@ -22,114 +22,182 @@ app.register_blueprint(proyectos_bp)
 # =========================
 # FILE WRITER
 # =========================
-def write_file(path, content):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+def write_file(path,content):
+    os.makedirs(os.path.dirname(path),exist_ok=True)
+    with open(path,"w",encoding="utf-8") as f:f.write(content)
 
 # =========================
-# ANALISIS VIABILIDAD
+# VIABILIDAD
 # =========================
 def analizar_viabilidad(idea):
-    idea=idea.lower();score=0;justificacion=[];problemas=[];soluciones=[]
-    if "incendio" in idea:score+=2;justificacion.append("Aplicacion a emergencia real")
-    else:problemas.append("No enfocado a problema critico");soluciones.append("Aplicar a incendios o rescate")
-    if "autonom" in idea:score+=2;justificacion.append("Sistema autonomo considerado")
-    else:score+=1;problemas.append("Falta autonomia");soluciones.append("Implementar navegacion autonoma")
-    if "sensor" in idea or "camara" in idea:score+=2;justificacion.append("Sistema de percepcion incluido")
-    else:score+=1;problemas.append("Sin percepcion");soluciones.append("Agregar sensores termicos")
-    estado="ALTAMENTE VIABLE" if score>=6 else "VIABLE" if score>=4 else "VIABLE CON MEJORAS"
-    return {"estado":estado,"score":score,"justificacion":justificacion,"problemas":problemas,"soluciones":soluciones}
+    idea=idea.lower();score=0;j=[];p=[];s=[]
+    if "incendio" in idea:score+=2;j.append("Emergencia real")
+    else:p.append("No critico");s.append("Aplicar rescate/incendios")
+    if "autonom" in idea:score+=2;j.append("Autonomia")
+    else:score+=1;p.append("Sin autonomia");s.append("Agregar IA")
+    if "sensor" in idea or "camara" in idea:score+=2;j.append("Percepcion")
+    else:score+=1;p.append("Sin sensores");s.append("Agregar vision")
+    estado="ALTAMENTE VIABLE" if score>=6 else "VIABLE" if score>=4 else "MEJORABLE"
+    return {"estado":estado,"score":score,"justificacion":j,"problemas":p,"soluciones":s}
 
 # =========================
-# ANALISIS IDEA
+# IDEA
 # =========================
 def analizar_idea(idea):
-    return {"tipo_mision":"Extincion de incendios" if "incendio" in idea.lower() else "General","complejidad":"Alta","riesgo_tecnico":"Integracion de multiples sistemas","recomendacion":"Implementar control + IA + simulacion"}
+    return {"tipo":"incendio" if "incendio" in idea.lower() else "general","nivel":"alto","riesgo":"integracion sistemas","recomendacion":"usar PX4+ROS2"}
 
 # =========================
 # HARDWARE
 # =========================
 def generar_hardware(peso):
-    return {"estructura":{"material":"carbon fiber aerospace","tipo":"quad_x industrial"},"propulsion":{"motores":4,"kv":1200,"thrust_por_motor_kg":6.5,"esc":"BLHeli_32 45A"},"controlador_vuelo":"Pixhawk","energia":{"bateria":"LiPo 6S 10000mAh","voltaje":22.2},"sensores":{"termico":True,"lidar":True,"gps":True},"peso_total":peso}
+    return {"estructura":{"material":"carbono","tipo":"quad_x"},"propulsion":{"motores":4,"kv":1200,"thrust":6.5},"controlador":"Pixhawk","bateria":"LiPo 6S","sensores":{"lidar":True,"termico":True,"gps":True},"peso_total":peso}
 
 # =========================
-# SOFTWARE INDUSTRIAL
+# SOFTWARE INDUSTRIAL REAL
 # =========================
 def generar_software(base):
     root=os.path.join(base,"software")
-    estructura={"main.py":"""import time,random
-from threading import Thread
 
-telemetry={}
+    estructura={
 
-class PID:
+"main.py":"""from core.system import DroneSystem
+if __name__=="__main__":DroneSystem().run()
+""",
+
+"core":{"system.py":"""import time
+from comms.mavlink_node import MAVLinkNode
+from control.flight_controller import FlightController
+from perception.vision import VisionSystem
+from navigation.planner import Planner
+
+class DroneSystem:
+    def __init__(self):
+        self.mav=MAVLinkNode()
+        self.fc=FlightController()
+        self.vision=VisionSystem()
+        self.nav=Planner()
+
+    def run(self):
+        while True:
+            s=self.mav.get_telemetry()
+            v=self.vision.process()
+            m=self.nav.update(s,v)
+            c=self.fc.update(s,m)
+            self.mav.send_control(c)
+            time.sleep(0.02)
+"""},
+
+"comms":{"mavlink_node.py":"""from pymavlink import mavutil
+
+class MAVLinkNode:
+    def __init__(self):
+        self.master=mavutil.mavlink_connection('udp:127.0.0.1:14550')
+        self.master.wait_heartbeat()
+
+    def get_telemetry(self):
+        msg=self.master.recv_match(blocking=False)
+        data={"altitude":0,"battery":100}
+        if msg and msg.get_type()=="GLOBAL_POSITION_INT":
+            data["altitude"]=msg.relative_alt/1000
+        return data
+
+    def send_control(self,c):
+        self.master.mav.rc_channels_override_send(
+            self.master.target_system,
+            self.master.target_component,
+            int(c.get("roll",1500)),
+            int(c.get("pitch",1500)),
+            int(c.get("throttle",1500)),
+            int(c.get("yaw",1500)),
+            0,0,0,0)
+"""},
+
+"control":{
+"pid.py":"""class PID:
     def __init__(self,kp,ki,kd):
         self.kp=kp;self.ki=ki;self.kd=kd;self.i=0;self.prev=0
     def update(self,sp,meas,dt):
-        e=sp-meas;self.i+=e*dt;d=(e-self.prev)/dt if dt>0 else 0;self.prev=e
+        e=sp-meas;self.i+=e*dt
+        d=(e-self.prev)/dt if dt>0 else 0;self.prev=e
         return self.kp*e+self.ki*self.i+self.kd*d
+""",
+"flight_controller.py":"""from control.pid import PID
 
-pid=PID(1.5,0.02,0.5)
+class FlightController:
+    def __init__(self):
+        self.alt=PID(1.5,0.02,0.5)
 
-def sensores():
-    return {"altitude":random.uniform(8,12),"battery":random.uniform(50,100),"temperature":random.uniform(30,90)}
+    def update(self,s,m):
+        t=1500+self.alt.update(10,s.get("altitude",0),0.02)*100
+        return {"roll":1500,"pitch":1500,"yaw":1500,"throttle":t}
+"""},
 
-def control():
-    while True:
-        s=sensores();telemetry["sensors"]=s
-        telemetry["throttle"]=pid.update(10,s["altitude"],0.02)
-        time.sleep(0.02)
+"perception":{"vision.py":"""import cv2
 
-def ai():
-    while True:
-        s=telemetry.get("sensors",{})
-        if s.get("temperature",0)>70:action="EXTINGUIR"
-        elif s.get("battery",100)<30:action="RETORNAR"
-        else:action="PATRULLAR"
-        telemetry["decision"]=action
-        print("AI:",action)
-        time.sleep(0.1)
+class VisionSystem:
+    def __init__(self):
+        self.cap=cv2.VideoCapture(0)
 
-def mavlink():
-    while True:
-        print("MAVLINK:",telemetry.get("sensors",{}))
-        time.sleep(0.5)
+    def process(self):
+        ret,frame=self.cap.read()
+        if not ret:return {}
+        return {"vision":True}
+"""},
 
-Thread(target=control).start()
-Thread(target=ai).start()
-Thread(target=mavlink).start()
+"navigation":{"planner.py":"""class Planner:
+    def update(self,s,v):
+        if s.get("battery",100)<30:return {"mode":"RTL"}
+        if v.get("vision"):return {"mode":"TRACK"}
+        return {"mode":"PATROL"}
+"""},
 
-while True:time.sleep(1)
-"""}
-    def crear(ruta,contenido):
-        if isinstance(contenido,dict):
-            for k,v in contenido.items():crear(os.path.join(ruta,k),v)
-        else:write_file(ruta,contenido)
+"telemetry":{"logger.py":"""import time
+class Logger:
+    def log(self,d):print(time.time(),d)
+"""},
+
+"config":{"params.yaml":"pid: {kp:1.5,ki:0.02,kd:0.5}"}
+
+    }
+
+    def crear(r,c):
+        if isinstance(c,dict):
+            for k,v in c.items():crear(os.path.join(r,k),v)
+        else:write_file(r,c)
+
     crear(root,estructura)
     return estructura
 
 # =========================
-# RESTO
+# FISICA
 # =========================
 def calcular_fisica(peso):
     thrust=26
     return {"thrust_total":thrust,"relacion":round(thrust/peso,2),"estado":"ESTABLE"}
 
+# =========================
+# TELEMETRIA
+# =========================
 def generar_telemetria():
-    return {"variables":["x","y","z","battery"],"frecuencia_hz":10}
+    return {"vars":["x","y","z","battery"],"hz":10}
 
+# =========================
+# 3D INDUSTRIAL
+# =========================
 def generar_modelo_3d(base,peso):
-    return {"tipo":"quad_x industrial","escala":peso}
+    return {"tipo":"quad_x","formato":"STL/URDF","componentes":["frame.stl","motor.stl","prop.stl"],"escala":peso}
 
+# =========================
+# ZIP
+# =========================
 def exportar_zip(path):
-    zip_path=path+".zip"
-    with zipfile.ZipFile(zip_path,'w') as zipf:
+    z=path+".zip"
+    with zipfile.ZipFile(z,'w') as zipf:
         for root,_,files in os.walk(path):
             for f in files:
                 full=os.path.join(root,f)
                 zipf.write(full,os.path.relpath(full,path))
-    return zip_path
+    return z
 
 # =========================
 # CORE
@@ -149,14 +217,14 @@ class MaiaCore:
             data["telemetria"]=generar_telemetria()
             return {"paso":4,"data":data}
         elif paso==4:
-            data["riesgos"]=["viento extremo","fallo bateria","perdida señal"]
+            data["riesgos"]=["viento","bateria","comunicacion"]
             return {"paso":5,"data":data}
         elif paso==5:
             data["modelo_3d"]=generar_modelo_3d(data["base"],data["hardware"]["peso_total"])
             return {"paso":6,"data":data}
         elif paso==6:
             data["zip"]=exportar_zip(data["base"])
-            data["nivel_maia"]="NIVEL 5 - INDUSTRIAL SYSTEM"
+            data["nivel_maia"]="NIVEL 6 - REAL DRONE STACK"
             return {"final":True,"resultado":data}
 
 # =========================

@@ -24,7 +24,8 @@ app.register_blueprint(proyectos_bp)
 # =========================
 def write_file(path,content):
     os.makedirs(os.path.dirname(path),exist_ok=True)
-    with open(path,"w",encoding="utf-8") as f:f.write(content)
+    with open(path,"w",encoding="utf-8") as f:
+        f.write(content)
 
 # =========================
 # VIABILIDAD
@@ -53,22 +54,19 @@ def generar_hardware(peso):
     return {"estructura":{"material":"carbono","tipo":"quad_x_industrial"},"propulsion":{"motores":4,"kv":1200,"thrust":6.5},"controlador":"Pixhawk","bateria":"LiPo 6S 10000mAh","sensores":{"lidar":True,"termico":True,"gps":True},"peso_total":peso}
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL (LEVEL 7)
+# SOFTWARE INDUSTRIAL REAL (LEVEL 7 FIXED)
 # =========================
 def generar_software(base):
     root=os.path.join(base,"software")
 
     estructura={
-
-"main.py":"""
-from core.system import DroneSystem
-
+    "main.py":"""from core.system import DroneSystem
 if __name__=="__main__":
     DroneSystem().run()
 """,
 
-"core":{"system.py":"""
-import time
+    "core":{
+    "system.py":"""import time
 from comms.mavlink_node import MAVLinkNode
 from control.flight_controller import FlightController
 from perception.vision import VisionSystem
@@ -84,6 +82,8 @@ class DroneSystem:
         self.nav=Planner()
         self.log=Logger()
         self.safe=FailSafe()
+
+        self.mav.arm()
 
     def run(self):
         while True:
@@ -103,19 +103,24 @@ class DroneSystem:
             time.sleep(0.02)
 """},
 
-"comms":{"mavlink_node.py":"""
-from pymavlink import mavutil
+    "comms":{
+    "mavlink_node.py":"""from pymavlink import mavutil
 
 class MAVLinkNode:
     def __init__(self):
         self.master=mavutil.mavlink_connection('udp:127.0.0.1:14550')
         self.master.wait_heartbeat()
 
+    def arm(self):
+        self.master.arducopter_arm()
+
     def get_telemetry(self):
         msg=self.master.recv_match(blocking=False)
         data={"altitude":0,"battery":100}
+
         if msg and msg.get_type()=="GLOBAL_POSITION_INT":
             data["altitude"]=msg.relative_alt/1000
+
         return data
 
     def send_control(self,c):
@@ -126,18 +131,21 @@ class MAVLinkNode:
             int(c.get("pitch",1500)),
             int(c.get("throttle",1500)),
             int(c.get("yaw",1500)),
-            0,0,0,0)
+            0,0,0,0
+        )
 
     def emergency_land(self):
         print("FAILSAFE LAND")
 """},
 
-"control":{
-"pid.py":"""
-class PID:
+    "control":{
+    "pid.py":"""class PID:
     def __init__(self,kp,ki,kd):
-        self.kp=kp;self.ki=ki;self.kd=kd
-        self.i=0;self.prev=0
+        self.kp=kp
+        self.ki=ki
+        self.kd=kd
+        self.i=0
+        self.prev=0
 
     def update(self,sp,meas,dt):
         e=sp-meas
@@ -147,8 +155,7 @@ class PID:
         return self.kp*e+self.ki*self.i+self.kd*d
 """,
 
-"flight_controller.py":"""
-from control.pid import PID
+    "flight_controller.py":"""from control.pid import PID
 
 class FlightController:
     def __init__(self):
@@ -159,8 +166,8 @@ class FlightController:
         return {"roll":1500,"pitch":1500,"yaw":1500,"throttle":t}
 """},
 
-"perception":{"vision.py":"""
-import cv2
+    "perception":{
+    "vision.py":"""import cv2
 
 class VisionSystem:
     def __init__(self):
@@ -172,73 +179,54 @@ class VisionSystem:
         return {"vision":True}
 """},
 
-"navigation":{"planner.py":"""
-class Planner:
+    "navigation":{
+    "planner.py":"""class Planner:
     def update(self,s,v):
         if s.get("battery",100)<25:return {"mode":"RTL"}
         if v.get("vision"):return {"mode":"TRACK"}
         return {"mode":"PATROL"}
 """},
 
-"safety":{"failsafe.py":"""
-class FailSafe:
+    "safety":{
+    "failsafe.py":"""class FailSafe:
     def check(self,s):
-        if s.get("battery",100)<15:
-            return True
-        return False
+        return s.get("battery",100)<15
 """},
 
-"telemetry":{"logger.py":"""
-import time
+    "telemetry":{
+    "logger.py":"""import time
 class Logger:
     def log(self,d):
         print(time.time(),d)
 """},
 
-"config":{"params.yaml":"pid: {kp:1.5,ki:0.02,kd:0.5}"}
-    }
+    "config":{
+    "params.yaml":"pid: {kp:1.5,ki:0.02,kd:0.5}"
+    }}
 
     def crear(r,c):
         if isinstance(c,dict):
-            for k,v in c.items():crear(os.path.join(r,k),v)
-        else:write_file(r,c)
+            for k,v in c.items():
+                crear(os.path.join(r,k),v)
+        else:
+            write_file(r,c)
 
     crear(root,estructura)
     return estructura
 
 # =========================
-# FISICA
+# RESTO
 # =========================
 def calcular_fisica(peso):
     thrust=26
     return {"thrust_total":thrust,"relacion":round(thrust/peso,2),"estado":"ESTABLE"}
 
-# =========================
-# TELEMETRIA
-# =========================
 def generar_telemetria():
     return {"vars":["x","y","z","battery"],"hz":10}
 
-# =========================
-# 3D INDUSTRIAL REAL
-# =========================
 def generar_modelo_3d(base,peso):
-    return {
-        "tipo":"quad_x_industrial",
-        "formato":"URDF + STL",
-        "componentes":[
-            "frame.stl",
-            "motor.stl",
-            "propeller.stl",
-            "battery.stl"
-        ],
-        "simulacion":"Gazebo ready",
-        "escala":peso
-    }
+    return {"tipo":"quad_x_industrial","formato":"URDF + STL","escala":peso}
 
-# =========================
-# ZIP
-# =========================
 def exportar_zip(path):
     z=path+".zip"
     with zipfile.ZipFile(z,'w') as zipf:

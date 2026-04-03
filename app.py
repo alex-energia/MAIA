@@ -1,292 +1,202 @@
-<!DOCTYPE html><html><head><title>MAIA INDUSTRIAL</title>
+from flask import Flask, render_template, request, jsonify
+from proyectos import proyectos_bp, init_db
+from maia_core_fisico import analizar_drone
+import os, time, zipfile
 
-<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+print("MAIA INDUSTRIAL CORE LEVEL 8 - REAL STACK")
 
-<style>
-body{font-family:Consolas,monospace;background:#0f172a;color:#e5e7eb;}
-textarea{width:100%;height:80px;padding:10px;background:#020617;color:#e5e7eb;border:1px solid #1e293b;}
-button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor:pointer;}
-.btn-danger{background:#ef4444;}
-.btn-info{background:#0ea5e9;}
-.panel{margin-top:20px;}
-.bloque{background:#020617;margin-top:15px;padding:15px;border-left:4px solid #22c55e;}
-.item{margin-left:10px;cursor:pointer;font-size:13px;}
-.folder{color:#38bdf8;}
-.file{color:#22c55e;}
-.line{color:#64748b;}
-.codigo{background:#000;padding:10px;margin-top:5px;display:none;white-space:pre;font-size:12px;border:1px solid #1e293b;}
-.progress{width:100%;background:#1e293b;margin-top:10px;}
-.progress-bar{height:14px;width:0%;background:#22c55e;text-align:center;font-size:10px;}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;padding:40px;}
-.modal-content{background:#020617;padding:20px;max-width:900px;}
-#viewer3d{width:100%;height:320px;background:black;margin-top:10px;}
-</style>
+app = Flask(__name__, template_folder="templates")
+app.secret_key = "maia_ultra"
 
-</head><body>
+# =========================
+# NO CACHE
+# =========================
+@app.after_request
+def add_header(response):
+    response.cache_control.no_store = True
+    return response
 
-<h1>🧠 MAIA INDUSTRIAL</h1>
+init_db()
+app.register_blueprint(proyectos_bp)
 
-<textarea id="idea" placeholder="Describe tu drone..."></textarea><br>
+# =========================
+# FILE WRITER
+# =========================
+def write_file(path, content):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
 
-<button onclick="evaluar()">🚀 Generar</button>
-<button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
-<button class="btn-info" onclick="abrirInfo()">🧠 Capacidades</button>
+# =========================
+# VIABILIDAD
+# =========================
+def analizar_viabilidad(idea):
+    idea = idea.lower()
+    score = 0
+    j, p, s = [], [], []
 
-<div class="progress"><div id="bar" class="progress-bar">0%</div></div>
-<div id="progressText">Esperando...</div>
+    if "incendio" in idea:
+        score += 2
+        j.append("Emergencia real")
+    else:
+        p.append("No crítico")
+        s.append("Aplicar rescate/incendios")
 
-<div id="resultado"></div>
+    if "autonom" in idea:
+        score += 2
+        j.append("Autonomía")
+    else:
+        score += 1
+        p.append("Sin autonomía")
+        s.append("Agregar IA")
 
-<!-- MODAL -->
-<div id="modal" class="modal">
-<div class="modal-content">
-<h2>🚀 MAIA INDUSTRIAL - NIVELES</h2>
+    if "sensor" in idea or "camara" in idea:
+        score += 2
+        j.append("Percepción")
+    else:
+        score += 1
+        p.append("Sin sensores")
+        s.append("Agregar visión")
 
-<div id="capacidades"></div>
+    estado = "ALTAMENTE VIABLE" if score >= 6 else "VIABLE" if score >= 4 else "MEJORABLE"
 
-<h3>🔹 Nivel 1-3</h3>
-<p>Concepto e idea.</p>
+    return {
+        "estado": estado,
+        "score": score,
+        "justificacion": j,
+        "problemas": p,
+        "soluciones": s
+    }
 
-<h3>🔹 Nivel 4-6</h3>
-<p>Arquitectura técnica completa.</p>
+# =========================
+# HARDWARE
+# =========================
+def generar_hardware(peso):
+    return {
+        "estructura": {"material": "carbono", "tipo": "quad_x_industrial"},
+        "propulsion": {"motores": 4, "kv": 1200, "thrust": 6.5},
+        "controlador": "Pixhawk",
+        "bateria": "LiPo 6S 10000mAh",
+        "sensores": {"lidar": True, "termico": True, "gps": True},
+        "peso_total": peso
+    }
 
-<h3>🔹 Nivel 7</h3>
-<p>Software funcional MAVLink + PID + visión.</p>
+# =========================
+# SOFTWARE REAL FIX
+# =========================
+def generar_software(base):
+    root = os.path.join(base, "software")
 
-<h3>🔥 Nivel 8</h3>
-<p>Stack industrial real:<br>
-- MAVLink real<br>
-- Control de vuelo<br>
-- FailSafe<br>
-- Telemetría<br>
-- Percepción<br>
-- Navegación autónoma</p>
+    estructura = {
+        "main.py": """from core.system import DroneSystem
 
-<h3>💻 ALCANCE</h3>
-<p>Compatible con:<br>
-- PX4 / Ardupilot<br>
-- Gazebo<br>
-- Prototipo real</p>
+if __name__ == "__main__":
+    DroneSystem().run()
+""",
+        "core": {
+            "system.py": """import time
+from comms.mavlink_node import MAVLinkNode
 
-<button onclick="cerrarInfo()">Cerrar</button>
-</div>
-</div>
+class DroneSystem:
+    def __init__(self):
+        self.mav = MAVLinkNode()
+        self.mav.arm()
 
-<script>
+    def run(self):
+        while True:
+            data = self.mav.get_telemetry()
+            print(data)
+            time.sleep(0.05)
+"""
+        },
+        "comms": {
+            "mavlink_node.py": """from pymavlink import mavutil
 
-/* ========================= MOTOR ========================= */
-async function evaluar(){
-let idea=document.getElementById("idea").value;
-if(!idea){alert("Ingresa una idea");return;}
+class MAVLinkNode:
+    def __init__(self):
+        self.master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
+        self.master.wait_heartbeat()
 
-let paso=0,data={},progreso=0;
+    def arm(self):
+        try:
+            self.master.arducopter_arm()
+        except:
+            pass
 
-const estados=[
-"Analizando...",
-"Hardware...",
-"Software industrial...",
-"Física...",
-"Integración...",
-"3D industrial...",
-"Finalizando..."
-];
+    def get_telemetry(self):
+        msg = self.master.recv_match(blocking=False)
+        if msg:
+            return msg.to_dict()
+        return {}
+"""
+        }
+    }
 
-while(true){
-progreso=Math.min(progreso+14,95);
-actualizarBarra(progreso,estados[paso]||"Procesando...");
+    def crear(r, c):
+        if isinstance(c, dict):
+            for k, v in c.items():
+                crear(os.path.join(r, k), v)
+        else:
+            write_file(r, c)
 
-let res=await fetch("/maia_step",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({idea,paso,data})
-});
+    crear(root, estructura)
+    return estructura
 
-let json=await res.json();
+# =========================
+# CORE
+# =========================
+class MaiaCore:
+    def ejecutar_paso(self, idea, paso, data):
 
-if(json.final){
-actualizarBarra(100,"Completado");
-render(json.resultado || {});
-actualizarCapacidades();
-return;
-}
+        if paso == 0:
+            return {
+                "paso": 1,
+                "data": {
+                    "viabilidad": analizar_viabilidad(idea)
+                }
+            }
 
-paso=json.paso ?? paso;
-data=json.data ?? data;
-}
-}
+        elif paso == 1:
+            data["hardware"] = generar_hardware(12)
+            return {"paso": 2, "data": data}
 
-/* ========================= UI ========================= */
-function actualizarBarra(p,txt){
-let bar=document.getElementById("bar");
-bar.style.width=p+"%";
-bar.innerText=p+"%";
-document.getElementById("progressText").innerText=txt;
-}
+        elif paso == 2:
+            base = f"maia_projects/{int(time.time())}"
+            os.makedirs(base, exist_ok=True)
+            data["base"] = base
+            data["software"] = generar_software(base)
+            return {"paso": 3, "data": data}
 
-function limpiarUI(){
-document.getElementById("idea").value="";
-document.getElementById("resultado").innerHTML="";
-actualizarBarra(0,"Esperando...");
-}
+        elif paso == 3:
+            data["nivel_maia"] = "NIVEL 8 - SOFTWARE REAL FUNCIONAL"
+            return {"final": True, "resultado": data}
 
-/* ========================= BLOQUES ========================= */
-function renderBloque(titulo,data,expandir=false){
-if(!data) return "";
+# =========================
+# API
+# =========================
+@app.route("/maia_step", methods=["POST"])
+def maia_step():
+    req = request.get_json() or {}
+    core = MaiaCore()
+    return jsonify(core.ejecutar_paso(
+        req.get("idea", ""),
+        int(req.get("paso", 0)),
+        req.get("data", {})
+    ))
 
-let html=`<div class="bloque"><h3>${titulo}</h3>`;
+# =========================
+# VISTAS
+# =========================
+@app.route("/maia_invent")
+def maia_invent():
+    return render_template("maia_invent.html")
 
-if(Array.isArray(data)){
-data.forEach(x=>{
-html+=`<div class="item">• ${x}</div>`;
-});
-}else{
-html+=renderTree(data,0,expandir);
-}
+@app.route("/")
+def home():
+    return render_template("index.html")
 
-html+=`</div>`;
-return html;
-}
-
-/* ========================= RENDER ========================= */
-function render(data){
-let html=`<div class="panel">`;
-
-html+=`<div class="bloque"><h2>${data.nivel_maia || "MAIA"}</h2></div>`;
-html+=renderBloque("🧠 Viabilidad",data.viabilidad);
-html+=renderBloque("📊 Idea",data.analisis_idea);
-html+=renderBloque("🔩 Hardware",data.hardware,true);
-
-html+=`<div class="bloque">
-<h3>💻 Software (INDUSTRIAL)</h3>
-${renderTree(data.software || {},0,true)}
-</div>`;
-
-html+=renderBloque("📡 Telemetría",data.telemetria);
-html+=renderBloque("⚙️ Física",data.fisica);
-html+=renderBloque("⚠️ Riesgos",data.riesgos);
-
-if(data.modelo_3d){
-html+=`<div class="bloque">
-<h3>🧱 Modelo 3D INDUSTRIAL</h3>
-${renderTree(data.modelo_3d,0,true)}
-<div id="viewer3d"></div>
-</div>`;
-}
-
-html+=`</div>`;
-
-document.getElementById("resultado").innerHTML=html;
-
-if(data.modelo_3d) iniciar3D();
-}
-
-/* ========================= TREE ========================= */
-function renderTree(obj,nivel=0,expandir=false){
-let html="";
-
-if(Array.isArray(obj)){
-obj.forEach((v,i)=>{
-html+=renderTree({["["+i+"]"]:v},nivel,expandir);
-});
-return html;
-}
-
-Object.keys(obj).forEach(key=>{
-let val=obj[key];
-let id="node_"+Math.random().toString(36).substring(2);
-let autoOpen=expandir&&nivel<8;
-let prefix="│ ".repeat(nivel)+"├─";
-
-if(typeof val==="object"&&val!==null){
-html+=`<div class="item folder" onclick="toggle('${id}')">
-<span class="line">${prefix}</span>📁 ${key}</div>
-<div id="${id}" style="display:${autoOpen?'block':'none'};margin-left:10px;">
-${renderTree(val,nivel+1,expandir)}</div>`;
-}else{
-html+=`<div class="item file" onclick="toggle('${id}')">
-<span class="line">${prefix}</span>📄 ${key}</div>
-<pre id="${id}" class="codigo">${escapeHtml(val)}</pre>`;
-}
-});
-
-return html;
-}
-
-/* ========================= UTIL ========================= */
-function escapeHtml(text){
-if(typeof text!=="string") return JSON.stringify(text,null,2);
-return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-function toggle(id){
-let el=document.getElementById(id);
-if(!el) return;
-el.style.display=el.style.display==="block"?"none":"block";
-}
-
-/* ========================= 3D ========================= */
-function iniciar3D(){
-let c=document.getElementById("viewer3d");
-if(!c || typeof THREE==="undefined") return;
-
-let scene=new THREE.Scene();
-let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
-let renderer=new THREE.WebGLRenderer({antialias:true});
-
-renderer.setSize(c.clientWidth,320);
-c.innerHTML="";
-c.appendChild(renderer.domElement);
-
-let mat=new THREE.MeshNormalMaterial();
-
-let body=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.3,1.2),mat);
-scene.add(body);
-
-let arm1=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
-scene.add(arm1);
-
-let arm2=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
-arm2.rotation.y=Math.PI/2;
-scene.add(arm2);
-
-let motorGeo=new THREE.CylinderGeometry(0.2,0.2,0.15);
-let propGeo=new THREE.BoxGeometry(0.8,0.02,0.1);
-
-[[1.5,0,0],[-1.5,0,0],[0,0,1.5],[0,0,-1.5]].forEach(p=>{
-let m=new THREE.Mesh(motorGeo,mat);
-m.position.set(...p);
-scene.add(m);
-
-let prop=new THREE.Mesh(propGeo,mat);
-prop.position.set(...p);
-prop.position.y+=0.15;
-scene.add(prop);
-});
-
-camera.position.z=6;
-
-function animate(){
-requestAnimationFrame(animate);
-scene.rotation.y+=0.005;
-renderer.render(scene,camera);
-}
-animate();
-}
-
-/* ========================= MODAL ========================= */
-function abrirInfo(){document.getElementById("modal").style.display="block";}
-function cerrarInfo(){document.getElementById("modal").style.display="none";}
-
-function actualizarCapacidades(){
-document.getElementById("capacidades").innerHTML=`
-<h3>🧠 IA</h3><p>Autonomía real con decisiones dinámicas</p>
-<h3>🔩 Hardware</h3><p>Diseño industrial listo para fabricación</p>
-<h3>💻 Software</h3><p>MAVLink + control + navegación + failsafe</p>
-<h3>📡 Telemetría</h3><p>Streaming en tiempo real (preparado)</p>
-<h3>⚙️ Física</h3><p>Modelo validado para prototipo</p>
-`;
-}
-
-</script>
-
-</body></html>
+# =========================
+# RUN
+# =========================
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)

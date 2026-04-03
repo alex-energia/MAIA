@@ -3,7 +3,7 @@ from proyectos import proyectos_bp, init_db
 from maia_core_fisico import analizar_drone
 import os,time,zipfile
 
-print("MAIA INDUSTRIAL CORE LEVEL 6")
+print("MAIA INDUSTRIAL CORE LEVEL 7 - REAL DRONE STACK")
 
 app=Flask(__name__,template_folder="templates")
 app.secret_key="maia_ultra"
@@ -44,31 +44,37 @@ def analizar_viabilidad(idea):
 # IDEA
 # =========================
 def analizar_idea(idea):
-    return {"tipo":"incendio" if "incendio" in idea.lower() else "general","nivel":"alto","riesgo":"integracion sistemas","recomendacion":"usar PX4+ROS2"}
+    return {"tipo":"incendio" if "incendio" in idea.lower() else "general","nivel":"alto","riesgo":"integracion sistemas","recomendacion":"PX4 + ROS2 + MAVLink"}
 
 # =========================
 # HARDWARE
 # =========================
 def generar_hardware(peso):
-    return {"estructura":{"material":"carbono","tipo":"quad_x"},"propulsion":{"motores":4,"kv":1200,"thrust":6.5},"controlador":"Pixhawk","bateria":"LiPo 6S","sensores":{"lidar":True,"termico":True,"gps":True},"peso_total":peso}
+    return {"estructura":{"material":"carbono","tipo":"quad_x_industrial"},"propulsion":{"motores":4,"kv":1200,"thrust":6.5},"controlador":"Pixhawk","bateria":"LiPo 6S 10000mAh","sensores":{"lidar":True,"termico":True,"gps":True},"peso_total":peso}
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL
+# SOFTWARE INDUSTRIAL REAL (LEVEL 7)
 # =========================
 def generar_software(base):
     root=os.path.join(base,"software")
 
     estructura={
 
-"main.py":"""from core.system import DroneSystem
-if __name__=="__main__":DroneSystem().run()
+"main.py":"""
+from core.system import DroneSystem
+
+if __name__=="__main__":
+    DroneSystem().run()
 """,
 
-"core":{"system.py":"""import time
+"core":{"system.py":"""
+import time
 from comms.mavlink_node import MAVLinkNode
 from control.flight_controller import FlightController
 from perception.vision import VisionSystem
 from navigation.planner import Planner
+from telemetry.logger import Logger
+from safety.failsafe import FailSafe
 
 class DroneSystem:
     def __init__(self):
@@ -76,18 +82,29 @@ class DroneSystem:
         self.fc=FlightController()
         self.vision=VisionSystem()
         self.nav=Planner()
+        self.log=Logger()
+        self.safe=FailSafe()
 
     def run(self):
         while True:
             s=self.mav.get_telemetry()
             v=self.vision.process()
+
+            if self.safe.check(s):
+                self.mav.emergency_land()
+                continue
+
             m=self.nav.update(s,v)
             c=self.fc.update(s,m)
+
             self.mav.send_control(c)
+            self.log.log(s)
+
             time.sleep(0.02)
 """},
 
-"comms":{"mavlink_node.py":"""from pymavlink import mavutil
+"comms":{"mavlink_node.py":"""
+from pymavlink import mavutil
 
 class MAVLinkNode:
     def __init__(self):
@@ -110,18 +127,28 @@ class MAVLinkNode:
             int(c.get("throttle",1500)),
             int(c.get("yaw",1500)),
             0,0,0,0)
+
+    def emergency_land(self):
+        print("FAILSAFE LAND")
 """},
 
 "control":{
-"pid.py":"""class PID:
+"pid.py":"""
+class PID:
     def __init__(self,kp,ki,kd):
-        self.kp=kp;self.ki=ki;self.kd=kd;self.i=0;self.prev=0
+        self.kp=kp;self.ki=ki;self.kd=kd
+        self.i=0;self.prev=0
+
     def update(self,sp,meas,dt):
-        e=sp-meas;self.i+=e*dt
-        d=(e-self.prev)/dt if dt>0 else 0;self.prev=e
+        e=sp-meas
+        self.i+=e*dt
+        d=(e-self.prev)/dt if dt>0 else 0
+        self.prev=e
         return self.kp*e+self.ki*self.i+self.kd*d
 """,
-"flight_controller.py":"""from control.pid import PID
+
+"flight_controller.py":"""
+from control.pid import PID
 
 class FlightController:
     def __init__(self):
@@ -132,7 +159,8 @@ class FlightController:
         return {"roll":1500,"pitch":1500,"yaw":1500,"throttle":t}
 """},
 
-"perception":{"vision.py":"""import cv2
+"perception":{"vision.py":"""
+import cv2
 
 class VisionSystem:
     def __init__(self):
@@ -144,20 +172,30 @@ class VisionSystem:
         return {"vision":True}
 """},
 
-"navigation":{"planner.py":"""class Planner:
+"navigation":{"planner.py":"""
+class Planner:
     def update(self,s,v):
-        if s.get("battery",100)<30:return {"mode":"RTL"}
+        if s.get("battery",100)<25:return {"mode":"RTL"}
         if v.get("vision"):return {"mode":"TRACK"}
         return {"mode":"PATROL"}
 """},
 
-"telemetry":{"logger.py":"""import time
+"safety":{"failsafe.py":"""
+class FailSafe:
+    def check(self,s):
+        if s.get("battery",100)<15:
+            return True
+        return False
+"""},
+
+"telemetry":{"logger.py":"""
+import time
 class Logger:
-    def log(self,d):print(time.time(),d)
+    def log(self,d):
+        print(time.time(),d)
 """},
 
 "config":{"params.yaml":"pid: {kp:1.5,ki:0.02,kd:0.5}"}
-
     }
 
     def crear(r,c):
@@ -182,10 +220,21 @@ def generar_telemetria():
     return {"vars":["x","y","z","battery"],"hz":10}
 
 # =========================
-# 3D INDUSTRIAL
+# 3D INDUSTRIAL REAL
 # =========================
 def generar_modelo_3d(base,peso):
-    return {"tipo":"quad_x","formato":"STL/URDF","componentes":["frame.stl","motor.stl","prop.stl"],"escala":peso}
+    return {
+        "tipo":"quad_x_industrial",
+        "formato":"URDF + STL",
+        "componentes":[
+            "frame.stl",
+            "motor.stl",
+            "propeller.stl",
+            "battery.stl"
+        ],
+        "simulacion":"Gazebo ready",
+        "escala":peso
+    }
 
 # =========================
 # ZIP
@@ -224,7 +273,7 @@ class MaiaCore:
             return {"paso":6,"data":data}
         elif paso==6:
             data["zip"]=exportar_zip(data["base"])
-            data["nivel_maia"]="NIVEL 6 - REAL DRONE STACK"
+            data["nivel_maia"]="NIVEL 7 - INDUSTRIAL REAL STACK"
             return {"final":True,"resultado":data}
 
 # =========================

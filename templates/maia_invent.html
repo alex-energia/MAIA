@@ -1,7 +1,6 @@
-<!DOCTYPE html><html><head>
-<title>MAIA INDUSTRIAL</title>
+<!DOCTYPE html><html><head><title>MAIA INDUSTRIAL</title>
 
-<!-- FIX REAL -->
+<!-- ✅ FIX REAL THREE -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
@@ -22,25 +21,29 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 .modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;padding:40px;}
 .modal-content{background:#020617;padding:20px;max-width:900px;}
 #viewer3d{width:100%;height:320px;background:black;margin-top:10px;}
-</style></head>
+</style>
 
-<body>
+</head><body>
 
 <h1>🧠 MAIA INDUSTRIAL</h1>
 
 <textarea id="idea" placeholder="Describe tu drone..."></textarea><br>
+
 <button onclick="evaluar()">🚀 Generar</button>
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 <button class="btn-info" onclick="abrirInfo()">🧠 Capacidades</button>
 
 <div class="progress"><div id="bar" class="progress-bar">0%</div></div>
 <div id="progressText">Esperando...</div>
+
 <div id="resultado"></div>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
 <div class="modal-content">
 <h2>🚀 MAIA INDUSTRIAL - NIVELES</h2>
+
+<div id="capacidades"></div>
 
 <h3>🔹 Nivel 1-3</h3>
 <p>Concepto e idea.</p>
@@ -52,23 +55,19 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 <p>Software funcional con MAVLink + PID + visión.</p>
 
 <h3>🔥 Nivel 8</h3>
-<p>
-Stack industrial real:
-<br>- MAVLink real
-<br>- Control de vuelo
-<br>- FailSafe
-<br>- Telemetría
-<br>- Percepción
-<br>- Navegación autónoma
-</p>
+<p>Stack industrial real:<br>
+- MAVLink real<br>
+- Control de vuelo<br>
+- FailSafe<br>
+- Telemetría<br>
+- Percepción<br>
+- Navegación autónoma</p>
 
 <h3>💻 ALCANCE</h3>
-<p>
-Compatible con:
-<br>- PX4 / Ardupilot
-<br>- Simulación Gazebo
-<br>- Prototipo físico real
-</p>
+<p>Compatible con:<br>
+- PX4 / Ardupilot<br>
+- Gazebo<br>
+- Prototipo real</p>
 
 <button onclick="cerrarInfo()">Cerrar</button>
 </div>
@@ -80,7 +79,6 @@ Compatible con:
 async function evaluar(){
 let idea=document.getElementById("idea").value;
 if(!idea){alert("Ingresa una idea");return;}
-
 let paso=0,data={},progreso=0;
 
 const estados=[
@@ -131,6 +129,24 @@ document.getElementById("resultado").innerHTML="";
 actualizarBarra(0,"Esperando...");
 }
 
+/* ========================= BLOQUES ========================= */
+function renderBloque(titulo,data,expandir=false){
+if(!data) return "";
+
+let html=`<div class="bloque"><h3>${titulo}</h3>`;
+
+if(Array.isArray(data)){
+data.forEach(x=>{
+html+=`<div class="item">• ${x}</div>`;
+});
+}else{
+html+=renderTree(data,0,expandir);
+}
+
+html+=`</div>`;
+return html;
+}
+
 /* ========================= RENDER ========================= */
 function render(data){
 let html=`<div class="panel">`;
@@ -140,24 +156,18 @@ html+=renderBloque("🧠 Viabilidad",data.viabilidad);
 html+=renderBloque("📊 Idea",data.analisis_idea);
 html+=renderBloque("🔩 Hardware",data.hardware,true);
 
-html+=`<div class="bloque">
-<h3>💻 Software (INDUSTRIAL)</h3>
-${renderTree(data.software,0,true)}
-</div>`;
+html+=`<div class="bloque"><h3>💻 Software (INDUSTRIAL)</h3>${renderTree(data.software,0,true)}</div>`;
 
 html+=renderBloque("📡 Telemetría",data.telemetria);
 html+=renderBloque("⚙️ Física",data.fisica);
 html+=renderBloque("⚠️ Riesgos",data.riesgos);
 
 if(data.modelo_3d){
-html+=`<div class="bloque">
-<h3>🧱 Modelo 3D INDUSTRIAL</h3>
-${renderTree(data.modelo_3d,0,true)}
-<div id="viewer3d"></div>
-</div>`;
+html+=`<div class="bloque"><h3>🧱 Modelo 3D INDUSTRIAL</h3>${renderTree(data.modelo_3d,0,true)}<div id="viewer3d"></div></div>`;
 }
 
 html+=`</div>`;
+
 document.getElementById("resultado").innerHTML=html;
 
 if(data.modelo_3d) iniciar3D();
@@ -166,8 +176,11 @@ if(data.modelo_3d) iniciar3D();
 /* ========================= TREE ========================= */
 function renderTree(obj,nivel=0,expandir=false){
 let html="";
+
 if(Array.isArray(obj)){
-obj.forEach((v,i)=>{html+=renderTree({["["+i+"]"]:v},nivel,expandir);});
+obj.forEach((v,i)=>{
+html+=renderTree({["["+i+"]"]:v},nivel,expandir);
+});
 return html;
 }
 
@@ -178,18 +191,13 @@ let autoOpen=expandir&&nivel<8;
 let prefix="│ ".repeat(nivel)+"├─";
 
 if(typeof val==="object"&&val!==null){
-html+=`
-<div class="item folder" onclick="toggle('${id}')">
-<span class="line">${prefix}</span>📁 ${key}
-</div>
+html+=`<div class="item folder" onclick="toggle('${id}')">
+<span class="line">${prefix}</span>📁 ${key}</div>
 <div id="${id}" style="display:${autoOpen?'block':'none'};margin-left:10px;">
-${renderTree(val,nivel+1,expandir)}
-</div>`;
+${renderTree(val,nivel+1,expandir)}</div>`;
 }else{
-html+=`
-<div class="item file" onclick="toggle('${id}')">
-<span class="line">${prefix}</span>📄 ${key}
-</div>
+html+=`<div class="item file" onclick="toggle('${id}')">
+<span class="line">${prefix}</span>📄 ${key}</div>
 <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>`;
 }
 });
@@ -199,19 +207,20 @@ return html;
 
 /* ========================= UTIL ========================= */
 function escapeHtml(text){
-if(typeof text!=="string")return JSON.stringify(text,null,2);
+if(typeof text!=="string") return JSON.stringify(text,null,2);
 return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
 
 function toggle(id){
 let el=document.getElementById(id);
-if(!el)return;
+if(!el) return;
 el.style.display=el.style.display==="block"?"none":"block";
 }
 
-/* ========================= 3D INDUSTRIAL ========================= */
+/* ========================= 3D ========================= */
 function iniciar3D(){
 let c=document.getElementById("viewer3d");
+
 let scene=new THREE.Scene();
 let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
 let renderer=new THREE.WebGLRenderer({antialias:true});
@@ -222,11 +231,9 @@ c.appendChild(renderer.domElement);
 
 let mat=new THREE.MeshNormalMaterial();
 
-// cuerpo
 let body=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.3,1.2),mat);
 scene.add(body);
 
-// brazos X
 let arm1=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
 scene.add(arm1);
 
@@ -234,7 +241,6 @@ let arm2=new THREE.Mesh(new THREE.BoxGeometry(3,0.1,0.2),mat);
 arm2.rotation.y=Math.PI/2;
 scene.add(arm2);
 
-// motores + helices
 let motorGeo=new THREE.CylinderGeometry(0.2,0.2,0.15);
 let propGeo=new THREE.BoxGeometry(0.8,0.02,0.1);
 
@@ -265,12 +271,13 @@ function cerrarInfo(){document.getElementById("modal").style.display="none";}
 
 function actualizarCapacidades(){
 document.getElementById("capacidades").innerHTML=`
-<h3>🧠 IA</h3><p>Autonomía real</p>
-<h3>🔩 Hardware</h3><p>Diseño industrial</p>
-<h3>💻 Software</h3><p>Stack real MAVLink + control</p>
+<h3>🧠 IA</h3><p>Autonomía real con decisiones dinámicas</p>
+<h3>🔩 Hardware</h3><p>Arquitectura lista para fabricación</p>
+<h3>💻 Software</h3><p>MAVLink + control + navegación + failsafe</p>
 <h3>📡 Telemetría</h3><p>Datos en tiempo real</p>
-<h3>⚙️ Física</h3><p>Simulación realista</p>
-`;
+<h3>⚙️ Física</h3><p>Modelo validado</p>`;
 }
 
-</script></body></html>
+</script>
+
+</body></html>

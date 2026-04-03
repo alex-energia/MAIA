@@ -84,7 +84,7 @@ def generar_hardware(peso):
     }
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL (FIX TOTAL)
+# SOFTWARE INDUSTRIAL REAL
 # =========================
 def generar_software(base):
     root = os.path.join(base, "software")
@@ -105,7 +105,6 @@ from navigation.planner import Planner
 from safety.failsafe import FailSafe
 
 class DroneSystem:
-
     def __init__(self):
         self.mav = MAVLinkNode()
         self.fc = FlightController()
@@ -141,7 +140,6 @@ class DroneSystem:
             "mavlink_node.py": """from pymavlink import mavutil
 
 class MAVLinkNode:
-
     def __init__(self):
         self.master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
         self.master.wait_heartbeat()
@@ -168,7 +166,6 @@ class MAVLinkNode:
 
         "control": {
             "pid.py": """class PID:
-
     def __init__(self, kp, ki, kd):
         self.kp = kp
         self.ki = ki
@@ -187,7 +184,6 @@ class MAVLinkNode:
             "flight_controller.py": """from control.pid import PID
 
 class FlightController:
-
     def __init__(self):
         self.alt = PID(1.5, 0.02, 0.5)
 
@@ -198,7 +194,6 @@ class FlightController:
 
         "perception": {
             "vision.py": """class VisionSystem:
-
     def process(self):
         return {"vision": True}
 """
@@ -206,7 +201,6 @@ class FlightController:
 
         "navigation": {
             "planner.py": """class Planner:
-
     def update(self, s, v):
         return {"mode": "AUTO"}
 """
@@ -214,7 +208,6 @@ class FlightController:
 
         "safety": {
             "failsafe.py": """class FailSafe:
-
     def check(self, s):
         return s.get("battery", 100) < 15
 """
@@ -236,12 +229,13 @@ class FlightController:
     return estructura
 
 # =========================
-# EXTRA BLOQUES (NUEVOS)
+# EXTRA BLOQUES
 # =========================
 def generar_telemetria():
     return {
         "variables": ["altitude", "battery", "gps", "velocity"],
-        "frecuencia_hz": 10
+        "frecuencia_hz": 10,
+        "estado": "stream_activo"
     }
 
 def calcular_fisica(peso):
@@ -257,6 +251,13 @@ def generar_modelo_3d(peso):
         "tipo": "quad_x_industrial",
         "brazos": 4,
         "escala": peso
+    }
+
+def generar_riesgos():
+    return {
+        "criticos": ["perdida_bateria", "fallo_motores"],
+        "operativos": ["viento", "lluvia"],
+        "sistema": ["perdida_mavlink", "error_pid"]
     }
 
 # =========================
@@ -288,12 +289,10 @@ class MaiaCore:
             return {"paso": 3, "data": data}
 
         elif paso == 3:
-            # 🔥 AQUÍ ESTABA EL PROBLEMA: FALTABAN BLOQUES
             data["telemetria"] = generar_telemetria()
             data["fisica"] = calcular_fisica(data["hardware"]["peso_total"])
-            data["riesgos"] = ["viento", "bateria", "comunicacion"]
+            data["riesgos"] = generar_riesgos()
             data["modelo_3d"] = generar_modelo_3d(data["hardware"]["peso_total"])
-
             data["nivel_maia"] = "NIVEL 8 - SOFTWARE REAL FUNCIONAL"
 
             return {"final": True, "resultado": data}

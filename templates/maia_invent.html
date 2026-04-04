@@ -8,7 +8,6 @@
 <style>
 body{font-family:Consolas;background:#0a0f1f;color:#e5e7eb;}
 textarea{width:100%;height:80px;background:#020617;color:white;border:1px solid #1e293b;}
-
 button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor:pointer;}
 .btn-danger{background:#ef4444;}
 .btn-info{background:#0ea5e9;}
@@ -20,6 +19,11 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 
 .bloque{background:#020617;margin-top:15px;padding:15px;border-left:4px solid #22c55e;}
 .scroll{max-height:400px;overflow:auto;}
+
+.item{cursor:pointer;font-size:13px;}
+.folder{color:#38bdf8;}
+.file{color:#22c55e;}
+.codigo{display:none;background:#000;padding:10px;}
 
 #chatBox{position:fixed;bottom:20px;right:90px;width:320px;height:420px;background:#020617;border:1px solid #22c55e;display:none;flex-direction:column;}
 #chatMessages{flex:1;overflow:auto;padding:10px;}
@@ -33,9 +37,8 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 
 <h1>🧠 MAIA INDUSTRIAL</h1>
 
-<textarea id="idea"></textarea>
+<textarea id="idea"></textarea><br>
 
-<br>
 <button onclick="evaluar()">🚀 Generar</button>
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 <button class="btn-info" onclick="abrirInfo()">🧠 Capacidades</button>
@@ -44,14 +47,14 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 
 <!-- BOTONES -->
 <div class="global-ui">
-<button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
-<button class="btn-chat" onclick="toggleChat()">➕</button>
+    <button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
+    <button class="btn-chat" onclick="toggleChat()">➕</button>
 </div>
 
 <!-- CHAT -->
 <div id="chatBox">
-<div id="chatMessages"></div>
-<input id="chatInput" placeholder="Pregunta a MAIA..." onkeydown="if(event.key==='Enter')enviarChat()">
+    <div id="chatMessages"></div>
+    <input id="chatInput" onkeydown="if(event.key==='Enter')enviarChat()">
 </div>
 
 <!-- MODAL -->
@@ -64,57 +67,71 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 <script>
 
 /* ========================= ESTADO ========================= */
-let vozActiva = false;
-let recognition = null;
-let ultimoResultado = null;
+let vozActiva=false;
+let recognition=null;
+let ultimoResultado=null;
 
-/* ========================= HABLAR ========================= */
+/* ========================= LIMPIAR TEXTO VOZ ========================= */
+function limpiarTexto(texto){
+    return texto
+    .replace(/[_{}[\]"]/g,"")
+    .replace(/,/g,".")
+    .replace(/:/g,"")
+    .replace(/\s+/g," ");
+}
+
+/* ========================= VOZ ========================= */
 function hablar(texto){
-    let msg = new SpeechSynthesisUtterance(texto);
-    msg.lang = "es-ES";
-    msg.pitch = 1;
-    msg.rate = 1;
+    if(!vozActiva) return;
+
+    let limpio = limpiarTexto(texto);
+
+    let msg = new SpeechSynthesisUtterance(limpio);
+    msg.pitch=1;
+    msg.rate=1;
+
+    let voces = speechSynthesis.getVoices();
+    let vozFemenina = voces.find(v=>v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman"));
+
+    if(vozFemenina) msg.voice = vozFemenina;
+
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);
 }
 
 /* ========================= VOZ CONTINUA ========================= */
 function iniciarEscucha(){
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "es-ES";
-    recognition.continuous = true;
+    recognition = new (window.SpeechRecognition||window.webkitSpeechRecognition)();
+    recognition.lang="es-CO";
+    recognition.continuous=true;
 
-    recognition.onresult = function(event){
-        let texto = event.results[event.results.length-1][0].transcript;
+    recognition.onresult = e=>{
+        let texto = e.results[e.results.length-1][0].transcript;
         procesarVoz(texto);
     };
 
-    recognition.onend = function(){
+    recognition.onend = ()=>{
         if(vozActiva) recognition.start();
     };
 
     recognition.start();
 }
 
-/* ========================= PROCESAR VOZ ========================= */
 function procesarVoz(texto){
-    let respuesta = generarRespuesta(texto);
-
-    let cont = document.getElementById("chatMessages");
-    cont.innerHTML += `<div>🎤 ${texto}</div>`;
-    cont.innerHTML += `<div>🤖 ${respuesta}</div>`;
-
+    let respuesta = generarRespuesta(texto,true);
+    logChat("🎤",texto);
+    logChat("🤖",respuesta);
     hablar(respuesta);
 }
 
-/* ========================= TOGGLE VOZ ========================= */
+/* ========================= BOTON VOZ ========================= */
 function toggleVoice(){
-    vozActiva = !vozActiva;
-    let btn = document.getElementById("btnVoice");
+    vozActiva=!vozActiva;
+    let btn=document.getElementById("btnVoice");
 
     if(vozActiva){
         btn.classList.add("active");
-        hablar("Hola Alex, soy MAIA. Sistema activado.");
+        hablar("Hola Alex. Soy MAIA.");
         iniciarEscucha();
     }else{
         btn.classList.remove("active");
@@ -125,54 +142,57 @@ function toggleVoice(){
 
 /* ========================= CHAT ========================= */
 function toggleChat(){
-    let box = document.getElementById("chatBox");
-    box.style.display = box.style.display==="flex"?"none":"flex";
+    let box=document.getElementById("chatBox");
+    box.style.display=box.style.display==="flex"?"none":"flex";
 }
 
 function enviarChat(){
-    let input = document.getElementById("chatInput");
-    let msg = input.value;
+    let input=document.getElementById("chatInput");
+    let msg=input.value;
     if(!msg) return;
 
-    let cont = document.getElementById("chatMessages");
-    cont.innerHTML += `<div>🧑 ${msg}</div>`;
+    let respuesta=generarRespuesta(msg,false);
 
-    let respuesta = generarRespuesta(msg);
-
-    cont.innerHTML += `<div>🤖 ${respuesta}</div>`;
+    logChat("🧑",msg);
+    logChat("🤖",respuesta);
 
     input.value="";
 }
 
-/* ========================= IA ========================= */
-function generarRespuesta(msg){
-    msg = msg.toLowerCase();
+function logChat(tipo,texto){
+    let cont=document.getElementById("chatMessages");
+    cont.innerHTML+=`<div>${tipo} ${texto}</div>`;
+}
+
+/* ========================= IA MEJORADA ========================= */
+function generarRespuesta(msg,voz){
+    msg=msg.toLowerCase();
 
     if(!ultimoResultado){
         return "Primero genera un drone.";
     }
 
     if(msg.includes("hardware")){
-        return "Hardware: " + JSON.stringify(ultimoResultado.hardware);
+        return "El drone tiene estructura de carbono, cuatro motores y sensores avanzados como lidar y cámara térmica.";
     }
 
     if(msg.includes("software")){
-        return "Software con MAVLink, control PID y navegación autónoma.";
+        return "El sistema usa comunicación MAVLink, control PID y navegación autónoma.";
     }
 
     if(msg.includes("riesgo")){
-        return "Riesgos: " + JSON.stringify(ultimoResultado.riesgos);
+        return "Los riesgos principales son pérdida de batería, fallos de motor, condiciones climáticas y errores de comunicación.";
     }
 
     if(msg.includes("finanza")){
-        return "Puede generar ingresos en vigilancia, agricultura o inspección.";
+        return "Este drone puede generar ingresos en vigilancia, inspección y agricultura.";
     }
 
     if(msg.includes("energia")){
-        return "Compatible con energía solar e híbrida.";
+        return "Puede integrarse con energía solar o sistemas híbridos.";
     }
 
-    return "Puedo analizar hardware, software, riesgos y negocio del drone.";
+    return "Puedo ayudarte a analizar hardware, software, riesgos o negocio del drone.";
 }
 
 /* ========================= MOTOR ========================= */
@@ -192,7 +212,7 @@ async function evaluar(){
         let json=await res.json();
 
         if(json.final){
-            ultimoResultado = json.resultado;
+            ultimoResultado=json.resultado;
             render(json.resultado);
             actualizarCapacidades();
             if(vozActiva) hablar("Análisis completado");
@@ -207,33 +227,50 @@ async function evaluar(){
 /* ========================= RENDER ORIGINAL (RESPETADO) ========================= */
 function render(data){
     let html="";
-    html+=bloque("🧠 Viabilidad",data.viabilidad);
-    html+=bloque("🔩 Hardware",data.hardware,true);
-    html+=bloque("📡 Telemetría",data.telemetria,true);
-    html+=bloque("⚙️ Física",data.fisica,true);
-    html+=bloque("⚠️ Riesgos",data.riesgos,true);
+    html+=renderBloque("🧠 Viabilidad",data.viabilidad);
+    html+=renderBloque("🔩 Hardware",data.hardware,true);
+    html+=renderBloque("💻 Software",data.software,true);
+    html+=renderBloque("📡 Telemetría",data.telemetria,true);
+    html+=renderBloque("⚙️ Física",data.fisica,true);
+    html+=renderBloque("⚠️ Riesgos",data.riesgos,true);
+
     html+=`<div class="bloque"><h3>🧱 Modelo 3D</h3><div id="viewer3d"></div></div>`;
+
     document.getElementById("resultado").innerHTML=html;
     iniciar3D();
 }
 
-function bloque(t,d){
-    if(!d) return "";
-    return `<div class="bloque"><h3>${t}</h3><div class="scroll">${renderTree(d)}</div></div>`;
+function renderBloque(titulo,data,expandir=false){
+    if(!data) return "";
+    return `<div class="bloque">
+        <h3>${titulo}</h3>
+        <div class="scroll">
+            ${renderTree(data,expandir)}
+        </div>
+    </div>`;
 }
 
-function renderTree(obj){
+function renderTree(obj,expandir=false){
     let html="";
     for(let k in obj){
         let v=obj[k];
+        let id="n"+Math.random();
+
         if(typeof v==="object"){
-            html+=`<div class="folder">${k}</div>`;
-            html+=renderTree(v);
+            html+=`<div class="folder" onclick="toggle('${id}')">📁 ${k}</div>
+                   <div id="${id}" style="display:${expandir?'block':'none'};margin-left:10px;">
+                   ${renderTree(v,expandir)}</div>`;
         }else{
-            html+=`<div class="file">${k}: ${v}</div>`;
+            html+=`<div class="file" onclick="toggle('${id}')">📄 ${k}</div>
+                   <div id="${id}" class="codigo">${v}</div>`;
         }
     }
     return html;
+}
+
+function toggle(id){
+    let el=document.getElementById(id);
+    el.style.display=el.style.display==="block"?"none":"block";
 }
 
 /* ========================= 3D ========================= */
@@ -251,10 +288,18 @@ function iniciar3D(){
     scene.add(light);
 
     let mat=new THREE.MeshStandardMaterial({color:0x00ffcc});
+
     let body=new THREE.Mesh(new THREE.BoxGeometry(2,0.5,2),mat);
     scene.add(body);
 
-    camera.position.z=6;
+    let arm=new THREE.Mesh(new THREE.BoxGeometry(5,0.2,0.2),mat);
+    scene.add(arm);
+
+    let arm2=arm.clone();
+    arm2.rotation.y=Math.PI/2;
+    scene.add(arm2);
+
+    camera.position.z=8;
 
     function animate(){
         requestAnimationFrame(animate);
@@ -284,20 +329,19 @@ document.getElementById("capacidades").innerHTML=`
 <h2>🔥 MAIA NIVEL 12</h2>
 
 <h3>🧠 INTELIGENCIA</h3>
-<p>MAIA analiza sistemas completos y responde en tiempo real.</p>
+<p>Análisis completo de sistemas de drones con arquitectura real.</p>
 
 <h3>🎤 VOZ</h3>
-<p>Interacción continua bidireccional por voz.</p>
+<p>Interacción continua, respuestas naturales sin lectura técnica.</p>
 
 <h3>➕ CHAT</h3>
-<p>Asistente experto multi-industria.</p>
+<p>Asistente experto en drones, energía, finanzas y sistemas.</p>
 
 <h3>⚙️ SISTEMA</h3>
-<p>Arquitectura industrial funcional y escalable.</p>
+<p>Arquitectura modular industrial con bloques expandibles.</p>
 `;
 }
 
 </script>
-
 </body>
 </html>

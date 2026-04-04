@@ -5,7 +5,7 @@ import os
 import time
 import zipfile
 
-print("MAIA INDUSTRIAL CORE LEVEL 9 - REAL STACK")
+print("MAIA INDUSTRIAL CORE LEVEL 10 - REAL AUTOPILOT")
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "maia_ultra"
@@ -30,7 +30,7 @@ def write_file(path, content):
         f.write(content)
 
 # =========================
-# VIABILIDAD
+# VIABILIDAD (NO SE TOCA)
 # =========================
 def analizar_viabilidad(idea):
     idea = idea.lower()
@@ -71,7 +71,7 @@ def analizar_viabilidad(idea):
     }
 
 # =========================
-# HARDWARE
+# HARDWARE (NO SE TOCA)
 # =========================
 def generar_hardware(peso):
     return {
@@ -84,7 +84,7 @@ def generar_hardware(peso):
     }
 
 # =========================
-# SOFTWARE INDUSTRIAL REAL (FIX TOTAL)
+# SOFTWARE NIVEL 10 (REAL)
 # =========================
 def generar_software(base):
 
@@ -115,38 +115,45 @@ class DroneSystem:
         self.nav = Planner()
         self.safe = FailSafe()
 
-        try:
-            self.mav.arm()
-        except:
-            pass
+        self.dt = 0.02
+
+        self.mav.set_mode_guided()
+        self.mav.arm()
 
     def run(self):
         while True:
-            s = self.mav.get_telemetry()
-            v = self.vision.process()
+            state = self.mav.get_telemetry()
+            vision = self.vision.process()
 
-            if self.safe.check(s):
+            if self.safe.check(state):
                 self.mav.emergency_land()
                 continue
 
-            m = self.nav.update(s, v)
-            c = self.fc.update(s, m)
+            target = self.nav.update(state, vision)
+            control = self.fc.update(state, target, self.dt)
 
-            self.mav.send_control(c)
+            self.mav.send_control(control)
 
-            print(s)
-            time.sleep(0.05)
+            time.sleep(self.dt)
 """
         },
 
         "comms": {
             "mavlink_node.py": """from pymavlink import mavutil
+import time
 
 class MAVLinkNode:
 
     def __init__(self):
         self.master = mavutil.mavlink_connection('udp:127.0.0.1:14550')
         self.master.wait_heartbeat()
+
+    def set_mode_guided(self):
+        self.master.mav.set_mode_send(
+            self.master.target_system,
+            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+            4
+        )
 
     def arm(self):
         try:
@@ -156,12 +163,17 @@ class MAVLinkNode:
 
     def get_telemetry(self):
         msg = self.master.recv_match(blocking=False)
-        if msg:
-            return msg.to_dict()
-        return {}
+        return msg.to_dict() if msg else {}
 
     def send_control(self, c):
-        pass
+        self.master.mav.manual_control_send(
+            self.master.target_system,
+            0,
+            0,
+            int(c.get("throttle", 500)),
+            0,
+            0
+        )
 
     def emergency_land(self):
         print("FAILSAFE LAND")
@@ -193,8 +205,13 @@ class FlightController:
     def __init__(self):
         self.alt = PID(1.5, 0.02, 0.5)
 
-    def update(self, s, m):
-        return {"throttle": 1500}
+    def update(self, s, m, dt):
+        altitude = s.get("altitude", 0)
+        target_alt = m.get("altitude", 10)
+
+        throttle = self.alt.update(target_alt, altitude, dt)
+
+        return {"throttle": max(200, min(800, throttle))}
 """
         },
 
@@ -208,7 +225,7 @@ class FlightController:
         "navigation": {
             "planner.py": """class Planner:
     def update(self, s, v):
-        return {"mode": "AUTO"}
+        return {"altitude": 10}
 """
         },
 
@@ -235,13 +252,13 @@ class FlightController:
     return estructura
 
 # =========================
-# EXTRA BLOQUES (NO SE TOCAN, SOLO MEJORADOS)
+# BLOQUES EXTRA (SE CONSERVAN)
 # =========================
 def generar_telemetria():
     return {
         "variables": ["altitude", "battery", "gps", "velocity"],
-        "frecuencia_hz": 10,
-        "estado": "stream_activo"
+        "frecuencia_hz": 20,
+        "estado": "real_stream"
     }
 
 def calcular_fisica(peso):
@@ -298,8 +315,7 @@ class MaiaCore:
             data["riesgos"] = generar_riesgos()
             data["modelo_3d"] = generar_modelo_3d(data["hardware"]["peso_total"])
 
-            # 🔥 SUBIDA DE NIVEL REAL
-            data["nivel_maia"] = "NIVEL 9 - CONTROL REAL INDUSTRIAL"
+            data["nivel_maia"] = "NIVEL 10 - AUTOPILOTO REAL"
 
             return {"final": True, "resultado": data}
 
@@ -310,6 +326,7 @@ class MaiaCore:
 def maia_step():
     req = request.get_json() or {}
     core = MaiaCore()
+
     return jsonify(core.ejecutar_paso(
         req.get("idea", ""),
         int(req.get("paso", 0)),

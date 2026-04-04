@@ -12,19 +12,26 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 .btn-info{background:#0ea5e9;}
 
 .global-ui{
-position:fixed;bottom:20px;right:20px;
-display:flex;flex-direction:column;gap:10px;
+position:fixed;
+bottom:20px;
+right:20px;
+display:flex;
+flex-direction:column;
+gap:10px;
+z-index:999;
 }
 
 .btn-ia{
-background:#111827;border:2px solid #ef4444;
-border-radius:50%;width:55px;height:55px;
+background:#111827;
+border:2px solid #ef4444;
+border-radius:50%;
+width:55px;height:55px;
 }
-
 .btn-ia.active{background:#ef4444;box-shadow:0 0 15px red;}
 
 .btn-chat{
-background:#22c55e;border-radius:50%;
+background:#22c55e;
+border-radius:50%;
 width:55px;height:55px;
 }
 
@@ -40,16 +47,22 @@ width:55px;height:55px;
 
 .modal{
 position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.95);display:none;
+background:rgba(0,0,0,0.95);
+display:none;
+z-index:999;
 }
 
 .modal-content{
-background:#020617;padding:20px;
-max-width:900px;margin:auto;margin-top:5%;
-max-height:80vh;overflow:auto;
+background:#020617;
+padding:20px;
+max-width:900px;
+margin:auto;
+margin-top:5%;
+max-height:80vh;
+overflow:auto;
 }
 
-#viewer3d{height:400px;}
+#viewer3d{height:420px;}
 </style>
 </head>
 
@@ -67,7 +80,7 @@ max-height:80vh;overflow:auto;
 
 <div id="resultado"></div>
 
-<!-- BOTONES MAIA -->
+<!-- BOTONES -->
 <div class="global-ui">
 <button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
 <button class="btn-chat" onclick="toggleChat()">➕</button>
@@ -76,7 +89,7 @@ max-height:80vh;overflow:auto;
 <!-- CHAT -->
 <div id="chatBox" style="display:none;position:fixed;bottom:20px;right:90px;width:300px;height:400px;background:#020617;border:1px solid #22c55e;flex-direction:column;">
 <div id="chatMessages" style="flex:1;overflow:auto;padding:10px;"></div>
-<input id="chatInput" placeholder="Pregunta..." onkeydown="if(event.key==='Enter')enviarChat()">
+<input id="chatInput" onkeydown="if(event.key==='Enter')enviarChat()">
 </div>
 
 <!-- MODAL -->
@@ -92,14 +105,27 @@ max-height:80vh;overflow:auto;
 /* ========================= NIVEL ========================= */
 let NIVEL_MAIA = 15;
 
-/* ========================= VOZ ========================= */
+/* ========================= VOZ FEMENINA REAL ========================= */
 let vozActiva=false;
 let recognition=null;
+let voces=[];
+
+speechSynthesis.onvoiceschanged = ()=>{voces=speechSynthesis.getVoices();};
+
+function getVozFemenina(){
+let v = voces.find(v=>v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman"));
+if(!v) v = voces.find(v=>v.lang.includes("es"));
+return v;
+}
 
 function hablar(t){
 if(!vozActiva) return;
 let msg=new SpeechSynthesisUtterance(t);
-msg.lang="es-US";
+msg.lang="es-CO";
+msg.pitch=1;
+msg.rate=1;
+let voz=getVozFemenina();
+if(voz) msg.voice=voz;
 speechSynthesis.cancel();
 speechSynthesis.speak(msg);
 }
@@ -142,15 +168,12 @@ box.style.display=box.style.display==="flex"?"none":"flex";
 }
 
 function enviarChat(){
-let input=document.getElementById("chatInput");
-let msg=input.value;
+let msg=chatInput.value;
 if(!msg) return;
-
-let respuesta=generarRespuesta(msg);
+let r=generarRespuesta(msg);
 logChat("🧑",msg);
-logChat("🤖",respuesta);
-
-input.value="";
+logChat("🤖",r);
+chatInput.value="";
 }
 
 function logChat(t,x){
@@ -160,13 +183,10 @@ chatMessages.innerHTML+=`<div>${t} ${x}</div>`;
 /* ========================= IA ========================= */
 function generarRespuesta(msg){
 msg=msg.toLowerCase();
-
-if(msg.includes("hardware")) return "Sistema estructural de carbono con motores brushless y sensores industriales.";
-if(msg.includes("software")) return "Control autónomo con navegación inteligente y procesamiento en tiempo real.";
-if(msg.includes("riesgo")) return "Riesgos críticos: energía, clima y fallos mecánicos.";
-if(msg.includes("uso")) return "Aplicaciones en incendios, vigilancia e inspección.";
-
-return "Haz una pregunta específica.";
+if(msg.includes("hardware")) return "Sistema estructural completo con materiales aeroespaciales, motores de alto torque y sensores industriales avanzados.";
+if(msg.includes("software")) return "Arquitectura autónoma con navegación inteligente, control adaptativo y procesamiento en tiempo real.";
+if(msg.includes("riesgo")) return "Riesgos críticos incluyen fallo energético, pérdida de comunicación y condiciones ambientales extremas.";
+return "Pregunta específica sobre hardware, software, riesgos o uso.";
 }
 
 /* ========================= PROGRESO ========================= */
@@ -176,30 +196,60 @@ if(!idea){alert("Ingresa una idea");return;}
 
 let barra=document.getElementById("progreso");
 
-for(let i=0;i<=100;i+=10){
+for(let i=0;i<=100;i+=5){
 barra.style.width=i+"%";
-await new Promise(r=>setTimeout(r,80));
+await new Promise(r=>setTimeout(r,50));
 }
 
 let data=generarDroneReal(idea);
 render(data);
 }
 
-/* ========================= GENERADOR ========================= */
+/* ========================= GENERADOR COMPLETO ========================= */
 function generarDroneReal(){
 return{
-viabilidad:{estado:"VIABLE",justificacion:"Alta demanda en incendios forestales"},
-hardware:{
-estructura:"fibra de carbono aeroespacial",
-motores:"4 brushless industriales",
-sensores:{lidar:"detección 3D",termico:"detección calor"}
+viabilidad:{
+estado:"VIABLE",
+demanda:"Alta en incendios forestales",
+impacto:"Protección ambiental y reducción de pérdidas"
 },
-software:{control:"autónomo",ia:"detección de fuego"},
-riesgos:{criticos:["batería","motor"],operativos:["clima"]}
+hardware:{
+estructura:{
+material:"fibra de carbono aeroespacial",
+resistencia:"alta temperatura",
+peso:"ligero"
+},
+motores:{
+tipo:"brushless industrial",
+potencia:"alta",
+cantidad:4
+},
+sensores:{
+lidar:"mapeo 3D",
+termico:"detección calor",
+gps:"posicionamiento"
+}
+},
+software:{
+control:"autónomo",
+navegacion:"inteligente",
+ia:"detección fuego"
+},
+telemetria:{
+datos:["posición","batería","velocidad"]
+},
+fisica:{
+empuje:"alto",
+estabilidad:"óptima"
+},
+riesgos:{
+criticos:["batería","motor"],
+operativos:["clima","interferencias"]
+}
 };
 }
 
-/* ========================= TREE ========================= */
+/* ========================= TREE COMPLETO ========================= */
 function renderTree(obj){
 let html="";
 for(let k in obj){
@@ -208,7 +258,7 @@ let id="n"+Math.random();
 
 if(typeof v==="object"){
 html+=`<div class="folder" onclick="toggle('${id}')">📁 ${k}</div>
-<div id="${id}" style="display:none;margin-left:10px;">
+<div id="${id}" style="display:block;margin-left:10px;">
 ${renderTree(v)}
 </div>`;
 }else{
@@ -230,9 +280,7 @@ let html="";
 for(let k in data){
 html+=`<div class="bloque"><h3>${k}</h3><div class="scroll">${renderTree(data[k])}</div></div>`;
 }
-
 html+=`<div class="bloque"><h3>🧱 Modelo 3D</h3><div id="viewer3d"></div></div>`;
-
 resultado.innerHTML=html;
 iniciar3D();
 }
@@ -244,8 +292,8 @@ let c=document.getElementById("viewer3d");
 let scene=new THREE.Scene();
 let camera=new THREE.PerspectiveCamera(75,c.clientWidth/400,0.1,1000);
 let renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(c.clientWidth,400);
 
+renderer.setSize(c.clientWidth,400);
 c.innerHTML="";
 c.appendChild(renderer.domElement);
 
@@ -290,6 +338,14 @@ prop.position.set(x,0.3,z);
 scene.add(prop);
 }
 
+/* CÁMARA */
+let cam=new THREE.Mesh(
+new THREE.SphereGeometry(0.3),
+new THREE.MeshStandardMaterial({color:0x0000ff})
+);
+cam.position.y=-0.5;
+scene.add(cam);
+
 camera.position.z=8;
 
 function animate(){
@@ -303,14 +359,10 @@ animate();
 /* ========================= CAPACIDADES ========================= */
 function abrirInfo(){
 modal.style.display="block";
-
 let html=`<h2>🔥 MAIA NIVEL ${NIVEL_MAIA}</h2>`;
-
 for(let i=1;i<=NIVEL_MAIA;i++){
-html+=`<h3>FASE ${i}</h3>
-<p>Sistema avanzado fase ${i} con análisis profundo, integración industrial y optimización real.</p>`;
+html+=`<h3>FASE ${i}</h3><p>Fase ${i} con análisis industrial completo, integración real y profundidad técnica avanzada.</p>`;
 }
-
 capacidades.innerHTML=html;
 }
 
@@ -324,6 +376,5 @@ progreso.style.width="0%";
 }
 
 </script>
-
 </body>
 </html>

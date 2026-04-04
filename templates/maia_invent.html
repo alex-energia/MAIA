@@ -3,150 +3,29 @@
 <head>
 <title>MAIA INDUSTRIAL</title>
 
-<!-- 🔥 FIX REAL THREE -->
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
+body{font-family:Consolas;background:#0a0f1f;color:#e5e7eb;}
+textarea{width:100%;height:80px;background:#020617;color:white;border:1px solid #1e293b;}
 
-/* ========================= BASE ========================= */
-body{
-    font-family:Consolas,monospace;
-    background:#0a0f1f;
-    color:#e5e7eb;
-}
-
-/* INPUT */
-textarea{
-    width:100%;
-    height:80px;
-    padding:10px;
-    background:#020617;
-    color:#e5e7eb;
-    border:1px solid #1e293b;
-}
-
-/* BOTONES */
-button{
-    padding:10px;
-    margin:5px;
-    background:#2563eb;
-    color:white;
-    border:none;
-    cursor:pointer;
-}
-
+button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor:pointer;}
 .btn-danger{background:#ef4444;}
 .btn-info{background:#0ea5e9;}
 
-/* 🔥 BOTONES GLOBALES */
-.global-ui{
-    position:fixed;
-    bottom:20px;
-    right:20px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    z-index:9999;
-}
+.global-ui{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;}
+.btn-ia{background:#111827;border:2px solid #ef4444;border-radius:50%;width:50px;height:50px;}
+.btn-ia.active{background:#ef4444;box-shadow:0 0 15px red;}
+.btn-chat{background:#22c55e;border-radius:50%;width:50px;height:50px;}
 
-.btn-ia{
-    background:#111827;
-    border:2px solid #ef4444;
-    border-radius:50%;
-    width:50px;height:50px;
-}
+.bloque{background:#020617;margin-top:15px;padding:15px;border-left:4px solid #22c55e;}
+.scroll{max-height:400px;overflow:auto;}
 
-/* 🔥 ACTIVO */
-.btn-ia.active{
-    background:#ef4444;
-    box-shadow:0 0 15px red;
-}
+#chatBox{position:fixed;bottom:20px;right:90px;width:320px;height:420px;background:#020617;border:1px solid #22c55e;display:none;flex-direction:column;}
+#chatMessages{flex:1;overflow:auto;padding:10px;}
+#chatInput{background:#000;color:white;border:none;padding:10px;}
 
-.btn-chat{
-    background:#22c55e;
-    border-radius:50%;
-    width:50px;height:50px;
-}
-
-/* BLOQUES */
-.bloque{
-    background:#020617;
-    margin-top:15px;
-    padding:15px;
-    border-left:4px solid #22c55e;
-}
-
-/* SCROLL */
-.scroll{
-    max-height:400px;
-    overflow:auto;
-}
-
-/* TREE */
-.item{cursor:pointer;font-size:13px;}
-.folder{color:#38bdf8;}
-.file{color:#22c55e;}
-
-.codigo{
-    background:#000;
-    display:none;
-    padding:10px;
-    max-height:200px;
-    overflow:auto;
-}
-
-/* PROGRESS */
-.progress{background:#1e293b;}
-.progress-bar{
-    height:14px;
-    width:0%;
-    background:#22c55e;
-}
-
-/* MODAL */
-.modal{
-    position:fixed;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,0.95);
-    display:none;
-}
-.modal-content{
-    background:#020617;
-    padding:20px;
-    max-height:90vh;
-    overflow:auto;
-}
-
-/* CHAT */
-#chatBox{
-    position:fixed;
-    bottom:20px;
-    right:90px;
-    width:320px;
-    height:420px;
-    background:#020617;
-    border:1px solid #22c55e;
-    display:none;
-    flex-direction:column;
-}
-#chatMessages{
-    flex:1;
-    overflow:auto;
-    padding:10px;
-}
-#chatInput{
-    background:#000;
-    color:white;
-    border:none;
-    padding:10px;
-}
-
-/* 3D */
-#viewer3d{
-    height:320px;
-}
-
+#viewer3d{height:320px;}
 </style>
 </head>
 
@@ -154,69 +33,92 @@ button{
 
 <h1>🧠 MAIA INDUSTRIAL</h1>
 
-<textarea id="idea" placeholder="Describe tu drone..."></textarea><br>
+<textarea id="idea"></textarea>
 
+<br>
 <button onclick="evaluar()">🚀 Generar</button>
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 <button class="btn-info" onclick="abrirInfo()">🧠 Capacidades</button>
 
-<div class="progress">
-    <div id="bar" class="progress-bar">0%</div>
-</div>
-
-<div id="progressText">Esperando...</div>
 <div id="resultado"></div>
 
-<!-- 🔥 BOTONES -->
+<!-- BOTONES -->
 <div class="global-ui">
-    <button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
-    <button class="btn-chat" onclick="toggleChat()">➕</button>
+<button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
+<button class="btn-chat" onclick="toggleChat()">➕</button>
 </div>
 
 <!-- CHAT -->
 <div id="chatBox">
-    <div id="chatMessages"></div>
-    <input id="chatInput" placeholder="Pregunta a MAIA..." onkeydown="if(event.key==='Enter')enviarChat()">
+<div id="chatMessages"></div>
+<input id="chatInput" placeholder="Pregunta a MAIA..." onkeydown="if(event.key==='Enter')enviarChat()">
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
 <div class="modal-content">
-<h2>🚀 MAIA INDUSTRIAL - NIVEL 11</h2>
 <div id="capacidades"></div>
-<button onclick="cerrarInfo()">Cerrar</button>
 </div>
 </div>
 
 <script>
 
-/* ========================= ESTADO GLOBAL ========================= */
+/* ========================= ESTADO ========================= */
 let vozActiva = false;
+let recognition = null;
 let ultimoResultado = null;
 
-/* ========================= VOZ ========================= */
+/* ========================= HABLAR ========================= */
 function hablar(texto){
-    if(!vozActiva) return;
-
     let msg = new SpeechSynthesisUtterance(texto);
     msg.lang = "es-ES";
     msg.pitch = 1;
     msg.rate = 1;
-
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);
 }
 
+/* ========================= VOZ CONTINUA ========================= */
+function iniciarEscucha(){
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "es-ES";
+    recognition.continuous = true;
+
+    recognition.onresult = function(event){
+        let texto = event.results[event.results.length-1][0].transcript;
+        procesarVoz(texto);
+    };
+
+    recognition.onend = function(){
+        if(vozActiva) recognition.start();
+    };
+
+    recognition.start();
+}
+
+/* ========================= PROCESAR VOZ ========================= */
+function procesarVoz(texto){
+    let respuesta = generarRespuesta(texto);
+
+    let cont = document.getElementById("chatMessages");
+    cont.innerHTML += `<div>🎤 ${texto}</div>`;
+    cont.innerHTML += `<div>🤖 ${respuesta}</div>`;
+
+    hablar(respuesta);
+}
+
+/* ========================= TOGGLE VOZ ========================= */
 function toggleVoice(){
     vozActiva = !vozActiva;
-
     let btn = document.getElementById("btnVoice");
 
     if(vozActiva){
         btn.classList.add("active");
         hablar("Hola Alex, soy MAIA. Sistema activado.");
+        iniciarEscucha();
     }else{
         btn.classList.remove("active");
+        if(recognition) recognition.stop();
         speechSynthesis.cancel();
     }
 }
@@ -236,42 +138,41 @@ function enviarChat(){
     cont.innerHTML += `<div>🧑 ${msg}</div>`;
 
     let respuesta = generarRespuesta(msg);
-    cont.innerHTML += `<div>🤖 ${respuesta}</div>`;
 
-    hablar(respuesta);
+    cont.innerHTML += `<div>🤖 ${respuesta}</div>`;
 
     input.value="";
 }
 
-/* 🔥 IA CONTEXTUAL REAL */
+/* ========================= IA ========================= */
 function generarRespuesta(msg){
     msg = msg.toLowerCase();
 
     if(!ultimoResultado){
-        return "Primero genera un drone para poder analizar.";
+        return "Primero genera un drone.";
     }
 
     if(msg.includes("hardware")){
-        return "El drone usa " + JSON.stringify(ultimoResultado.hardware);
+        return "Hardware: " + JSON.stringify(ultimoResultado.hardware);
     }
 
     if(msg.includes("software")){
-        return "El sistema incluye MAVLink, control PID y navegación autónoma.";
+        return "Software con MAVLink, control PID y navegación autónoma.";
     }
 
     if(msg.includes("riesgo")){
-        return "Riesgos detectados: " + JSON.stringify(ultimoResultado.riesgos);
+        return "Riesgos: " + JSON.stringify(ultimoResultado.riesgos);
     }
 
     if(msg.includes("finanza")){
-        return "Este drone puede monetizarse en inspección, vigilancia o agricultura.";
+        return "Puede generar ingresos en vigilancia, agricultura o inspección.";
     }
 
     if(msg.includes("energia")){
-        return "Puede integrarse con sistemas solares o híbridos.";
+        return "Compatible con energía solar e híbrida.";
     }
 
-    return "Puedo analizar hardware, software, riesgos o negocio del drone.";
+    return "Puedo analizar hardware, software, riesgos y negocio del drone.";
 }
 
 /* ========================= MOTOR ========================= */
@@ -294,7 +195,7 @@ async function evaluar(){
             ultimoResultado = json.resultado;
             render(json.resultado);
             actualizarCapacidades();
-            hablar("Análisis completado");
+            if(vozActiva) hablar("Análisis completado");
             return;
         }
 
@@ -303,20 +204,16 @@ async function evaluar(){
     }
 }
 
-/* ========================= RENDER ========================= */
+/* ========================= RENDER ORIGINAL (RESPETADO) ========================= */
 function render(data){
     let html="";
-
     html+=bloque("🧠 Viabilidad",data.viabilidad);
     html+=bloque("🔩 Hardware",data.hardware,true);
     html+=bloque("📡 Telemetría",data.telemetria,true);
     html+=bloque("⚙️ Física",data.fisica,true);
     html+=bloque("⚠️ Riesgos",data.riesgos,true);
-
     html+=`<div class="bloque"><h3>🧱 Modelo 3D</h3><div id="viewer3d"></div></div>`;
-
     document.getElementById("resultado").innerHTML=html;
-
     iniciar3D();
 }
 
@@ -325,7 +222,6 @@ function bloque(t,d){
     return `<div class="bloque"><h3>${t}</h3><div class="scroll">${renderTree(d)}</div></div>`;
 }
 
-/* TREE */
 function renderTree(obj){
     let html="";
     for(let k in obj){
@@ -343,11 +239,9 @@ function renderTree(obj){
 /* ========================= 3D ========================= */
 function iniciar3D(){
     let c=document.getElementById("viewer3d");
-
     let scene=new THREE.Scene();
     let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
     let renderer=new THREE.WebGLRenderer({antialias:true});
-
     renderer.setSize(c.clientWidth,320);
     c.innerHTML="";
     c.appendChild(renderer.domElement);
@@ -357,7 +251,6 @@ function iniciar3D(){
     scene.add(light);
 
     let mat=new THREE.MeshStandardMaterial({color:0x00ffcc});
-
     let body=new THREE.Mesh(new THREE.BoxGeometry(2,0.5,2),mat);
     scene.add(body);
 
@@ -377,7 +270,7 @@ function limpiarUI(){
     document.getElementById("resultado").innerHTML="";
 }
 
-/* MODAL */
+/* ========================= MODAL ========================= */
 function abrirInfo(){
     document.getElementById("modal").style.display="block";
 }
@@ -385,20 +278,22 @@ function cerrarInfo(){
     document.getElementById("modal").style.display="none";
 }
 
-/* CAPACIDADES */
+/* ========================= CAPACIDADES NIVEL 12 ========================= */
 function actualizarCapacidades(){
 document.getElementById("capacidades").innerHTML=`
-<h3>🧠 NIVEL 11</h3>
-<p>MAIA ahora analiza y responde en tiempo real con voz y contexto.</p>
+<h2>🔥 MAIA NIVEL 12</h2>
+
+<h3>🧠 INTELIGENCIA</h3>
+<p>MAIA analiza sistemas completos y responde en tiempo real.</p>
 
 <h3>🎤 VOZ</h3>
-<p>Interacción continua activable.</p>
+<p>Interacción continua bidireccional por voz.</p>
 
-<h3>➕ CHAT IA</h3>
-<p>Asistente experto en drones, economía y energía.</p>
+<h3>➕ CHAT</h3>
+<p>Asistente experto multi-industria.</p>
 
 <h3>⚙️ SISTEMA</h3>
-<p>Arquitectura industrial funcional.</p>
+<p>Arquitectura industrial funcional y escalable.</p>
 `;
 }
 

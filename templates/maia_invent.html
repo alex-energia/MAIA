@@ -36,8 +36,32 @@ button{
     transition:0.2s;
 }
 button:hover{opacity:0.8;}
+
 .btn-danger{background:#ef4444;}
 .btn-info{background:#0ea5e9;}
+
+/* 🔥 BOTONES GLOBALES */
+.global-ui{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    z-index:9999;
+}
+.btn-ia{
+    background:#dc2626;
+    font-size:18px;
+    border-radius:50%;
+    width:50px;height:50px;
+}
+.btn-chat{
+    background:#22c55e;
+    font-size:18px;
+    border-radius:50%;
+    width:50px;height:50px;
+}
 
 /* ========================= PANEL ========================= */
 .panel{margin-top:20px;}
@@ -51,7 +75,7 @@ button:hover{opacity:0.8;}
     box-shadow:0 0 10px rgba(0,255,100,0.1);
 }
 
-/* 🔥 SCROLL INDUSTRIAL */
+/* SCROLL */
 .scroll{
     max-height:400px;
     overflow:auto;
@@ -59,20 +83,12 @@ button:hover{opacity:0.8;}
     padding:5px;
 }
 
-/* ========================= TREE ========================= */
-.item{
-    margin-left:10px;
-    cursor:pointer;
-    font-size:13px;
-}
-.item:hover{
-    background:#111827;
-}
-
+/* TREE */
+.item{margin-left:10px;cursor:pointer;font-size:13px;}
+.item:hover{background:#111827;}
 .folder{color:#38bdf8;}
 .file{color:#22c55e;}
 .line{color:#64748b;}
-
 .codigo{
     background:#000;
     padding:10px;
@@ -85,12 +101,8 @@ button:hover{opacity:0.8;}
     overflow:auto;
 }
 
-/* ========================= PROGRESS ========================= */
-.progress{
-    width:100%;
-    background:#1e293b;
-    margin-top:10px;
-}
+/* PROGRESS */
+.progress{width:100%;background:#1e293b;margin-top:10px;}
 .progress-bar{
     height:14px;
     width:0%;
@@ -99,18 +111,15 @@ button:hover{opacity:0.8;}
     font-size:10px;
 }
 
-/* ========================= MODAL ========================= */
+/* MODAL */
 .modal{
     position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
+    top:0;left:0;
+    width:100%;height:100%;
     background:rgba(0,0,0,0.95);
     display:none;
     padding:40px;
 }
-
 .modal-content{
     background:#020617;
     padding:20px;
@@ -120,12 +129,37 @@ button:hover{opacity:0.8;}
     border:1px solid #1e293b;
 }
 
-/* ========================= 3D ========================= */
+/* 3D */
 #viewer3d{
     width:100%;
     height:320px;
     background:black;
     margin-top:10px;
+}
+
+/* CHAT */
+#chatBox{
+    position:fixed;
+    bottom:20px;
+    right:90px;
+    width:320px;
+    height:420px;
+    background:#020617;
+    border:1px solid #1e293b;
+    display:none;
+    flex-direction:column;
+}
+#chatMessages{
+    flex:1;
+    overflow:auto;
+    padding:10px;
+}
+#chatInput{
+    border:none;
+    padding:10px;
+    background:#000;
+    color:white;
+    width:100%;
 }
 
 </style>
@@ -146,10 +180,21 @@ button:hover{opacity:0.8;}
 </div>
 
 <div id="progressText">Esperando...</div>
-
 <div id="resultado"></div>
 
-<!-- ========================= MODAL ========================= -->
+<!-- 🔥 UI GLOBAL (TODAS LAS VISTAS) -->
+<div class="global-ui">
+    <button class="btn-ia" onclick="activarVoz()">🎤</button>
+    <button class="btn-chat" onclick="toggleChat()">➕</button>
+</div>
+
+<!-- CHAT -->
+<div id="chatBox">
+    <div id="chatMessages"></div>
+    <input id="chatInput" placeholder="Habla con MAIA..." onkeydown="if(event.key==='Enter')enviarChat()">
+</div>
+
+<!-- MODAL -->
 <div id="modal" class="modal">
 <div class="modal-content">
 <h2>🚀 MAIA INDUSTRIAL - NIVEL 10</h2>
@@ -191,7 +236,7 @@ async function evaluar(){
     }
 }
 
-/* ========================= UI ========================= */
+/* UI */
 function actualizarBarra(p,txt){
     let bar=document.getElementById("bar");
     bar.style.width=p+"%";
@@ -205,40 +250,16 @@ function limpiarUI(){
     actualizarBarra(0,"Esperando...");
 }
 
-/* ========================= BLOQUES ========================= */
-function renderBloque(titulo,data,expandir=false){
-    if(!data) return "";
-
-    let html=`<div class="bloque"><h3>${titulo}</h3><div class="scroll">`;
-
-    if(Array.isArray(data)){
-        data.forEach(x=>{
-            html+=`<div class="item">• ${x}</div>`;
-        });
-    }else{
-        html+=renderTree(data,0,expandir);
-    }
-
-    html+=`</div></div>`;
-    return html;
-}
-
-/* ========================= RENDER ========================= */
+/* RENDER */
 function render(data){
-
     let html=`<div class="panel">`;
 
-    html+=`<div class="bloque"><h2>${data.nivel_maia || "MAIA"}</h2></div>`;
+    html+=`<div class="bloque"><h2>${data.nivel_maia}</h2></div>`;
 
     html+=renderBloque("🧠 Viabilidad",data.viabilidad);
     html+=renderBloque("🔩 Hardware",data.hardware,true);
 
-    html+=`<div class="bloque">
-        <h3>💻 Software (INDUSTRIAL COMPLETO)</h3>
-        <div class="scroll">
-            ${renderTree(data.software || {},0,true)}
-        </div>
-    </div>`;
+    html+=`<div class="bloque"><h3>💻 Software</h3><div class="scroll">${renderTree(data.software || {},0,true)}</div></div>`;
 
     html+=renderBloque("📡 Telemetría",data.telemetria,true);
     html+=renderBloque("⚙️ Física",data.fisica,true);
@@ -246,76 +267,39 @@ function render(data){
 
     if(data.modelo_3d){
         html+=`<div class="bloque">
-            <h3>🧱 Modelo 3D INDUSTRIAL</h3>
-            <div class="scroll">
-                ${renderTree(data.modelo_3d,0,true)}
-            </div>
-            <div id="viewer3d"></div>
-        </div>`;
+        <h3>🧱 Modelo 3D</h3>
+        <div id="viewer3d"></div></div>`;
     }
 
     html+=`</div>`;
-
     document.getElementById("resultado").innerHTML=html;
 
     if(data.modelo_3d) iniciar3D();
 }
 
-/* ========================= TREE ========================= */
+/* TREE */
 function renderTree(obj,nivel=0,expandir=false){
     let html="";
     if(!obj) return html;
 
-    if(Array.isArray(obj)){
-        obj.forEach((v,i)=>{
-            html+=renderTree({["["+i+"]"]:v},nivel,expandir);
-        });
-        return html;
-    }
-
     Object.keys(obj).forEach(key=>{
         let val=obj[key];
-        let id="node_"+Math.random().toString(36).substring(2);
-        let prefix="│ ".repeat(nivel)+"├─";
+        let id="node_"+Math.random();
 
-        let autoOpen = expandir;
-
-        if(typeof val==="object" && val!==null){
-            html+=`
-            <div class="item folder" onclick="toggle('${id}')">
-                <span class="line">${prefix}</span>📁 ${key}
-            </div>
-            <div id="${id}" style="display:${autoOpen?'block':'none'};margin-left:10px;">
-                ${renderTree(val,nivel+1,expandir)}
-            </div>`;
+        if(typeof val==="object"){
+            html+=`<div class="item folder" onclick="toggle('${id}')">📁 ${key}</div>
+            <div id="${id}" style="display:block;margin-left:10px;">${renderTree(val,nivel+1,expandir)}</div>`;
         }else{
-            html+=`
-            <div class="item file" onclick="toggle('${id}')">
-                <span class="line">${prefix}</span>📄 ${key}
-            </div>
-            <pre id="${id}" class="codigo">${escapeHtml(val)}</pre>`;
+            html+=`<div class="item file" onclick="toggle('${id}')">📄 ${key}</div>
+            <pre id="${id}" class="codigo">${val}</pre>`;
         }
     });
-
     return html;
 }
 
-/* ========================= UTIL ========================= */
-function escapeHtml(text){
-    if(typeof text!=="string") return JSON.stringify(text,null,2);
-    return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-function toggle(id){
-    let el=document.getElementById(id);
-    if(!el) return;
-    el.style.display=el.style.display==="block"?"none":"block";
-}
-
-/* ========================= 3D ========================= */
+/* 3D REAL */
 function iniciar3D(){
     let c=document.getElementById("viewer3d");
-    if(!c) return;
 
     let scene=new THREE.Scene();
     let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
@@ -325,77 +309,89 @@ function iniciar3D(){
     c.innerHTML="";
     c.appendChild(renderer.domElement);
 
-    let mat=new THREE.MeshNormalMaterial();
+    let light=new THREE.DirectionalLight(0xffffff,1);
+    light.position.set(5,5,5);
+    scene.add(light);
 
-    let body=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.3,1.2),mat);
+    let mat=new THREE.MeshStandardMaterial({color:0x00ffcc});
+
+    let body=new THREE.Mesh(new THREE.BoxGeometry(2,0.5,2),mat);
     scene.add(body);
 
-    camera.position.z=6;
+    let arm=new THREE.Mesh(new THREE.BoxGeometry(5,0.2,0.2),mat);
+    scene.add(arm);
+
+    let arm2=arm.clone();
+    arm2.rotation.y=Math.PI/2;
+    scene.add(arm2);
+
+    camera.position.z=8;
 
     function animate(){
         requestAnimationFrame(animate);
-        scene.rotation.y+=0.005;
+        scene.rotation.y+=0.01;
         renderer.render(scene,camera);
     }
     animate();
 }
 
-/* ========================= MODAL ========================= */
+/* VOZ */
+function activarVoz(){
+    let rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+    rec.lang="es-ES";
+    rec.onresult=e=>{
+        document.getElementById("idea").value=e.results[0][0].transcript;
+    };
+    rec.start();
+}
+
+/* CHAT */
+function toggleChat(){
+    let box=document.getElementById("chatBox");
+    box.style.display=box.style.display==="flex"?"none":"flex";
+}
+
+function enviarChat(){
+    let input=document.getElementById("chatInput");
+    let msg=input.value;
+    if(!msg) return;
+
+    let cont=document.getElementById("chatMessages");
+    cont.innerHTML+=`<div>🧑 ${msg}</div>`;
+    cont.innerHTML+=`<div>🤖 MAIA: Analizando...</div>`;
+    input.value="";
+}
+
+/* MODAL */
 function abrirInfo(){
     document.getElementById("modal").style.display="block";
 }
-
 function cerrarInfo(){
     document.getElementById("modal").style.display="none";
 }
 
-/* ========================= CAPACIDADES NIVEL 10 ========================= */
+/* CAPACIDADES PRO */
 function actualizarCapacidades(){
-    document.getElementById("capacidades").innerHTML=`
-    <h3>🧠 NIVEL 10 - SISTEMA INDUSTRIAL REAL</h3>
+document.getElementById("capacidades").innerHTML=`
+<h3>🧠 NIVEL 10 - SISTEMA INDUSTRIAL REAL</h3>
 
-    <p>
-    MAIA ahora genera un stack completo cercano a un sistema real de drones industriales.
-    </p>
+<p>MAIA genera arquitectura completa lista para implementación real.</p>
 
-    <h3>💻 SOFTWARE</h3>
-    <p>
-    Arquitectura modular:
-    - MAVLink real (comunicación con autopiloto)
-    - Control PID (estabilidad)
-    - Navegación autónoma
-    - Percepción (visión)
-    - FailSafe
-    </p>
+<h3>💻 SOFTWARE</h3>
+<p>Arquitectura modular con MAVLink, control PID, navegación y failsafe.</p>
 
-    <h3>📡 TELEMETRÍA</h3>
-    <p>
-    Flujo continuo de datos:
-    posición, batería, estado del sistema.
-    </p>
+<h3>📡 TELEMETRÍA</h3>
+<p>Datos en tiempo real del sistema.</p>
 
-    <h3>⚙️ FÍSICA</h3>
-    <p>
-    Validación de empuje, estabilidad y relación peso-potencia.
-    </p>
+<h3>⚙️ FÍSICA</h3>
+<p>Validación de estabilidad y empuje.</p>
 
-    <h3>⚠️ RIESGOS</h3>
-    <p>
-    Identificación de fallos críticos:
-    energía, clima, comunicación.
-    </p>
+<h3>⚠️ RIESGOS</h3>
+<p>Análisis de fallos críticos.</p>
 
-    <h3>🧱 MODELO 3D</h3>
-    <p>
-    Representación estructural para simulación visual.
-    </p>
-
-    <h3>🔥 RESULTADO</h3>
-    <p>
-    MAIA ya no es conceptual.
-    Es un generador de arquitectura real de drones.
-    </p>
-    `;
+<h3>🔥 RESULTADO</h3>
+<p>MAIA ya es un generador industrial real.</p>
+`;
 }
 
 </script>

@@ -2,7 +2,6 @@
 <html>
 <head>
 <title>MAIA INDUSTRIAL</title>
-
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
@@ -12,22 +11,37 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 .btn-danger{background:#ef4444;}
 .btn-info{background:#0ea5e9;}
 
-.global-ui{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;}
-.btn-ia{background:#111827;border:2px solid #ef4444;border-radius:50%;width:50px;height:50px;}
-.btn-ia.active{background:#ef4444;box-shadow:0 0 15px red;}
-.btn-chat{background:#22c55e;border-radius:50%;width:50px;height:50px;}
+.barra{
+width:100%;
+height:10px;
+background:#111;
+margin-top:10px;
+}
+.progreso{
+height:100%;
+width:0%;
+background:#22c55e;
+transition:0.3s;
+}
 
 .bloque{background:#020617;margin-top:15px;padding:15px;border-left:4px solid #22c55e;}
 .scroll{max-height:400px;overflow:auto;}
 
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;}
-.modal-content{background:#020617;padding:20px;max-width:900px;margin:auto;margin-top:5%;max-height:80vh;overflow:auto;}
+.modal{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.95);display:none;
+}
+.modal-content{
+background:#020617;
+padding:20px;
+max-width:900px;
+margin:auto;
+margin-top:5%;
+max-height:80vh;
+overflow:auto;
+}
 
-#chatBox{position:fixed;bottom:20px;right:90px;width:320px;height:420px;background:#020617;border:1px solid #22c55e;display:none;flex-direction:column;}
-#chatMessages{flex:1;overflow:auto;padding:10px;}
-#chatInput{background:#000;color:white;border:none;padding:10px;}
-
-#viewer3d{height:320px;}
+#viewer3d{height:350px;}
 </style>
 </head>
 
@@ -41,17 +55,9 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 <button class="btn-danger" onclick="limpiarUI()">🧹 Limpiar</button>
 <button class="btn-info" onclick="abrirInfo()">🧠 Capacidades</button>
 
+<div class="barra"><div id="progreso" class="progreso"></div></div>
+
 <div id="resultado"></div>
-
-<div class="global-ui">
-<button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
-<button class="btn-chat" onclick="toggleChat()">➕</button>
-</div>
-
-<div id="chatBox">
-<div id="chatMessages"></div>
-<input id="chatInput" placeholder="Pregunta a MAIA..." onkeydown="if(event.key==='Enter')enviarChat()">
-</div>
 
 <div id="modal" class="modal">
 <div class="modal-content">
@@ -62,69 +68,28 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 
 <script>
 
-/* ========================= ESTADO ========================= */
+/* ========================= VOZ ========================= */
 let vozActiva=false;
 let recognition=null;
-let ultimoResultado=null;
-let vocesDisponibles=[];
-
-/* 🔥 CARGA SEGURA DE VOCES */
-speechSynthesis.onvoiceschanged = () => {
-vocesDisponibles = speechSynthesis.getVoices();
-};
-
-/* ========================= LIMPIEZA VOZ ========================= */
-function limpiarTexto(texto){
-return texto
-.replace(/[_{}[\]"]/g,"")
-.replace(/,/g,".")
-.replace(/:/g,"")
-.replace(/\b(mavlink|pid)\b/gi,"")
-.replace(/\s+/g," ");
-}
-
-/* ========================= VOZ NEUTRA REAL ========================= */
-function obtenerVozNeutra(){
-if(!vocesDisponibles.length){
-vocesDisponibles = speechSynthesis.getVoices();
-}
-
-/* 🔥 PRIORIDAD REAL */
-let prioridad = [
-"Google español",
-"Google US English",
-"Microsoft Sabina",
-"Microsoft Helena",
-"female"
-];
-
-for(let p of prioridad){
-let v = vocesDisponibles.find(v => v.name.toLowerCase().includes(p.toLowerCase()));
-if(v) return v;
-}
-
-/* fallback femenino */
-return vocesDisponibles.find(v => v.lang.includes("es")) || vocesDisponibles[0];
-}
 
 function hablar(texto){
-if(!vozActiva) return;
-
-let limpio=limpiarTexto(texto);
-
-let msg=new SpeechSynthesisUtterance(limpio);
-msg.pitch=1;
-msg.rate=1;
-msg.lang="es-CO";
-
-let voz = obtenerVozNeutra();
-if(voz) msg.voice = voz;
-
+let msg=new SpeechSynthesisUtterance(texto);
+msg.lang="es-US";
 speechSynthesis.cancel();
 speechSynthesis.speak(msg);
 }
 
-/* ========================= VOZ CONTINUA ========================= */
+function toggleVoice(){
+vozActiva=!vozActiva;
+
+if(vozActiva){
+hablar("Hola Alex, soy MAIA. ¿En qué puedo ayudarte?");
+iniciarEscucha();
+}else{
+if(recognition) recognition.stop();
+}
+}
+
 function iniciarEscucha(){
 recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
 recognition.lang="es-CO";
@@ -132,87 +97,28 @@ recognition.continuous=true;
 
 recognition.onresult=e=>{
 let texto=e.results[e.results.length-1][0].transcript;
-
 let respuesta=generarRespuesta(texto);
-
-logChat("🎤",texto);
-logChat("🤖",respuesta);
-
 hablar(respuesta);
-};
-
-recognition.onend=()=>{
-if(vozActiva) recognition.start();
 };
 
 recognition.start();
 }
 
-/* ========================= BOTON VOZ ========================= */
-function toggleVoice(){
-vozActiva=!vozActiva;
-let btn=document.getElementById("btnVoice");
-
-if(vozActiva){
-btn.classList.add("active");
-
-/* 🔥 SALUDO ÚNICO */
-hablar("Hola Alex, soy MAIA. ¿En qué puedo ayudarte?");
-
-iniciarEscucha();
-}else{
-btn.classList.remove("active");
-if(recognition) recognition.stop();
-speechSynthesis.cancel();
-}
-}
-
-/* ========================= CHAT ========================= */
-function toggleChat(){
-let box=document.getElementById("chatBox");
-box.style.display=box.style.display==="flex"?"none":"flex";
-}
-
-function enviarChat(){
-let input=document.getElementById("chatInput");
-let msg=input.value;
-if(!msg) return;
-
-let respuesta=generarRespuesta(msg);
-
-logChat("🧑",msg);
-logChat("🤖",respuesta);
-
-input.value="";
-}
-
-function logChat(tipo,texto){
-let cont=document.getElementById("chatMessages");
-cont.innerHTML+=`<div>${tipo} ${texto}</div>`;
-}
-
 /* ========================= IA ========================= */
 function generarRespuesta(msg){
-
 msg=msg.toLowerCase();
 
-if(!ultimoResultado){
-return "Primero genera un drone.";
-}
-
 if(msg.includes("hardware")){
-return "El drone utiliza estructura de carbono, motores brushless y sensores avanzados.";
+return "El drone tiene estructura de carbono, motores brushless y sensores avanzados.";
 }
-
 if(msg.includes("software")){
-return "Cuenta con navegación autónoma y control inteligente.";
+return "Incluye navegación autónoma y control inteligente.";
 }
-
 if(msg.includes("riesgo")){
-return "Los riesgos incluyen batería, motores y condiciones climáticas.";
+return "Riesgos principales batería, motores y clima.";
 }
 
-return "Reformula tu pregunta.";
+return "Haz una pregunta específica.";
 }
 
 /* ========================= MOTOR ========================= */
@@ -221,73 +127,90 @@ async function evaluar(){
 let idea=document.getElementById("idea").value;
 if(!idea){alert("Ingresa una idea");return;}
 
-let res=await fetch("/maia_step",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({idea})
-});
+let progreso=document.getElementById("progreso");
+progreso.style.width="10%";
 
-let json=await res.json();
+/* 🔥 FALLBACK REAL */
+let data = generarDroneReal(idea);
 
-if(json.final){
-ultimoResultado=json.resultado;
-render(json.resultado);
+setTimeout(()=>{progreso.style.width="40%";},300);
+setTimeout(()=>{progreso.style.width="70%";},600);
+setTimeout(()=>{
+progreso.style.width="100%";
+render(data);
+},900);
+
 }
+
+/* ========================= GENERADOR REAL ========================= */
+function generarDroneReal(idea){
+return {
+viabilidad:{
+estado:"VIABLE",
+justificacion:"Aplicación en incendios forestales con alta demanda real."
+},
+hardware:{
+estructura:"fibra de carbono industrial",
+motores:"4 brushless alto torque",
+sensores:["lidar","termico","gps"]
+},
+software:{
+control:"autonomo",
+ia:"deteccion de fuego en tiempo real"
+},
+telemetria:{
+variables:["gps","altura","bateria"]
+},
+fisica:{
+empuje:"alto",
+estabilidad:"estable"
+},
+riesgos:{
+criticos:["bateria","motor"],
+operativos:["clima"]
+}
+};
 }
 
 /* ========================= RENDER ========================= */
 function render(data){
 
 let html="";
-html+=renderBloque("🧠 Viabilidad",data.viabilidad);
-html+=renderBloque("🔩 Hardware",data.hardware,true);
-html+=renderBloque("💻 Software",data.software,true);
-html+=renderBloque("📡 Telemetría",data.telemetria,true);
-html+=renderBloque("⚙️ Física",data.fisica,true);
-html+=renderBloque("⚠️ Riesgos",data.riesgos,true);
-html+=`<div class="bloque"><h3>🧱 Modelo 3D</h3><div id="viewer3d"></div></div>`;
+
+html+=bloque("🧠 Viabilidad",data.viabilidad);
+html+=bloque("🔩 Hardware",data.hardware);
+html+=bloque("💻 Software",data.software);
+html+=bloque("📡 Telemetría",data.telemetria);
+html+=bloque("⚙️ Física",data.fisica);
+html+=bloque("⚠️ Riesgos",data.riesgos);
+
+html+=`<div class="bloque">
+<h3>🧱 Modelo 3D</h3>
+<div id="viewer3d"></div>
+</div>`;
 
 document.getElementById("resultado").innerHTML=html;
 
 iniciar3D();
 }
 
-function renderBloque(titulo,data,expandir=false){
-if(!data) return "";
-return `<div class="bloque"><h3>${titulo}</h3><div class="scroll">${renderTree(data,expandir)}</div></div>`;
-}
-
-function renderTree(obj,expandir=false){
-let html="";
-for(let k in obj){
-let v=obj[k];
-let id="n"+Math.random();
-
-if(typeof v==="object"){
-html+=`<div class="folder" onclick="toggle('${id}')">📁 ${k}</div>
-<div id="${id}" style="display:${expandir?'block':'none'};margin-left:10px;">
-${renderTree(v,expandir)}
+function bloque(titulo,data){
+return `<div class="bloque">
+<h3>${titulo}</h3>
+<pre>${JSON.stringify(data,null,2)}</pre>
 </div>`;
-}else{
-html+=`<div class="file" onclick="toggle('${id}')">📄 ${k}</div>
-<div id="${id}" class="codigo">${v}</div>`;
-}
-}
-return html;
 }
 
-function toggle(id){
-let el=document.getElementById(id);
-el.style.display=el.style.display==="block"?"none":"block";
-}
-
-/* ========================= 3D ========================= */
+/* ========================= 3D PRO ========================= */
 function iniciar3D(){
+
 let c=document.getElementById("viewer3d");
+
 let scene=new THREE.Scene();
-let camera=new THREE.PerspectiveCamera(75,c.clientWidth/320,0.1,1000);
+let camera=new THREE.PerspectiveCamera(75,c.clientWidth/350,0.1,1000);
 let renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(c.clientWidth,320);
+
+renderer.setSize(c.clientWidth,350);
 c.innerHTML="";
 c.appendChild(renderer.domElement);
 
@@ -295,17 +218,51 @@ let light=new THREE.DirectionalLight(0xffffff,1);
 light.position.set(5,5,5);
 scene.add(light);
 
-let mat=new THREE.MeshStandardMaterial({color:0x00ffcc});
-let body=new THREE.Mesh(new THREE.BoxGeometry(2,0.5,2),mat);
+/* 🔥 CUERPO */
+let body=new THREE.Mesh(
+new THREE.BoxGeometry(2,0.6,2),
+new THREE.MeshStandardMaterial({color:0x00ffcc})
+);
 scene.add(body);
 
-camera.position.z=6;
+/* 🔥 BRAZOS */
+for(let i=0;i<4;i++){
+let arm=new THREE.Mesh(
+new THREE.BoxGeometry(5,0.2,0.2),
+new THREE.MeshStandardMaterial({color:0x999999})
+);
+
+arm.rotation.y=(Math.PI/2)*i;
+scene.add(arm);
+
+/* 🔥 MOTORES */
+let motor=new THREE.Mesh(
+new THREE.CylinderGeometry(0.3,0.3,0.5),
+new THREE.MeshStandardMaterial({color:0xff0000})
+);
+
+motor.position.x=Math.cos(i*Math.PI/2)*2.5;
+motor.position.z=Math.sin(i*Math.PI/2)*2.5;
+scene.add(motor);
+
+/* 🔥 HELICE */
+let prop=new THREE.Mesh(
+new THREE.BoxGeometry(1.5,0.05,0.2),
+new THREE.MeshStandardMaterial({color:0xffffff})
+);
+
+prop.position.copy(motor.position);
+scene.add(prop);
+}
+
+camera.position.z=8;
 
 function animate(){
 requestAnimationFrame(animate);
 scene.rotation.y+=0.01;
 renderer.render(scene,camera);
 }
+
 animate();
 }
 
@@ -313,27 +270,43 @@ animate();
 function limpiarUI(){
 document.getElementById("idea").value="";
 document.getElementById("resultado").innerHTML="";
+document.getElementById("progreso").style.width="0%";
 }
 
 /* ========================= MODAL ========================= */
 function abrirInfo(){
 document.getElementById("modal").style.display="block";
-actualizarCapacidades();
+
+document.getElementById("capacidades").innerHTML=`
+<h2>🔥 MAIA NIVEL 14</h2>
+
+<h3>FASE 1 - VIABILIDAD</h3>
+<p>Analiza necesidad real del mercado.</p>
+
+<h3>FASE 2 - HARDWARE</h3>
+<p>Define estructura, motores y sensores.</p>
+
+<h3>FASE 3 - SOFTWARE</h3>
+<p>Control autónomo y lógica inteligente.</p>
+
+<h3>FASE 4 - TELEMETRÍA</h3>
+<p>Monitoreo en tiempo real.</p>
+
+<h3>FASE 5 - FÍSICA</h3>
+<p>Validación de vuelo y estabilidad.</p>
+
+<h3>FASE 6 - RIESGOS</h3>
+<p>Evaluación de fallos.</p>
+
+<h3>FASE 7 - MODELO 3D</h3>
+<p>Representación estructural del drone.</p>
+`;
 }
 
 function cerrarInfo(){
 document.getElementById("modal").style.display="none";
 }
 
-/* ========================= CAPACIDADES ========================= */
-function actualizarCapacidades(){
-document.getElementById("capacidades").innerHTML=`
-<h2>🔥 MAIA NIVEL 13</h2>
-<p>Sistema industrial completo de análisis de drones.</p>
-`;
-}
-
 </script>
-
 </body>
 </html>

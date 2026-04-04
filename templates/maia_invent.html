@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>MAIA INDUSTRIAL</title>
+
 <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
 
 <style>
@@ -18,7 +19,7 @@ right:20px;
 display:flex;
 flex-direction:column;
 gap:10px;
-z-index:999;
+z-index:9999;
 }
 
 .btn-ia{
@@ -27,6 +28,7 @@ border:2px solid #ef4444;
 border-radius:50%;
 width:55px;height:55px;
 }
+
 .btn-ia.active{background:#ef4444;box-shadow:0 0 15px red;}
 
 .btn-chat{
@@ -49,7 +51,7 @@ width:55px;height:55px;
 position:fixed;top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,0.95);
 display:none;
-z-index:999;
+z-index:9999;
 }
 
 .modal-content{
@@ -87,7 +89,7 @@ overflow:auto;
 </div>
 
 <!-- CHAT -->
-<div id="chatBox" style="display:none;position:fixed;bottom:20px;right:90px;width:300px;height:400px;background:#020617;border:1px solid #22c55e;flex-direction:column;">
+<div id="chatBox" style="display:none;position:fixed;bottom:20px;right:90px;width:300px;height:400px;background:#020617;border:1px solid #22c55e;flex-direction:column;z-index:9999;">
 <div id="chatMessages" style="flex:1;overflow:auto;padding:10px;"></div>
 <input id="chatInput" onkeydown="if(event.key==='Enter')enviarChat()">
 </div>
@@ -110,18 +112,29 @@ let vozActiva=false;
 let recognition=null;
 let voces=[];
 
-speechSynthesis.onvoiceschanged = ()=>{voces=speechSynthesis.getVoices();};
+speechSynthesis.onvoiceschanged=()=>{voces=speechSynthesis.getVoices();};
 
 function getVozFemenina(){
-let v = voces.find(v=>v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("woman"));
-if(!v) v = voces.find(v=>v.lang.includes("es"));
-return v;
+let prioridad=[
+"Google español",
+"Microsoft Sabina",
+"Microsoft Helena",
+"Google US English Female"
+];
+
+for(let p of prioridad){
+let v=voces.find(v=>v.name.toLowerCase().includes(p.toLowerCase()));
+if(v) return v;
+}
+
+/* fallback femenino real */
+return voces.find(v=>v.lang.includes("es") && v.name.toLowerCase().includes("a")) || voces[0];
 }
 
 function hablar(t){
 if(!vozActiva) return;
 let msg=new SpeechSynthesisUtterance(t);
-msg.lang="es-CO";
+msg.lang="es-US";
 msg.pitch=1;
 msg.rate=1;
 let voz=getVozFemenina();
@@ -183,10 +196,12 @@ chatMessages.innerHTML+=`<div>${t} ${x}</div>`;
 /* ========================= IA ========================= */
 function generarRespuesta(msg){
 msg=msg.toLowerCase();
-if(msg.includes("hardware")) return "Sistema estructural completo con materiales aeroespaciales, motores de alto torque y sensores industriales avanzados.";
-if(msg.includes("software")) return "Arquitectura autónoma con navegación inteligente, control adaptativo y procesamiento en tiempo real.";
-if(msg.includes("riesgo")) return "Riesgos críticos incluyen fallo energético, pérdida de comunicación y condiciones ambientales extremas.";
-return "Pregunta específica sobre hardware, software, riesgos o uso.";
+
+if(msg.includes("hardware")) return "Sistema estructural completo con motores industriales y sensores avanzados.";
+if(msg.includes("software")) return "Sistema autónomo con inteligencia artificial y navegación avanzada.";
+if(msg.includes("riesgo")) return "Riesgos: energía, clima y fallos mecánicos.";
+
+return "Haz una pregunta específica.";
 }
 
 /* ========================= PROGRESO ========================= */
@@ -198,80 +213,60 @@ let barra=document.getElementById("progreso");
 
 for(let i=0;i<=100;i+=5){
 barra.style.width=i+"%";
-await new Promise(r=>setTimeout(r,50));
+await new Promise(r=>setTimeout(r,40));
 }
 
-let data=generarDroneReal(idea);
+let data=generarDroneReal();
 render(data);
 }
 
-/* ========================= GENERADOR COMPLETO ========================= */
+/* ========================= GENERADOR PROFUNDO ========================= */
 function generarDroneReal(){
 return{
-viabilidad:{
-estado:"VIABLE",
-demanda:"Alta en incendios forestales",
-impacto:"Protección ambiental y reducción de pérdidas"
-},
 hardware:{
-estructura:{
-material:"fibra de carbono aeroespacial",
-resistencia:"alta temperatura",
-peso:"ligero"
-},
-motores:{
-tipo:"brushless industrial",
-potencia:"alta",
-cantidad:4
-},
+estructura:{material:"carbono",resistencia:"alta",peso:"ligero"},
+motores:{tipo:"brushless",potencia:"alta",cantidad:4,esc:"40A"},
 sensores:{
-lidar:"mapeo 3D",
-termico:"detección calor",
-gps:"posicionamiento"
+lidar:{rango:"100m"},
+termico:{deteccion:"calor"},
+gps:{precision:"alta"}
 }
 },
 software:{
-control:"autónomo",
-navegacion:"inteligente",
-ia:"detección fuego"
-},
-telemetria:{
-datos:["posición","batería","velocidad"]
-},
-fisica:{
-empuje:"alto",
-estabilidad:"óptima"
-},
-riesgos:{
-criticos:["batería","motor"],
-operativos:["clima","interferencias"]
+control:{tipo:"PID",estabilidad:"auto"},
+navegacion:{modo:"autónomo",evasión:"obstáculos"},
+ia:{deteccion:"fuego",modelo:"neuronal"}
 }
 };
 }
 
-/* ========================= TREE COMPLETO ========================= */
+/* ========================= TREE CORREGIDO ========================= */
 function renderTree(obj){
 let html="";
+
 for(let k in obj){
 let v=obj[k];
 let id="n"+Math.random();
 
-if(typeof v==="object"){
-html+=`<div class="folder" onclick="toggle('${id}')">📁 ${k}</div>
-<div id="${id}" style="display:block;margin-left:10px;">
+if(Array.isArray(v)){
+html+=`<div class="folder">📁 ${k}</div><div style="margin-left:10px;">`;
+v.forEach(item=>{
+html+=`<div class="file">📄 ${item}</div>`;
+});
+html+=`</div>`;
+}
+else if(typeof v==="object"){
+html+=`<div class="folder">📁 ${k}</div>
+<div style="margin-left:10px;">
 ${renderTree(v)}
 </div>`;
-}else{
-html+=`<div class="file" onclick="toggle('${id}')">📄 ${k}</div>
-<div id="${id}" class="codigo">${v}</div>`;
 }
+else{
+html+=`<div class="file">📄 ${k}: ${v}</div>`;
 }
-return html;
 }
 
-function toggle(id){
-let el=document.getElementById(id);
-el.style.display=el.style.display==="block"?"none":"block";
+return html;
 }
 
 /* ========================= RENDER ========================= */
@@ -285,14 +280,12 @@ resultado.innerHTML=html;
 iniciar3D();
 }
 
-/* ========================= 3D PRO ========================= */
+/* ========================= 3D MEJORADO ========================= */
 function iniciar3D(){
 let c=document.getElementById("viewer3d");
-
 let scene=new THREE.Scene();
 let camera=new THREE.PerspectiveCamera(75,c.clientWidth/400,0.1,1000);
 let renderer=new THREE.WebGLRenderer({antialias:true});
-
 renderer.setSize(c.clientWidth,400);
 c.innerHTML="";
 c.appendChild(renderer.domElement);
@@ -301,21 +294,17 @@ let light=new THREE.DirectionalLight(0xffffff,1);
 light.position.set(5,5,5);
 scene.add(light);
 
-/* CUERPO */
-let body=new THREE.Mesh(
-new THREE.BoxGeometry(2,0.6,2),
-new THREE.MeshStandardMaterial({color:0x00ffcc})
-);
+/* cuerpo */
+let body=new THREE.Mesh(new THREE.BoxGeometry(2,0.6,2),
+new THREE.MeshStandardMaterial({color:0x00ffcc}));
 scene.add(body);
 
-/* BRAZOS + MOTORES + HELICES */
+/* brazos + motores */
 for(let i=0;i<4;i++){
 let angle=i*Math.PI/2;
 
-let arm=new THREE.Mesh(
-new THREE.CylinderGeometry(0.1,0.1,5),
-new THREE.MeshStandardMaterial({color:0x888888})
-);
+let arm=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,5),
+new THREE.MeshStandardMaterial({color:0x888888}));
 arm.rotation.z=Math.PI/2;
 arm.rotation.y=angle;
 scene.add(arm);
@@ -323,28 +312,11 @@ scene.add(arm);
 let x=Math.cos(angle)*2.5;
 let z=Math.sin(angle)*2.5;
 
-let motor=new THREE.Mesh(
-new THREE.CylinderGeometry(0.3,0.3,0.5),
-new THREE.MeshStandardMaterial({color:0xff0000})
-);
+let motor=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,0.5),
+new THREE.MeshStandardMaterial({color:0xff0000}));
 motor.position.set(x,0,z);
 scene.add(motor);
-
-let prop=new THREE.Mesh(
-new THREE.BoxGeometry(1.5,0.05,0.2),
-new THREE.MeshStandardMaterial({color:0xffffff})
-);
-prop.position.set(x,0.3,z);
-scene.add(prop);
 }
-
-/* CÁMARA */
-let cam=new THREE.Mesh(
-new THREE.SphereGeometry(0.3),
-new THREE.MeshStandardMaterial({color:0x0000ff})
-);
-cam.position.y=-0.5;
-scene.add(cam);
 
 camera.position.z=8;
 
@@ -359,10 +331,14 @@ animate();
 /* ========================= CAPACIDADES ========================= */
 function abrirInfo(){
 modal.style.display="block";
+
 let html=`<h2>🔥 MAIA NIVEL ${NIVEL_MAIA}</h2>`;
+
 for(let i=1;i<=NIVEL_MAIA;i++){
-html+=`<h3>FASE ${i}</h3><p>Fase ${i} con análisis industrial completo, integración real y profundidad técnica avanzada.</p>`;
+html+=`<h3>FASE ${i}</h3>
+<p>Fase ${i} con análisis industrial completo, profundidad técnica y optimización real.</p>`;
 }
+
 capacidades.innerHTML=html;
 }
 

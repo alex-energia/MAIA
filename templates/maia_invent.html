@@ -11,24 +11,45 @@ button{padding:10px;margin:5px;background:#2563eb;color:white;border:none;cursor
 .btn-danger{background:#ef4444;}
 .btn-info{background:#0ea5e9;}
 
+.global-ui{
+position:fixed;bottom:20px;right:20px;
+display:flex;flex-direction:column;gap:10px;
+}
+
+.btn-ia{
+background:#111827;border:2px solid #ef4444;
+border-radius:50%;width:55px;height:55px;
+}
+
+.btn-ia.active{background:#ef4444;box-shadow:0 0 15px red;}
+
+.btn-chat{
+background:#22c55e;border-radius:50%;
+width:55px;height:55px;
+}
+
 .barra{width:100%;height:10px;background:#111;margin-top:10px;}
 .progreso{height:100%;width:0%;background:#22c55e;transition:0.3s;}
 
 .bloque{background:#020617;margin-top:15px;padding:15px;border-left:4px solid #22c55e;}
 .scroll{max-height:400px;overflow:auto;}
 
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;}
-.modal-content{
-background:#020617;
-padding:20px;
-max-width:900px;
-margin:auto;
-margin-top:5%;
-max-height:80vh;
-overflow:auto;
+.folder{color:#38bdf8;cursor:pointer;}
+.file{color:#22c55e;cursor:pointer;}
+.codigo{display:none;background:#000;padding:8px;}
+
+.modal{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.95);display:none;
 }
 
-#viewer3d{height:350px;}
+.modal-content{
+background:#020617;padding:20px;
+max-width:900px;margin:auto;margin-top:5%;
+max-height:80vh;overflow:auto;
+}
+
+#viewer3d{height:400px;}
 </style>
 </head>
 
@@ -46,6 +67,19 @@ overflow:auto;
 
 <div id="resultado"></div>
 
+<!-- BOTONES MAIA -->
+<div class="global-ui">
+<button id="btnVoice" class="btn-ia" onclick="toggleVoice()">🎤</button>
+<button class="btn-chat" onclick="toggleChat()">➕</button>
+</div>
+
+<!-- CHAT -->
+<div id="chatBox" style="display:none;position:fixed;bottom:20px;right:90px;width:300px;height:400px;background:#020617;border:1px solid #22c55e;flex-direction:column;">
+<div id="chatMessages" style="flex:1;overflow:auto;padding:10px;"></div>
+<input id="chatInput" placeholder="Pregunta..." onkeydown="if(event.key==='Enter')enviarChat()">
+</div>
+
+<!-- MODAL -->
 <div id="modal" class="modal">
 <div class="modal-content">
 <div id="capacidades"></div>
@@ -55,48 +89,16 @@ overflow:auto;
 
 <script>
 
-/* ========================= NIVEL DINÁMICO ========================= */
+/* ========================= NIVEL ========================= */
 let NIVEL_MAIA = 15;
-
-/* ========================= DEFINICIÓN DE FASES ========================= */
-const FASES = [
-{titulo:"FASE 1 - VIABILIDAD",desc:"Evalúa si el problema que resuelve el drone es real, urgente y tiene impacto económico o social. Analiza demanda, contexto operativo y necesidad industrial."},
-
-{titulo:"FASE 2 - HARDWARE",desc:"Diseña la arquitectura física completa: materiales, estructura, motores, hélices, sensores y sistema energético. Se optimiza resistencia, peso y eficiencia."},
-
-{titulo:"FASE 3 - SOFTWARE",desc:"Define la lógica de control del drone incluyendo navegación autónoma, estabilidad, procesamiento de datos y toma de decisiones en tiempo real."},
-
-{titulo:"FASE 4 - TELEMETRÍA",desc:"Sistema de monitoreo en tiempo real que transmite variables críticas como ubicación, velocidad, batería y estado del sistema."},
-
-{titulo:"FASE 5 - FÍSICA",desc:"Analiza empuje, peso, aerodinámica y estabilidad para garantizar que el drone pueda volar de forma segura y eficiente."},
-
-{titulo:"FASE 6 - RIESGOS",desc:"Identifica fallos críticos, operativos y sistémicos incluyendo clima, batería, motores y errores de software."},
-
-{titulo:"FASE 7 - MODELO 3D",desc:"Representación visual del drone para validar estructura, distribución y diseño funcional."},
-
-{titulo:"FASE 8 - ENERGÍA",desc:"Optimiza consumo energético, autonomía y posibles sistemas híbridos o renovables."},
-
-{titulo:"FASE 9 - INTELIGENCIA ARTIFICIAL",desc:"Implementa análisis inteligente como visión computacional, detección de eventos y aprendizaje automático."},
-
-{titulo:"FASE 10 - NEGOCIO",desc:"Define monetización, costos operativos, retorno de inversión y escalabilidad comercial."},
-
-{titulo:"FASE 11 - SEGURIDAD",desc:"Incluye redundancias, protocolos de emergencia y tolerancia a fallos críticos."},
-
-{titulo:"FASE 12 - COMUNICACIONES",desc:"Garantiza transmisión estable de datos mediante protocolos robustos y redundancia."},
-
-{titulo:"FASE 13 - AUTONOMÍA",desc:"Nivel de independencia del drone sin intervención humana."},
-
-{titulo:"FASE 14 - OPTIMIZACIÓN",desc:"Mejora continua del sistema en eficiencia, rendimiento y costo."},
-
-{titulo:"FASE 15 - ESCALABILIDAD INDUSTRIAL",desc:"Capacidad de replicar el sistema a gran escala en operaciones reales."}
-];
 
 /* ========================= VOZ ========================= */
 let vozActiva=false;
 let recognition=null;
 
-function hablar(texto){
-let msg=new SpeechSynthesisUtterance(texto);
+function hablar(t){
+if(!vozActiva) return;
+let msg=new SpeechSynthesisUtterance(t);
 msg.lang="es-US";
 speechSynthesis.cancel();
 speechSynthesis.speak(msg);
@@ -104,11 +106,16 @@ speechSynthesis.speak(msg);
 
 function toggleVoice(){
 vozActiva=!vozActiva;
+let btn=document.getElementById("btnVoice");
+
 if(vozActiva){
+btn.classList.add("active");
 hablar("Hola Alex, soy MAIA. ¿En qué puedo ayudarte?");
 iniciarEscucha();
 }else{
+btn.classList.remove("active");
 if(recognition) recognition.stop();
+speechSynthesis.cancel();
 }
 }
 
@@ -120,71 +127,125 @@ recognition.continuous=true;
 recognition.onresult=e=>{
 let texto=e.results[e.results.length-1][0].transcript;
 let respuesta=generarRespuesta(texto);
+logChat("🎤",texto);
+logChat("🤖",respuesta);
 hablar(respuesta);
 };
 
 recognition.start();
 }
 
+/* ========================= CHAT ========================= */
+function toggleChat(){
+let box=document.getElementById("chatBox");
+box.style.display=box.style.display==="flex"?"none":"flex";
+}
+
+function enviarChat(){
+let input=document.getElementById("chatInput");
+let msg=input.value;
+if(!msg) return;
+
+let respuesta=generarRespuesta(msg);
+logChat("🧑",msg);
+logChat("🤖",respuesta);
+
+input.value="";
+}
+
+function logChat(t,x){
+chatMessages.innerHTML+=`<div>${t} ${x}</div>`;
+}
+
 /* ========================= IA ========================= */
 function generarRespuesta(msg){
 msg=msg.toLowerCase();
 
-if(msg.includes("hardware")) return "El drone usa estructura de carbono, motores brushless y sensores avanzados.";
-if(msg.includes("software")) return "Sistema autónomo con control inteligente.";
-if(msg.includes("riesgo")) return "Riesgos: batería, motores y condiciones ambientales.";
+if(msg.includes("hardware")) return "Sistema estructural de carbono con motores brushless y sensores industriales.";
+if(msg.includes("software")) return "Control autónomo con navegación inteligente y procesamiento en tiempo real.";
+if(msg.includes("riesgo")) return "Riesgos críticos: energía, clima y fallos mecánicos.";
+if(msg.includes("uso")) return "Aplicaciones en incendios, vigilancia e inspección.";
 
 return "Haz una pregunta específica.";
 }
 
-/* ========================= MOTOR ========================= */
+/* ========================= PROGRESO ========================= */
 async function evaluar(){
-
 let idea=document.getElementById("idea").value;
 if(!idea){alert("Ingresa una idea");return;}
 
-let progreso=document.getElementById("progreso");
+let barra=document.getElementById("progreso");
 
-for(let i=0;i<=100;i+=20){
-await new Promise(r=>setTimeout(r,200));
-progreso.style.width=i+"%";
+for(let i=0;i<=100;i+=10){
+barra.style.width=i+"%";
+await new Promise(r=>setTimeout(r,80));
 }
 
-let data = generarDroneReal(idea);
+let data=generarDroneReal(idea);
 render(data);
 }
 
 /* ========================= GENERADOR ========================= */
-function generarDroneReal(idea){
-return {
+function generarDroneReal(){
+return{
 viabilidad:{estado:"VIABLE",justificacion:"Alta demanda en incendios forestales"},
-hardware:{estructura:"carbono",motores:4,sensores:["lidar","termico"]},
-software:{control:"autonomo"},
-riesgos:{criticos:["bateria","motor"]}
+hardware:{
+estructura:"fibra de carbono aeroespacial",
+motores:"4 brushless industriales",
+sensores:{lidar:"detección 3D",termico:"detección calor"}
+},
+software:{control:"autónomo",ia:"detección de fuego"},
+riesgos:{criticos:["batería","motor"],operativos:["clima"]}
 };
+}
+
+/* ========================= TREE ========================= */
+function renderTree(obj){
+let html="";
+for(let k in obj){
+let v=obj[k];
+let id="n"+Math.random();
+
+if(typeof v==="object"){
+html+=`<div class="folder" onclick="toggle('${id}')">📁 ${k}</div>
+<div id="${id}" style="display:none;margin-left:10px;">
+${renderTree(v)}
+</div>`;
+}else{
+html+=`<div class="file" onclick="toggle('${id}')">📄 ${k}</div>
+<div id="${id}" class="codigo">${v}</div>`;
+}
+}
+return html;
+}
+
+function toggle(id){
+let el=document.getElementById(id);
+el.style.display=el.style.display==="block"?"none":"block";
 }
 
 /* ========================= RENDER ========================= */
 function render(data){
 let html="";
 for(let k in data){
-html+=`<div class="bloque"><h3>${k}</h3><div class="scroll"><pre>${JSON.stringify(data[k],null,2)}</pre></div></div>`;
+html+=`<div class="bloque"><h3>${k}</h3><div class="scroll">${renderTree(data[k])}</div></div>`;
 }
+
 html+=`<div class="bloque"><h3>🧱 Modelo 3D</h3><div id="viewer3d"></div></div>`;
+
 resultado.innerHTML=html;
 iniciar3D();
 }
 
-/* ========================= 3D ========================= */
+/* ========================= 3D PRO ========================= */
 function iniciar3D(){
-
 let c=document.getElementById("viewer3d");
 
 let scene=new THREE.Scene();
-let camera=new THREE.PerspectiveCamera(75,c.clientWidth/350,0.1,1000);
+let camera=new THREE.PerspectiveCamera(75,c.clientWidth/400,0.1,1000);
 let renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(c.clientWidth,400);
 
-renderer.setSize(c.clientWidth,350);
 c.innerHTML="";
 c.appendChild(renderer.domElement);
 
@@ -192,11 +253,42 @@ let light=new THREE.DirectionalLight(0xffffff,1);
 light.position.set(5,5,5);
 scene.add(light);
 
+/* CUERPO */
 let body=new THREE.Mesh(
 new THREE.BoxGeometry(2,0.6,2),
 new THREE.MeshStandardMaterial({color:0x00ffcc})
 );
 scene.add(body);
+
+/* BRAZOS + MOTORES + HELICES */
+for(let i=0;i<4;i++){
+let angle=i*Math.PI/2;
+
+let arm=new THREE.Mesh(
+new THREE.CylinderGeometry(0.1,0.1,5),
+new THREE.MeshStandardMaterial({color:0x888888})
+);
+arm.rotation.z=Math.PI/2;
+arm.rotation.y=angle;
+scene.add(arm);
+
+let x=Math.cos(angle)*2.5;
+let z=Math.sin(angle)*2.5;
+
+let motor=new THREE.Mesh(
+new THREE.CylinderGeometry(0.3,0.3,0.5),
+new THREE.MeshStandardMaterial({color:0xff0000})
+);
+motor.position.set(x,0,z);
+scene.add(motor);
+
+let prop=new THREE.Mesh(
+new THREE.BoxGeometry(1.5,0.05,0.2),
+new THREE.MeshStandardMaterial({color:0xffffff})
+);
+prop.position.set(x,0.3,z);
+scene.add(prop);
+}
 
 camera.position.z=8;
 
@@ -208,25 +300,23 @@ renderer.render(scene,camera);
 animate();
 }
 
-/* ========================= MODAL DINÁMICO ========================= */
+/* ========================= CAPACIDADES ========================= */
 function abrirInfo(){
-
-document.getElementById("modal").style.display="block";
+modal.style.display="block";
 
 let html=`<h2>🔥 MAIA NIVEL ${NIVEL_MAIA}</h2>`;
 
-for(let i=0;i<NIVEL_MAIA;i++){
-html+=`<h3>${FASES[i].titulo}</h3><p>${FASES[i].desc}</p>`;
+for(let i=1;i<=NIVEL_MAIA;i++){
+html+=`<h3>FASE ${i}</h3>
+<p>Sistema avanzado fase ${i} con análisis profundo, integración industrial y optimización real.</p>`;
 }
 
-document.getElementById("capacidades").innerHTML=html;
+capacidades.innerHTML=html;
 }
 
-function cerrarInfo(){
-document.getElementById("modal").style.display="none";
-}
+function cerrarInfo(){modal.style.display="none";}
 
-/* ========================= UI ========================= */
+/* ========================= LIMPIAR ========================= */
 function limpiarUI(){
 idea.value="";
 resultado.innerHTML="";

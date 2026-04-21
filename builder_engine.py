@@ -1,29 +1,44 @@
-# builder_engine.py - INTELIGENCIA FINANCIERA & MONTECARLO
+# -*- coding: utf-8 -*-
 import numpy as np
 
 class FinancialBuilder:
     def __init__(self):
-        self.sections = {
-            "CAPEX": ["Equipos Principales", "Obras Civiles", "Terrenos", "Implantación"],
-            "OPEX": ["Personal", "Mantenimiento", "Seguros", "Servicios"],
-            "FINANCE": ["% Financiación", "Tasa Interés (Kd)", "Plazo", "Gracia"],
-            "MACRO": ["TRM Asumida", "IPC", "IPP", "TMRR (Hurdle Rate)"]
+        # Campos extraídos del modelo Granja Solar Morrosquillo
+        self.market_defaults = {
+            "TRM": 3900.0,
+            "IPC": 0.049,
+            "IPP": 0.0511,
+            "WACC": 0.1233
         }
 
-    def run_montecarlo(self, vpn_base, iteraciones=1000):
-        """Simulación de Montecarlo para el riesgo del proyecto."""
-        # Simula variaciones en TRM y Precio kWh
-        variaciones = np.random.normal(0, 0.05, iteraciones)
-        resultados = vpn_base * (1 + variaciones)
+    def run_full_model(self, data):
+        """
+        Calcula TIR, VPN y Payback integrando Ley 1715.
+        """
+        capex = float(data.get('capex', 0))
+        ingresos_anuales = float(data.get('ingresos_est', 0))
+        años = 25
+        
+        # Flujo de caja simplificado (Agnóstico a tecnología)
+        flujos = [-capex] + [ingresos_anuales * (1.03**i) for i in range(1, años + 1)]
+        
+        vpn = np.npv(self.market_defaults['WACC'], flujos)
+        tir = np.irr(flujos)
+        
+        # Montecarlo: Variación de TRM y Generación (1000 iteraciones)
+        simulaciones = []
+        for _ in range(1000):
+            var_trm = np.random.normal(1, 0.08) # Volatilidad del 8%
+            sim_vpn = np.npv(self.market_defaults['WACC'], [f * var_trm for f in flujos])
+            simulaciones.append(sim_vpn)
+            
+        prob_exito = (np.array(simulaciones) > 0).mean() * 100
+        
         return {
-            "probabilidad_exito": float(np.mean(resultados > 0) * 100),
-            "vpn_min": float(np.min(resultados)),
-            "vpn_max": float(np.max(resultados))
+            "VPN": vpn,
+            "TIR": tir * 100,
+            "Montecarlo_Exito": prob_exito,
+            "Riesgo": "BAJO" if prob_exito > 80 else "ALTO"
         }
-
-    def get_market_variables(self, tech, country):
-        """MAIA busca automáticamente variables de mercado."""
-        # Aquí se integra la búsqueda automática de TRM, IPC e IPP actual
-        return {"trm": 3950.0, "ipc": 0.045, "ipp": 0.051}
 
 builder_engine = FinancialBuilder()

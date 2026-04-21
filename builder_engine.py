@@ -2,41 +2,67 @@
 import numpy as np
 
 class BuilderCore:
-    def run_model(self, data):
+    def __init__(self):
+        self.tasa_descuento = 0.12
+
+    def calcular_modelo_completo(self, data):
         try:
-            # Captura de datos del formulario
-            capex = float(data.get('capex', '0').replace('.', ''))
-            capacidad = float(data.get('capacidad') or 1)
-            ppa = float(data.get('ppa') or 0)
+            # Entrada de datos
+            capacidad = float(data.get('capacidad') or 23.42)
+            capex_base = float(data.get('capex', '0').replace('.', '').replace(',', ''))
+            ppa = float(data.get('ppa') or 323)
+            años = 25
+
+            # --- DESGLOSE DE CAPEX (Basado en estándares de industria) ---
+            desglose_capex = {
+                "Equipos (Módulos/Inversores)": capex_base * 0.65,
+                "Obra Civil y Montaje": capex_base * 0.20,
+                "Interconexión y Redes": capex_base * 0.10,
+                "Gestión y Seguros Construcción": capex_base * 0.05
+            }
+
+            # --- DESGLOSE DE OPEX ANUAL ---
+            # Basado en un costo operativo de aprox $15,000 - $20,000 USD por MW/año
+            opex_anual_detallado = {
+                "Mantenimiento Preventivo/Correctivo": capacidad * 15000000, # COP
+                "Seguridad y Vigilancia": 120000000, # Fijo anual
+                "Seguros Todo Riesgo Daño Material": capex_base * 0.0025,
+                "Arrendamiento y Gestión Predial": 80000000,
+                "Personal Operativo": 250000000
+            }
+            total_opex_año = sum(opex_anual_detallado.values())
+
+            # --- FLUJO DE CAJA ---
+            generacion_anual = capacidad * 1900 * 0.98 # Horas sol con degradación técnica
+            ingresos_anuales = generacion_anual * ppa
+            flujo_neto = ingresos_anuales - total_opex_año
             
-            # 1. FLUJO DE CAJA SIMPLIFICADO (10 AÑOS)
-            periodos = 10
-            ingresos_anuales = capacidad * 1850 * ppa # 1850 horas sol/año
-            opex_anual = capex * 0.02
-            flujo_anual = ingresos_anuales - opex_anual
-            
-            # 2. CÁLCULO DE INDICADORES
-            vpn = np.npv(0.12, [-capex] + [flujo_anual] * periodos) # Tasa 12%
-            tir = np.irr([-capex] + [flujo_anual] * periodos)
-            
-            # 3. BASE PARA MONTECARLO (Simulación de 1000 escenarios)
-            # Variamos el PPA y el OPEX aleatoriamente
-            escenarios_vpn = []
+            flujos = [-capex_base] + [flujo_neto] * años
+            vpn = np.npv(self.tasa_descuento, flujos)
+            tir = np.irr(flujos)
+
+            # --- SIMULACIÓN MONTECARLO (1.000 Escenarios sobre PPA y Disponibilidad) ---
+            escenarios = []
             for _ in range(1000):
-                v_ppa = ppa * np.random.normal(1, 0.1) # 10% volatilidad
-                v_ingresos = capacidad * 1850 * v_ppa
-                v_vpn = np.npv(0.12, [-capex] + [v_ingresos - opex_anual] * periodos)
-                escenarios_vpn.append(v_vpn)
+                v_ppa = ppa * np.random.normal(1, 0.08)
+                v_disp = 1900 * np.random.normal(1, 0.03)
+                v_ingresos = capacidad * v_disp * v_ppa
+                v_vpn = np.npv(self.tasa_descuento, [-capex_base] + [(v_ingresos - total_opex_año)] * años)
+                escenarios.append(v_vpn)
 
             return {
-                "vpn": f"$ {int(vpn):,}",
-                "tir": f"{tir*100:.2f}%",
-                "payback": f"{capex/flujo_anual:.1f} Años" if flujo_anual > 0 else "N/A",
-                "montecarlo_avg": f"$ {int(np.mean(escenarios_vpn)):,}",
-                "probabilidad_exito": f"{len([x for x in escenarios_vpn if x > 0]) / 10:.1f}%",
-                "chart_data": [int(flujo_anual) for _ in range(5)]
+                "status": "SUCCESS",
+                "indicadores": {
+                    "vpn": f"$ {int(vpn):,}",
+                    "tir": f"{tir*100:.2f}%",
+                    "payback": f"{capex_base/flujo_neto:.1f} Años",
+                    "probabilidad_exito": f"{(len([x for x in escenarios if x > 0])/1000)*100}%"
+                },
+                "capex_detallado": desglose_capex,
+                "opex_detallado": opex_anual_detallado,
+                "flujo_grafica": [int(flujo_neto) for _ in range(10)]
             }
         except Exception as e:
-            return {"error": str(e)}
+            return {"status": "ERROR", "message": str(e)}
 
 builder_engine = BuilderCore()

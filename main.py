@@ -1,101 +1,95 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template_string, request
 from scout_engine import scout_engine
-from builder_engine import builder_engine
 import os
 
 app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    scout_res = []
-    fin_res = None
-    active_tab = 'scout'
-
+    results = []
     if request.method == 'POST':
-        action = request.form.get('action')
-        if action == 'run_scout':
-            scout_res = scout_engine.execute_brutal_search(request.form.get('c'), request.form.get('t'))
-            active_tab = 'scout'
-        elif action == 'run_finance':
-            fin_res = builder_engine.process_model(request.form)
-            active_tab = 'builder'
+        country = request.form.get('country', 'TODOS')
+        tech = request.form.get('tech', 'TODAS')
+        results = scout_engine.execute_brutal_search(country, tech)
 
-    return render_template_string(f"""
+    html = """
     <html><head>
-    <style>
-        body {{ background:#000; color:#0ff; font-family:monospace; padding:20px; }}
-        .header {{ border-bottom:2px solid #f0f; padding-bottom:10px; margin-bottom:20px; }}
-        .tab-content {{ display: {'block' if active_tab == 'scout' else 'none'}; }}
-        .builder-content {{ display: {'block' if active_tab == 'builder' else 'none'}; }}
-        .card {{ border:1px solid #0f0; padding:15px; margin:10px 0; background:rgba(0,40,0,0.1); }}
-        input, select {{ background:#111; border:1px solid #0ff; color:#fff; padding:10px; width:100%; margin:5px 0; }}
-        .btn {{ background:#f0f; color:#000; padding:12px; border:none; font-weight:bold; cursor:pointer; width:100%; }}
-        
-        /* CHAT MAXIMIZABLE/MINIMIZABLE */
-        #maia-chat {{ position:fixed; bottom:20px; right:20px; width:350px; border:2px solid #0ff; background:#000; transition: 0.3s; }}
-        .chat-header {{ background:#0ff; color:#000; padding:10px; cursor:pointer; font-weight:bold; }}
-        .chat-body {{ height: 300px; padding:15px; display:block; }}
-        .minimized {{ height: 40px !important; overflow:hidden; }}
-    </style>
-    <script>
-        function toggleChat() {{ document.getElementById('maia-chat').classList.toggle('minimized'); }}
-        function showTab(tab) {{ 
-            document.getElementById('scout-ui').style.display = tab === 'scout' ? 'block' : 'none';
-            document.getElementById('builder-ui').style.display = tab === 'builder' ? 'block' : 'none';
-        }}
-    </script>
+        <title>MAIA II - SCOUT ENGINE</title>
+        <style>
+            body { background:#000; color:#0ff; font-family: 'Courier New', monospace; padding:20px; }
+            .container { max-width: 1200px; margin: auto; }
+            .header { border-bottom: 2px solid #f0f; padding-bottom: 20px; margin-bottom: 30px; text-align: center; }
+            .search-box { background: #111; border: 1px solid #0ff; padding: 25px; margin-bottom: 30px; border-radius: 5px; }
+            input { background: #000; border: 1px solid #0ff; color: #fff; padding: 12px; width: 45%; margin-right: 10px; font-size: 16px; }
+            .btn-scout { background: #f0f; color: #000; border: none; padding: 12px 30px; font-weight: bold; cursor: pointer; font-size: 16px; }
+            .card { border: 1px solid #0f0; background: rgba(0, 50, 0, 0.2); padding: 20px; margin-bottom: 20px; position: relative; }
+            .card h3 { margin-top: 0; color: #f0f; }
+            .contact-info { background: rgba(255, 0, 255, 0.1); padding: 10px; margin-top: 10px; border-left: 3px solid #f0f; }
+            .viability { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #0f0; border: 2px solid #0f0; padding: 10px; border-radius: 50%; }
+            
+            /* CHAT MAIA MAXIMIZABLE */
+            #maia-chat { position: fixed; bottom: 20px; right: 20px; width: 350px; border: 2px solid #f0f; background: #000; transition: 0.3s; z-index: 1000; }
+            .chat-header { background: #f0f; color: #000; padding: 10px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; }
+            .chat-body { height: 350px; padding: 15px; overflow-y: auto; }
+            .minimized { height: 42px !important; overflow: hidden; border-color: #0ff !important; }
+            .minimized .chat-header { background: #0ff; }
+        </style>
+        <script>
+            function toggleChat() { document.getElementById('maia-chat').classList.toggle('minimized'); }
+        </script>
     </head><body>
-        <div class="header">
-            <h1>MAIA II - COMMAND CENTER</h1>
-            <button onclick="showTab('scout')" style="background:none; border:1px solid #0ff; color:#0ff; padding:5px 15px; cursor:pointer;">MOTOR SCOUT</button>
-            <button onclick="showTab('builder')" style="background:none; border:1px solid #f0f; color:#f0f; padding:5px 15px; cursor:pointer;">+ CREAR PROYECTO NUEVO</button>
-        </div>
-
-        <div id="scout-ui" class="tab-content" style="display: {'block' if active_tab == 'scout' else 'none'};">
-            <form method="post">
-                <input name="c" placeholder="PAÍS (EJ: COLOMBIA)">
-                <input name="t" placeholder="TECNOLOGÍA (EJ: HIDRÓGENO VERDE)">
-                <button type="submit" name="action" value="run_scout" class="btn" style="background:#0f0;">EJECUTAR BÚSQUEDA BRUTAL</button>
-            </form>
-            {"".join([f'<div class="card"><b>{r["Nombre"]}</b><br>{r["Resumen"]}<br><small>CONTACTO: {r["Contacto"]}</small></div>' for r in scout_res])}
-        </div>
-
-        <div id="builder-ui" class="builder-content" style="display: {'block' if active_tab == 'builder' else 'none'};">
-            <h2 style="color:#f0f;">FORMULARIO DE MODELO FINANCIERO</h2>
-            <form method="post">
-                <h3>Pestaña 1: CAPEX/OPEX</h3>
-                <input name="capex" placeholder="CAPEX Total (USD)">
-                <input name="opex" placeholder="OPEX Anual (USD)">
-                <h3>Pestaña 2: Mercado e Ingresos</h3>
-                <input name="ingresos" placeholder="Ingresos Anuales Estimados">
-                <input name="trm" value="3900" placeholder="TRM Proyectada">
-                
-                <button type="submit" name="action" value="run_finance" class="btn">GENERAR MODELO FINANCIERO & MONTECARLO</button>
-            </form>
-
-            {f'''
-            <div class="card" style="border-color:#f0f;">
-                <h3>RESULTADOS DEL ANÁLISIS</h3>
-                <p>VPN ESTIMADO: ${fin_res['vpn_base']:,.2f}</p>
-                <p>PROBABILIDAD ÉXITO (MONTECARLO): {fin_res['montecarlo_exito']}%</p>
-                <button class="btn" style="width:auto; background:#0ff;">GUARDAR EN MEMORIA</button>
+        <div class="container">
+            <div class="header">
+                <h1 style="margin:0; font-size: 3em;">MAIA II: SCOUT ENGINE</h1>
+                <p style="color: #f0f;">SISTEMA DE RASTREO DE INFRAESTRUCTURA ENERGÉTICA GLOBAL</p>
             </div>
-            ''' if fin_res else ''}
+
+            <div class="search-box">
+                <form method="post">
+                    <input type="text" name="country" placeholder="PAÍS O REGIÓN (EJ: COLOMBIA, KSA, USA)">
+                    <input type="text" name="tech" placeholder="TECNOLOGÍA (EJ: SOLAR, SMR, HIDRÓGENO)">
+                    <button type="submit" class="btn-scout">EJECUTAR BÚSQUEDA BRUTAL</button>
+                </form>
+            </div>
+
+            <div id="results">
+                {% for r in results %}
+                <div class="card">
+                    <div class="viability">{{ r.Viabilidad }}%</div>
+                    <h3>{{ r.Nombre }}</h3>
+                    <p><b>UBICACIÓN:</b> {{ r.Ubicación }} | <b>POTENCIA:</b> {{ r.Potencia }}</p>
+                    <p><b>TECNOLOGÍA:</b> {{ r.Tecnología }}</p>
+                    <p>{{ r.Resumen }}</p>
+                    <div class="contact-info">
+                        <b>CONTACTO EJECUTIVO:</b><br>
+                        CEO: {{ r.CEO }} | TEL: {{ r.Celular }}<br>
+                        DIRECCIÓN: {{ r.Dirección }}<br>
+                        EMAIL/LINK: <a href="{{ r.Contacto }}" style="color: #0ff;">{{ r.Contacto }}</a>
+                    </div>
+                    <p style="font-size: 10px; color: #555; margin-top: 10px;">FUENTE: {{ r.Fuente }} | FECHA: {{ r.Fecha_Pub }}</p>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         <div id="maia-chat" class="minimized">
-            <div class="chat-header" onclick="toggleChat()">MAIA II AGENT [+/-]</div>
+            <div class="chat-header" onclick="toggleChat()">
+                <span>MAIA AGENT - ONLINE</span>
+                <span>[+/-]</span>
+            </div>
             <div class="chat-body">
-                <p style="font-size:11px; color:#0f0;">Especialista en Energía y Finanzas activo.</p>
-                <div style="height:180px; border-bottom:1px solid #333; margin-bottom:10px;">
-                    MAIA: Lista para analizar el modelo Morrosquillo o buscar nuevos activos.
+                <div style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px;">
+                    <small style="color: #0f0;">SISTEMA OPERATIVO BLINDADO V.7</small><br>
+                    MAIA: Lista para analizar los datos del Scout. He cargado la base de datos de energía nuclear y renovables.
                 </div>
-                <input placeholder="Pregunta sobre TIR, VAN o SMR...">
+                <div id="messages"></div>
+                <input type="text" placeholder="Escribe tu consulta..." style="width: 100%; margin-top: 200px;">
             </div>
         </div>
     </body></html>
-    """)
+    """
+    return render_template_string(html, results=results)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))

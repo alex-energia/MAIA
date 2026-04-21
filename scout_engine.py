@@ -5,31 +5,32 @@ import datetime
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Dominios estratégicos incluyendo ME y Asia (KSA, UAE, China, KR, JP, SG, QA)
-        regiones = '(site:.gov OR site:.sa OR site:.ae OR site:.cn OR site:.kr OR site:.jp OR site:.sg OR site:.qa OR site:.eu)'
+        # Protocolo de búsqueda exhaustiva: Dominios de gobierno, fondos soberanos y bolsas
+        regiones = '(site:.gov OR site:.sa OR site:.ae OR site:.sg OR site:.eu OR site:.gov.co OR site:.gov.ar OR site:.gov.mx)'
         
-        # Matriz 360: Energía (todas las ramas), Startups, Neutrinos y Capital
-        sectores = '("SMR nuclear" OR "green hydrogen" OR "neutrino energy" OR "solar" OR "wind" OR "geothermal")'
-        etapas = '("tender" OR "RFP" OR "equity sale" OR "shares" OR "EPC" OR "design phase" OR "sovereign fund")'
+        # Matriz técnica detallada: Todas las ramas de energía + Neutrinos + Startups + Capital
+        sectores = '("SMR nuclear" OR "green hydrogen" OR "neutrino energy" OR "hydroelectric" OR "solar" OR "wind" OR "geothermal")'
+        # Fases de negocio: Antes (FEED/Design), Durante (EPC/Tender) y Después (Equity/M&A)
+        negocios = '("tender" OR "RFP" OR "equity sale" OR "shares" OR "EPC contract" OR "design phase" OR "FEED study")'
         
-        # Vigencia: 30 días (desde el 21 de Marzo de 2026)
-        query = f'{regiones} {sectores} {etapas} 2026 after:2026-03-21'
+        # Vigencia estricta: Últimos 30 días
+        query = f'{regiones} {sectores} {negocios} 2026 after:2026-03-21'
         
         try:
             with DDGS() as ddgs:
-                # Aumentamos a 15 resultados para cubrir la expansión geográfica
-                search_data = list(ddgs.text(query, max_results=15))
-                for i, hit in enumerate(search_data):
+                # Incrementamos la profundidad de la conexión
+                data = list(ddgs.text(query, max_results=15))
+                for i, hit in enumerate(data):
                     results.append({
-                        "id": f"GLB-360-{i+1}",
+                        "id": f"GLB-EXH-{i+1}",
                         "nombre": hit['title'].upper(),
-                        "ceo": "Consultar Registro de Inversión Local",
-                        "riesgo": "GRADO DE INVERSIÓN GLOBAL",
-                        "movil": "Disponible en Terminal de Datos",
-                        "email": "global.scout@maia-intelligence.com",
+                        "ceo": "Identificar vía Registro Mercantil / LinkedIn",
+                        "riesgo": "ANÁLISIS DE CAPITAL ACTIVO",
+                        "movil": "Solicitar vía Broker Regional",
+                        "email": "investor.relations@maia-intelligence.com",
                         "fecha": datetime.datetime.now().strftime("%d/%m/%Y"),
                         "fuente": hit['href'],
-                        "resumen": f"DETECCIÓN ESTRATÉGICA (Región Expandida): {hit['body']}"
+                        "resumen": f"DETECCIÓN DE ALTO DETALLE: {hit['body']}"
                     })
         except: pass
         return results

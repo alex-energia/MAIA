@@ -5,120 +5,120 @@ from builder_engine import builder_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_shield_v12_full"
+app.secret_key = "maia_v13_vibrant"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'history' not in session: session['history'] = []
+    if 'saved' not in session: session['saved'] = []
+    
     view = request.form.get('view_state', 'scout')
 
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'run_global':
             session['history'] = scout_engine.execute_global_scout()
-        elif action == 'calc_model':
-            # Procesa el formulario
-            session['calc_res'] = builder_engine.process_financials(request.form)
+        elif action == 'save_memoria':
+            p_id = request.form.get('p_id')
+            item = next((x for x in session['history'] if x['id'] == p_id), None)
+            if item and item not in session['saved']: session['saved'].append(item)
+        elif action == 'clear_all':
+            session['history'] = []; session['saved'] = []
+        elif action == 'hacer_modelo':
+            session['calc'] = builder_engine.calculate_indicators(request.form)
             view = 'builder'
 
     html = """
     <!DOCTYPE html>
     <html><head>
-        <title>MAIA II - V.12 CONTROL TOTAL</title>
+        <title>MAIA II - V.13</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
-            :root { --neon: #0ff; --pink: #f0f; --green: #0f0; }
+            :root { --neon: #0ff; --pink: #f0f; --green: #0f0; --red: #ff3131; --yellow: #ffff31; }
             body { background:#000; color:var(--neon); font-family:monospace; padding:20px; }
-            .nav { border-bottom: 2px solid var(--pink); padding-bottom:15px; margin-bottom:25px; display:flex; gap:10px; }
-            .btn { padding:10px 20px; background:none; border:1px solid var(--neon); color:var(--neon); cursor:pointer; font-weight:bold; }
+            .nav { display:flex; gap:10px; border-bottom:2px solid var(--pink); padding-bottom:15px; margin-bottom:20px; }
+            .btn { padding:10px; border:1px solid var(--neon); background:none; color:var(--neon); cursor:pointer; font-weight:bold; }
             .btn-active { background:var(--pink); color:#000; border-color:var(--pink); }
-            .ficha { background:#0a0a0a; border:1px solid #333; padding:20px; margin-bottom:20px; }
-            .label { color:var(--pink); font-size:10px; text-transform:uppercase; }
-            .value { color:#fff; display:block; margin-bottom:10px; }
-            .risk-badge { padding:3px 8px; font-weight:bold; border:1px solid; }
-            .ALTO { border-color:red; color:red; } .MODERADO { border-color:yellow; color:yellow; } .BAJO { border-color:green; color:green; }
             
-            /* Formulario Vacío */
-            .field-group { margin-bottom:15px; }
+            /* Colores de Riesgo Vivos */
+            .ALTO { background:var(--red); color:#000; padding:5px 10px; }
+            .MODERADO { background:var(--yellow); color:#000; padding:5px 10px; }
+            .BAJO { background:var(--green); color:#000; padding:5px 10px; }
+            
+            .ficha { background:#0a0a0a; border:1px solid #333; padding:20px; margin-bottom:20px; border-left:5px solid var(--neon); }
+            .grid { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:15px; margin:15px 0; }
+            .label { color:var(--pink); font-size:10px; display:block; }
+            .value { color:#fff; font-size:13px; }
+            
             input, select { width:100%; padding:10px; background:#111; border:1px solid var(--neon); color:#fff; }
-            
-            #loader { width:100%; height:6px; background:#111; display:none; margin-bottom:20px; }
-            #bar { height:100%; background:var(--green); width:0%; transition:0.4s; }
+            .card-fin { background:#111; padding:15px; border:1px solid var(--green); text-align:center; }
         </style>
     </head><body>
         <div class="nav">
             <form method="POST" style="display:contents;">
                 <input type="hidden" name="view_state" value="scout">
-                <button type="submit" name="action" value="go" class="btn {{ 'btn-active' if view == 'scout' }}">SCOUT GLOBAL</button>
+                <button type="submit" name="action" value="v" class="btn {{ 'btn-active' if view == 'scout' }}">SCOUT GLOBAL</button>
+                <input type="hidden" name="view_state" value="memoria">
+                <button type="submit" name="action" value="v" class="btn {{ 'btn-active' if view == 'memoria' }}">MEMORIA ({{ session['saved']|length }})</button>
                 <input type="hidden" name="view_state" value="builder">
-                <button type="submit" name="action" value="go" class="btn {{ 'btn-active' if view == 'builder' }}">CONSTRUCTOR</button>
+                <button type="submit" name="action" value="v" class="btn {{ 'btn-active' if view == 'builder' }}">CONSTRUCTOR FINANCIERO</button>
+                <button type="submit" name="action" value="clear_all" class="btn" style="border-color:red; color:red;">LIMPIAR TODO</button>
             </form>
         </div>
-
-        <div id="loader"><div id="bar"></div></div>
 
         {% if view == 'scout' %}
-        <form method="POST" onsubmit="start()">
-            <input type="hidden" name="view_state" value="scout">
-            <button type="submit" name="action" value="run_global" class="btn" style="width:100%; border-color:var(--green); color:var(--green);">EJECUTAR BÚSQUEDA PROFUNDA 2026</button>
-        </form>
-        <div style="margin-top:30px;">
-            {% for r in session['history'] %}
+        <form method="POST"><button type="submit" name="action" value="run_global" class="btn" style="width:100%; border-color:var(--green);">INICIAR RASTREO 2026</button></form>
+        {% for r in session['history'] %}
             <div class="ficha">
                 <div style="display:flex; justify-content:space-between;">
-                    <span class="label">ID: {{ r.id }}</span>
-                    <span class="risk-badge {{ r.Riesgo }}">RIESGO: {{ r.Riesgo }}</span>
+                    <strong>{{ r.nombre }}</strong>
+                    <span class="{{ r.riesgo }}">RIESGO {{ r.riesgo }}</span>
                 </div>
-                <h3 style="color:#fff;">{{ r.Nombre }}</h3>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                    <div>
-                        <span class="label">Ubicación del Proyecto</span><span class="value">{{ r.Ubicacion }}</span>
-                        <span class="label">Capacidad Estimada</span><span class="value">{{ r.Capacidad }}</span>
-                    </div>
-                    <div>
-                        <span class="label">CEO / Líder</span><span class="value">{{ r.CEO }}</span>
-                        <span class="label">Contacto Directo</span><span class="value">{{ r.Contacto }}</span>
-                    </div>
+                <div class="grid">
+                    <div><span class="label">UBICACIÓN</span><span class="value">{{ r.ubicacion }}</span></div>
+                    <div><span class="label">CAPACIDAD</span><span class="value">{{ r.capacidad }}</span></div>
+                    <div><span class="label">ID</span><span class="value">{{ r.id }}</span></div>
                 </div>
-                <div style="border-top:1px solid #222; padding-top:15px; margin-top:15px;">
-                    <span class="label">Resumen Ejecutivo</span>
-                    <p style="color:#ccc; font-size:13px;">{{ r.Resumen }}</p>
-                    <span class="label">Fuente de Información</span><br>
-                    <a href="{{ r.Fuente }}" target="_blank" style="color:var(--pink); font-size:11px;">{{ r.Fuente }}</a>
+                <p style="color:#ccc; font-size:12px; border-top:1px solid #222; padding-top:10px;">{{ r.resumen }}</p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <a href="{{ r.fuente }}" target="_blank" style="color:var(--pink);">[VER FUENTE]</a>
+                    <form method="POST"><input type="hidden" name="p_id" value="{{ r.id }}"><button type="submit" name="action" value="save_memoria" class="btn" style="font-size:10px;">+ MEMORIA</button></form>
                 </div>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
+        {% endfor %}
+
+        {% elif view == 'memoria' %}
+        <h2 style="color:var(--pink);">FICHAS GUARDADAS EN MEMORIA</h2>
+        {% for r in session['saved'] %}<div class="ficha"><strong>{{ r.nombre }}</strong> ({{ r.id }})</div>{% endfor %}
+
+        {% elif view == 'builder' %}
         <div class="ficha">
-            <h2 style="color:var(--pink);">NUEVO MODELO FINANCIERO (DILIGENCIAR DATOS)</h2>
+            <h2 style="color:var(--pink);">CREAR NUEVO PROYECTO</h2>
             <form method="POST">
-                <div class="field-group">
-                    <label>Tecnología</label>
-                    <select name="tech">
-                        <option value="solar">Solar Fotovoltaica</option>
-                        <option value="wind">Eólica</option>
-                        <option value="hydrogen">Hidrógeno Verde</option>
-                    </select>
+                <div class="grid">
+                    <div><label class="label">CAPEX (COP)</label><input type="text" name="capex" placeholder="Ej: 90000000000"></div>
+                    <div><label class="label">CAPACIDAD (MW)</label><input type="number" step="0.01" name="capacidad"></div>
+                    <div><label class="label">PPA (COP/kWh)</label><input type="number" name="ppa"></div>
                 </div>
-                <div class="field-group"><label>Nombre del Proyecto</label><input type="text" name="p_name" placeholder="..."></div>
-                <div class="field-group"><label>Capacidad (MW)</label><input type="number" step="0.01" name="capacidad"></div>
-                <div class="field-group"><label>CAPEX Total (COP)</label><input type="text" name="capex"></div>
-                <div class="field-group"><label>Valor PPA (COP/kWh)</label><input type="number" name="ppa"></div>
-                <button type="submit" name="action" value="calc_model" class="btn" style="width:100%; background:var(--green); color:#000;">HACER EL MODELO</button>
+                <button type="submit" name="action" value="hacer_modelo" class="btn" style="width:100%; background:var(--green); color:#000;">HACER EL MODELO</button>
             </form>
         </div>
-        {% endif %}
-
+        
+        {% if session.get('calc') %}
+        <div class="grid">
+            <div class="card-fin"><span class="label">VPN</span><div style="font-size:18px;">{{ session['calc'].vpn }}</div></div>
+            <div class="card-fin"><span class="label">TIR</span><div style="font-size:18px;">{{ session['calc'].tir }}</div></div>
+            <div class="card-fin"><span class="label">PAYBACK</span><div style="font-size:18px;">{{ session['calc'].payback }}</div></div>
+        </div>
+        <canvas id="myChart" style="background:#111; margin-top:20px;"></canvas>
         <script>
-            function start() {
-                document.getElementById('loader').style.display = 'block';
-                var b = document.getElementById('bar'); var w = 0;
-                var i = setInterval(function(){ w+=10; b.style.width=w+'%'; if(w>=100) clearInterval(i); }, 200);
-            }
+            new Chart(document.getElementById('myChart'), {
+                type: 'line',
+                data: { labels: ['Añ1', 'Añ2', 'Añ3', 'Añ4'], datasets: [{ label: 'Ingresos Proyectados', data: {{ session['calc'].data_grafica }}, borderColor: '#0f0' }] }
+            });
         </script>
+        {% endif %}
+        {% endif %}
     </body></html>
     """
     return render_template_string(html, view=view)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)

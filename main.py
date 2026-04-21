@@ -4,7 +4,7 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_scout_ultra_v5"
+app.secret_key = "maia_shield_v6_total"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -13,28 +13,25 @@ def index():
     
     current_results = []
     summary_data = {}
+    searching = False
 
     if request.method == 'POST':
         action = request.form.get('action')
+        searching = True # Activa estado de búsqueda
         
         if action == 'run_specialized':
-            pais = request.form.get('country')
-            tech = request.form.get('tech')
-            found = scout_engine.execute_brutal_search(pais, tech, is_global=False)
+            p = request.form.get('country')
+            t = request.form.get('tech')
+            found = scout_engine.execute_brutal_search(p, t, is_global=False)
             session['history'] = found
-            session.modified = True
-            current_results = found
-            
         elif action == 'run_global_scout':
             found = scout_engine.execute_brutal_search("", "", is_global=True)
             session['history'] = found
-            session.modified = True
-            current_results = found
-            
         elif action == 'clear':
             session['history'] = []
-            session.modified = True
-            current_results = []
+            
+        session.modified = True
+        current_results = session['history']
 
     if not current_results:
         current_results = session.get('history', [])
@@ -44,104 +41,110 @@ def index():
 
     html = """
     <html><head>
-        <title>MAIA II - SCOUT CONTROL PANEL</title>
+        <title>MAIA II - GLOBAL SCOUT</title>
         <style>
-            body { background:#050505; color:#0ff; font-family:'Segoe UI', monospace; padding:40px; }
-            .header-main { border-left: 10px solid #f0f; padding-left:20px; margin-bottom:40px; }
+            :root { --neon: #0ff; --pink: #f0f; --green: #0f0; }
+            body { background:#000; color:var(--neon); font-family:'Courier New', monospace; padding:30px; margin:0; }
             
-            .control-panel { background:#111; border:1px solid #0ff; padding:30px; margin-bottom:40px; display:flex; gap:15px; align-items:center; }
-            select { background:#000; border:1px solid #0ff; color:#fff; padding:12px; width:250px; font-family:monospace; }
+            .header { border-bottom: 2px solid var(--pink); padding-bottom:20px; margin-bottom:30px; }
+            .control-panel { background:#0a0a0a; border:1px solid var(--neon); padding:25px; margin-bottom:30px; }
             
-            .btn { padding:12px 25px; font-weight:bold; cursor:pointer; text-transform:uppercase; border:none; font-family:monospace; }
-            .btn-run { background:#0f0; color:#000; }
-            .btn-scout { background:#f0f; color:#000; }
-            .btn-clear { background:#333; color:#eee; }
+            select, .btn { padding:12px; font-weight:bold; font-family:monospace; font-size:14px; }
+            select { background:#000; border:1px solid var(--neon); color:#fff; width:220px; }
+            
+            .btn { cursor:pointer; text-transform:uppercase; border:none; margin-right:10px; }
+            .btn-run { background:var(--green); color:#000; }
+            .btn-global { background:var(--pink); color:#000; }
+            .btn-clear { background:#333; color:#fff; }
 
-            .ficha-proyecto { background:#0a0a0a; border:1px solid #333; margin-bottom:30px; padding:0; border-radius:4px; overflow:hidden; }
-            .ficha-header { background:#1a1a1a; padding:15px 25px; display:flex; justify-content:space-between; border-bottom:1px solid #333; }
-            .ficha-body { padding:25px; display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
-            .ficha-full { grid-column: span 2; border-top: 1px solid #222; padding-top:15px; }
-            
-            .label { color:#f0f; font-size:11px; text-transform:uppercase; display:block; margin-bottom:4px; }
-            .value { color:#fff; font-size:15px; margin-bottom:15px; display:block; }
-            
-            .tag-riesgo { padding:4px 12px; font-weight:bold; border:1px solid; }
-            .ALTO { border-color:#f00; color:#f00; background:rgba(255,0,0,0.1); }
-            .MODERADO { border-color:#ff0; color:#ff0; background:rgba(255,255,0,0.1); }
-            .BAJO { border-color:#0f0; color:#0f0; background:rgba(0,255,0,0.1); }
+            /* Barra de Estado */
+            .status-container { width:100%; background:#111; height:25px; border:1px solid var(--neon); margin-bottom:30px; position:relative; overflow:hidden; }
+            .status-bar { height:100%; background:var(--green); width:0%; transition: width 0.5s; }
+            .status-text { position:absolute; top:4px; width:100%; text-align:center; font-size:12px; font-weight:bold; color:#fff; }
 
-            .resumen-final { width:100%; border-collapse:collapse; margin-top:50px; background:#111; border:1px solid #f0f; }
-            .resumen-final th { background:#f0f; color:#000; padding:15px; text-align:left; }
-            .resumen-final td { border:1px solid #333; padding:15px; }
+            /* Fichas de Proyecto */
+            .ficha { border:1px solid #333; margin-bottom:25px; background:rgba(0,255,255,0.02); }
+            .ficha-head { background:#111; padding:15px; display:flex; justify-content:space-between; border-bottom:1px solid #333; }
+            .ficha-body { padding:20px; display:grid; grid-template-columns: 1fr 1fr; gap:25px; }
+            .ficha-footer { grid-column: span 2; border-top: 1px solid #222; padding-top:15px; }
+            
+            .label { color:var(--pink); font-size:11px; text-transform:uppercase; display:block; }
+            .value { color:#fff; font-size:15px; display:block; margin-bottom:12px; }
+            
+            .risk { padding:3px 8px; font-weight:bold; border:1px solid; }
+            .ALTO { border-color:#f00; color:#f00; }
+            .MODERADO { border-color:#ff0; color:#ff0; }
+            .BAJO { border-color:var(--green); color:var(--green); }
 
-            #maia-chat { position:fixed; bottom:20px; right:20px; width:350px; background:#000; border:1px solid #f0f; z-index:999; }
-            .chat-head { background:#f0f; color:#000; padding:10px; font-weight:bold; cursor:pointer; }
-            .chat-content { height:250px; padding:15px; font-size:13px; }
+            /* Chat Maia Modular */
+            #maia-chat { position:fixed; bottom:0; right:20px; width:360px; border:2px solid var(--pink); background:#000; transition: 0.3s; z-index:9999; }
+            .chat-header { background:var(--pink); color:#000; padding:12px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
+            .chat-body { height:300px; padding:15px; overflow-y:auto; display:block; }
+            .minimized { transform: translateY(300px); }
+
+            .summary-table { width:100%; border-collapse:collapse; margin-top:50px; border:2px solid var(--pink); }
+            .summary-table th { background:var(--pink); color:#000; padding:15px; text-align:left; }
+            .summary-table td { border:1px solid #333; padding:15px; }
         </style>
     </head><body>
-        <div class="header-main">
-            <h1 style="margin:0; font-size:35px; letter-spacing:2px;">MAIA II <span style="color:#f0f;">SCOUT ENGINE</span></h1>
-            <p style="color:#0f0; margin:5px 0;">SISTEMA DE RASTREO DE OPORTUNIDADES AMÉRICA - EUROPA - ASIA - ARABIA</p>
+        <div class="header">
+            <h1 style="margin:0;">MAIA II <span style="color:var(--pink);">SISTEMA SCOUT</span></h1>
+            <p style="color:var(--green); margin:5px 0;">ESTADO: MOTOR CONECTADO A RED GLOBAL 2026</p>
+        </div>
+
+        <div class="status-container">
+            <div id="p-bar" class="status-bar"></div>
+            <div id="p-text" class="status-text">SISTEMA EN ESPERA</div>
         </div>
 
         <div class="control-panel">
-            <form method="POST" style="display:flex; gap:15px; width:100%;">
+            <form method="POST" id="scout-form" onsubmit="startLoading()">
                 <select name="country">
-                    <option value="BORRAR">-- FILTRAR PAÍS/ZONA --</option>
+                    <option value="BORRAR">-- SELECCIONAR PAÍS --</option>
                     {% for p in scout_engine.Paises %}
                     <option value="{{ p }}">{{ p }}</option>
                     {% endfor %}
                 </select>
 
                 <select name="tech">
-                    <option value="BORRAR">-- FILTRAR TECNOLOGÍA --</option>
+                    <option value="BORRAR">-- SELECCIONAR TECNOLOGÍA --</option>
                     {% for t in scout_engine.Tecnologias %}
                     <option value="{{ t }}">{{ t }}</option>
                     {% endfor %}
                 </select>
 
                 <button type="submit" name="action" value="run_specialized" class="btn btn-run">INICIAR RASTREO</button>
-                <button type="submit" name="action" value="run_global_scout" class="btn btn-scout">SCOUT GLOBAL</button>
+                <button type="submit" name="action" value="run_global_scout" class="btn btn-global">SCOUT GLOBAL</button>
                 <button type="submit" name="action" value="clear" class="btn btn-clear">LIMPIAR</button>
             </form>
         </div>
 
-        <div id="fichas-container">
+        <div id="results">
             {% for r in current_results %}
-            <div class="ficha-proyecto">
-                <div class="ficha-header">
-                    <span style="color:#0ff; font-weight:bold;">ID: {{ r.id }}</span>
-                    <span class="tag-riesgo {{ r.Estado_Riesgo }}">RIESGO: {{ r.Estado_Riesgo }}</span>
+            <div class="ficha">
+                <div class="ficha-head">
+                    <span style="color:var(--neon); font-weight:bold;">FICHA: {{ r.id }}</span>
+                    <span class="risk {{ r.Estado_Riesgo }}">RIESGO: {{ r.Estado_Riesgo }}</span>
                 </div>
                 <div class="ficha-body">
                     <div>
-                        <span class="label">Nombre del Proyecto</span>
+                        <span class="label">Proyecto</span>
                         <span class="value">{{ r.Nombre_Proyecto }}</span>
-                        
-                        <span class="label">Ubicación</span>
-                        <span class="value">{{ r.Ubicacion_Pais }}</span>
-                        
-                        <span class="label">Tecnología</span>
-                        <span class="value">{{ r.Tecnologia_Tipo }}</span>
+                        <span class="label">Ubicación / Tecnología</span>
+                        <span class="value">{{ r.Ubicacion_Pais }} | {{ r.Tecnologia_Tipo }}</span>
+                        <span class="label">Capacidad Técnica</span>
+                        <span class="value">{{ r.Capacidad_Estimada }}</span>
                     </div>
                     <div>
-                        <span class="label">CEO / Líder de Proyecto</span>
+                        <span class="label">CEO / Contacto</span>
                         <span class="value">{{ r.Nombre_CEO }}</span>
-                        
-                        <span class="label">Contacto Directo</span>
-                        <span class="value">{{ r.Telefono_Contacto }}</span>
-                        
-                        <span class="label">Dirección Primaria</span>
-                        <span class="value">{{ r.Direccion_Sede }}</span>
+                        <span class="label">Móvil / Dirección</span>
+                        <span class="value">{{ r.Telefono_Contacto }}<br>{{ r.Direccion_Sede }}</span>
                     </div>
-                    <div class="ficha-full">
-                        <span class="label">Resumen Ejecutivo y Descripción Técnica</span>
-                        <p style="color:#ccc; font-size:14px; line-height:1.6;">{{ r.Resumen_Ejecutivo }}</p>
-                        
-                        <span class="label">Fuente Original</span>
-                        <a href="{{ r.URL_Fuente }}" target="_blank" style="color:#f0f; font-size:13px;">{{ r.URL_Fuente }}</a>
-                        
-                        <p style="text-align:right; font-size:10px; color:#555; margin-top:15px;">RASTREADO: {{ r.Fecha_Rastreo }}</p>
+                    <div class="ficha-footer">
+                        <span class="label">Resumen Ejecutivo</span>
+                        <p style="color:#ccc; font-size:13px;">{{ r.Resumen_Ejecutivo }}</p>
+                        <a href="{{ r.URL_Fuente }}" target="_blank" style="color:var(--pink);">>> ACCEDER A FUENTE ORIGINAL</a>
                     </div>
                 </div>
             </div>
@@ -149,39 +152,64 @@ def index():
         </div>
 
         {% if summary_data %}
-        <div style="margin-top:60px;">
-            <h2 style="color:#f0f; border-bottom:1px solid #f0f; padding-bottom:10px;">RESUMEN DE INTELIGENCIA DE MERCADO</h2>
-            <table class="resumen-final">
-                <thead>
-                    <tr>
-                        <th>TECNOLOGÍA IDENTIFICADA</th>
-                        <th>CANTIDAD DE PROYECTOS</th>
-                        <th>ESTADO DE BASE DE DATOS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for tech, count in summary_data.items() %}
-                    <tr>
-                        <td>{{ tech }}</td>
-                        <td>{{ count }} PROYECTOS ENCONTRADOS</td>
-                        <td style="color:#0f0;">ACTUALIZADO 2026</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>TECNOLOGÍA</th>
+                    <th>REGISTROS</th>
+                    <th>ANALÍTICA</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t, c in summary_data.items() %}
+                <tr>
+                    <td>{{ t }}</td>
+                    <td>{{ c }} Items</td>
+                    <td style="color:var(--green);">VERIFICADO</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% endif %}
 
         <div id="maia-chat">
-            <div class="chat-head">MAIA II AGENT</div>
-            <div class="chat-content">
-                <p style="color:#0f0;">> Módulos de países actualizados.</p>
-                <p style="color:#0f0;">> Motor de búsqueda sincronizado con DuckDuckGo API.</p>
+            <div class="chat-header" onclick="toggleChat()">
+                MAIA AGENT <span>[Min/Max]</span>
+            </div>
+            <div class="chat-body" id="chat-body">
+                <p>> Sistema iniciado.</p>
+                <p>> Protocolo de búsqueda 100% real activo.</p>
                 {% if current_results %}
-                <p style="color:#f0f;">> Hallazgos: {{ current_results|length }} proyectos listos para análisis financiero.</p>
+                <p style="color:var(--green);">> Rastreo completado. {{ current_results|length }} hallazgos.</p>
                 {% endif %}
             </div>
         </div>
+
+        <script>
+            function toggleChat() {
+                document.getElementById('maia-chat').classList.toggle('minimized');
+            }
+            
+            function startLoading() {
+                const bar = document.getElementById('p-bar');
+                const txt = document.getElementById('p-text');
+                let width = 0;
+                txt.innerText = "RASTREANDO REDES GLOBALES...";
+                const interval = setInterval(() => {
+                    if (width >= 100) clearInterval(interval);
+                    else {
+                        width += 5;
+                        bar.style.width = width + "%";
+                    }
+                }, 100);
+            }
+
+            // Mantener barra al 100 si hay resultados
+            {% if current_results %}
+            document.getElementById('p-bar').style.width = "100%";
+            document.getElementById('p-text').innerText = "RASTREO FINALIZADO - DATOS CARGADOS";
+            {% endif %}
+        </script>
     </body></html>
     """
     return render_template_string(html, current_results=current_results, summary_data=summary_data, scout_engine=scout_engine)

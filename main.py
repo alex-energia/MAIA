@@ -8,79 +8,86 @@ app = Flask(__name__)
 @app.route('/', methods=['GET', 'POST'])
 def home():
     view = request.form.get('view', 'projects')
-    query = request.form.get('search_query', '').upper()
-    scout_data = get_market_scout() if view == 'scout' else []
+    target_country = request.form.get('target_country', 'TODOS')
+    
+    # Obtener datos y filtrar
+    all_data = get_market_scout()
+    countries = sorted(list(set([a['Pais'] for a in all_data])))
+    
+    if view == 'scout':
+        if target_country == 'TODOS':
+            scout_results = all_data
+        else:
+            scout_results = [a for a in all_data if a['Pais'] == target_country]
+    else:
+        scout_results = []
 
     h = f"""
-    <html><head><title>MAIA FKT - SISTEMA CENTRAL</title>
+    <html><head><title>MAIA FKT - INTEL V2</title>
     <style>
         body {{ background:#000; color:#0ff; font-family:monospace; padding:30px; }}
         .header {{ display:flex; justify-content:space-between; border-bottom:2px solid #f0f; padding-bottom:15px; margin-bottom:25px; }}
         .btn {{ background:none; border:1px solid #0ff; color:#0ff; padding:10px; cursor:pointer; font-weight:bold; font-size:11px; }}
         .btn-scout {{ border-color:#0f0; color:#0f0; box-shadow: inset 0 0 5px #0f0; }}
         
-        .grid {{ display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:20px; }}
-        .card-scout {{ border:1px solid #0f05; background:rgba(0,50,0,0.1); padding:15px; position:relative; }}
+        .grid {{ display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:20px; }}
+        .card-scout {{ border:1px solid #0f05; background:rgba(0,50,0,0.1); padding:15px; border-radius:5px; }}
         
-        .risk-BAJO {{ color: #0f0; }}
-        .risk-MEDIO {{ color: #ff0; }}
-        .risk-ALTO {{ color: #f00; }}
-        .risk-MÍNIMO {{ color: #0ff; }}
+        .risk-BAJO {{ color: #0f0; }} .risk-MEDIO {{ color: #ff0; }} .risk-ALTO {{ color: #f00; }} .risk-MÍNIMO {{ color: #0ff; }}
 
-        .bar-bg {{ background:#111; height:4px; width:100%; margin-top:10px; }}
+        .bar-bg {{ background:#111; height:4px; width:100%; margin:10px 0; }}
         .bar-fill {{ background:#0f0; height:100%; }}
         
-        .search-box {{ background:#000; border:1px solid #f0f; color:#0ff; padding:12px; width:100%; max-width:400px; }}
-        .result-box {{ border: 1px solid #0ff; padding: 20px; margin-top: 20px; background: rgba(0,255,255,0.05); }}
+        select, .search-box {{ background:#000; border:1px solid #f0f; color:#0ff; padding:12px; outline:none; }}
+        .contact-box {{ background:rgba(0,255,255,0.1); border:1px dashed #0ff; padding:8px; margin-top:10px; font-size:12px; }}
     </style>
     </head><body>
         <div class="header">
             <div>
                 <h1 style="margin:0; letter-spacing:2px; color:#f0f;">MAIA FKT</h1>
-                <small style="color:#666;">GESTIÓN DE ACTIVOS & INGENIERÍA</small>
+                <small style="color:#666;">INTELIGENCIA E INGENIERÍA // FILTRO GEOGRÁFICO</small>
             </div>
-            <div style="display:flex; gap:10px;">
-                <form method="post" style="margin:0;">
+            <div style="display:flex; gap:10px; align-items:center;">
+                <form method="post" style="display:flex; gap:10px; margin:0;">
                     <input type="hidden" name="view" value="scout">
-                    <button type="submit" class="btn btn-scout">EJECUTAR SCOUT [ON]</button>
+                    <select name="target_country">
+                        <option value="TODOS">-- SELECCIONAR PAÍS --</option>
+                        {" ".join([f'<option value="{c}" {"selected" if c==target_country else ""}>{c.upper()}</option>' for c in countries])}
+                    </select>
+                    <button type="submit" class="btn btn-scout">BUSCAR EN PAÍS</button>
                 </form>
-                <button class="btn" style="border-color:#f0f; color:#f0f;" onclick="window.location.href='/'">RESETEAR CONSOLA</button>
             </div>
         </div>
 
-        { f'<div class="grid">' + "".join([f'''
+        {"<p style='color:#f0f;'>[+] RESULTADOS EN: " + target_country + "</p>" if view == 'scout' else ""}
+        
+        <div class="grid">
+        {"".join([f'''
         <div class="card-scout">
-            <small style="color:#0f0;">ID: {a['id']}</small><br>
-            <b style="font-size:1.1em;">{a['Nombre']}</b><br>
-            <span style="font-size:0.9em;">TIPO: {a['Tipo']}</span><br>
-            <hr style="border:0; border-top:1px solid #0f02;">
-            <span>UBICACIÓN: {a['Ubicación']}</span><br>
-            <span>VALOR: <b>{a['Valor_Est']}</b></span> | RIESGO: <b class="risk-{a['Riesgo']}">{a['Riesgo']}</b>
-            <div class="bar-bg"><div class="bar-fill" style="width:{a['Viabilidad']}%"></div></div>
-        </div>
-        ''' for a in scout_data]) + '</div>' if view == 'scout' else '' }
-
-        <div style="margin-top:40px;">
-            <h3 style="color:#f0f;">BUSCADOR DE PROYECTOS DE INGENIERÍA</h3>
-            <form method="post">
-                <input name="search_query" class="search-box" placeholder="Ej: MAIA II, EKF, SENSORES..." value="{query}">
-                <button type="submit" class="btn" style="border-color:#f0f; color:#f0f;">BUSCAR</button>
-            </form>
-            
-            {f'''
-            <div class="result-box">
-                <h4 style="color:#f0f; margin-top:0;">[+] REPORTE DE BÚSQUEDA: {query}</h4>
-                <p><b>Estado:</b> Accediendo a Repositorio Externo...</p>
-                <p><b>Estructura Detectada:</b> Arquitectura de 14 Nodos de Ingeniería.</p>
-                <ul style="color:#0f0; font-size:12px;">
-                    <li>Nodo 01: HARDWARE ABSTRACTION LAYER (HAL)</li>
-                    <li>Nodo 02: CONTROL & ATTITUDE (EKF FUSION)</li>
-                    <li>Nodo 03: NAVIGATION (A-STAR 3D)</li>
-                    <li>Nodo 07: RADIOMETRIC THERMAL PROCESSING</li>
-                </ul>
-                <small style="color:#666;">Sincronizado con maia-ii.render.com</small>
+            <small style="color:#0f0;">ID: {a['id']} | {a['Tipo']}</small><br>
+            <b style="font-size:1.2em; color:#fff;">{a['Nombre']}</b><br>
+            <p style="margin:10px 0; font-size:0.9em; color:#ccc;">
+                <b>NEGOCIO:</b> {a['Detalle']}
+            </p>
+            <div style="display:flex; justify-content:space-between; font-size:0.9em;">
+                <span>VALOR: {a['Valor_Est']}</span>
+                <span>RIESGO: <b class="risk-{a['Riesgo']}">{a['Riesgo']}</b></span>
             </div>
-            ''' if query else ''}
+            <div class="bar-bg"><div class="bar-fill" style="width:{a['Viabilidad']}%"></div></div>
+            <div class="contact-box">
+                <b style="color:#0ff;">CONTACTO DIRECTO:</b><br>{a['Contacto']}
+            </div>
+        </div>
+        ''' for a in scout_results])}
+        </div>
+
+        <div style="margin-top:40px; border-top:1px solid #333; padding-top:20px;">
+            <h3 style="color:#f0f;">CONSULTA DE REPOSITORIO MAIA II</h3>
+            <p style="font-size:12px; color:#666;">Ingrese términos de ingeniería para validar contra nodos remotos.</p>
+            <form method="post">
+                <input name="search_query" class="search-box" style="width:300px;" placeholder="Ej: EKF, A-Star, PCL...">
+                <button type="submit" class="btn" style="border-color:#f0f; color:#f0f;">CONSULTAR</button>
+            </form>
         </div>
     </body></html>
     """

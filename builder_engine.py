@@ -1,25 +1,40 @@
 # -*- coding: utf-8 -*-
+import numpy as np
+
 class BuilderCore:
-    def calculate_full_model(self, data):
-        """Calcula CAPEX, OPEX e indicadores financieros"""
+    def run_model(self, data):
         try:
+            # Captura de datos del formulario
+            capex = float(data.get('capex', '0').replace('.', ''))
             capacidad = float(data.get('capacidad') or 1)
-            capex_input = data.get('capex', '0').replace('.', '').replace(',', '')
-            capex = float(capex_input) if capex_input else 0
             ppa = float(data.get('ppa') or 0)
             
-            # Lógica de modelo financiero (Proyección a 10 años)
-            ingresos_anuales = capacidad * 1900 * ppa # 1900 horas sol promedio
-            opex_anual = capex * 0.015 # 1.5% del CAPEX
-            ebitda = ingresos_anuales - opex_anual
+            # 1. FLUJO DE CAJA SIMPLIFICADO (10 AÑOS)
+            periodos = 10
+            ingresos_anuales = capacidad * 1850 * ppa # 1850 horas sol/año
+            opex_anual = capex * 0.02
+            flujo_anual = ingresos_anuales - opex_anual
             
+            # 2. CÁLCULO DE INDICADORES
+            vpn = np.npv(0.12, [-capex] + [flujo_anual] * periodos) # Tasa 12%
+            tir = np.irr([-capex] + [flujo_anual] * periodos)
+            
+            # 3. BASE PARA MONTECARLO (Simulación de 1000 escenarios)
+            # Variamos el PPA y el OPEX aleatoriamente
+            escenarios_vpn = []
+            for _ in range(1000):
+                v_ppa = ppa * np.random.normal(1, 0.1) # 10% volatilidad
+                v_ingresos = capacidad * 1850 * v_ppa
+                v_vpn = np.npv(0.12, [-capex] + [v_ingresos - opex_anual] * periodos)
+                escenarios_vpn.append(v_vpn)
+
             return {
-                "vpn": f"$ {int(ebitda * 7 - capex):,}",
-                "tir": "12.85%",
-                "payback": "6.8 Años",
-                "opex_anual": f"$ {int(opex_anual):,}",
-                "capex_mw": f"$ {int(capex/capacidad if capacidad > 0 else 0):,}",
-                "chart_data": [int(ingresos_anuales * 0.9), int(ingresos_anuales), int(ingresos_anuales * 1.1), int(ingresos_anuales * 1.2)]
+                "vpn": f"$ {int(vpn):,}",
+                "tir": f"{tir*100:.2f}%",
+                "payback": f"{capex/flujo_anual:.1f} Años" if flujo_anual > 0 else "N/A",
+                "montecarlo_avg": f"$ {int(np.mean(escenarios_vpn)):,}",
+                "probabilidad_exito": f"{len([x for x in escenarios_vpn if x > 0]) / 10:.1f}%",
+                "chart_data": [int(flujo_anual) for _ in range(5)]
             }
         except Exception as e:
             return {"error": str(e)}

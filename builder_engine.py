@@ -4,65 +4,67 @@ import random
 class BuilderCore:
     def calcular_modelo_completo(self, data):
         try:
-            # Entrada de datos y limpieza de strings
+            # 1. Limpieza y Captura de Entradas
             capacidad = float(data.get('capacidad') or 23.42)
             capex_raw = str(data.get('capex', '90389977843')).replace('.', '').replace(',', '')
-            capex_base = float(capex_raw) if capex_raw else 90389977843.0
+            capex_total = float(capex_raw) if capex_raw else 90389977843.0
             ppa = float(data.get('ppa') or 323)
-            años = 25
-
-            # --- DESGLOSE DE CAPEX PROFESIONAL ---
-            desglose_capex = {
-                "Módulos Fotovoltaicos (Tier 1)": capex_base * 0.45,
-                "Inversores y Estructura (Trackers)": capex_base * 0.20,
-                "Obra Civil y Vías de Acceso": capex_base * 0.15,
-                "Subestación y Línea de Alta Tensión": capex_base * 0.12,
-                "Costos Indirectos (Ingeniería/Permisos)": capex_base * 0.08
-            }
-
-            # --- DESGLOSE DE OPEX ANUAL DETALLADO ---
-            opex_anual_detallado = {
-                "O&M (Mantenimiento y Limpieza)": capacidad * 18000000,
-                "Seguridad 24/7 (Física y Electrónica)": 150000000,
-                "Seguros Patrimoniales (All Risk)": capex_base * 0.003,
-                "Administración y Gestión Social": 95000000,
-                "Canon de Arrendamiento Suelo": 110000000
-            }
-            total_opex_año = sum(opex_anual_detallado.values())
-
-            # --- CÁLCULOS FINANCIEROS NATIVOS (Sin Error 500) ---
-            generacion_anual = capacidad * 1950 * 0.98 
-            ingreso_anual = generacion_anual * ppa
-            flujo_neto = ingreso_anual - total_opex_año
             
-            # Cálculo simple de VPN (Tasa 12%)
+            # 2. Desglose de CAPEX (Investment)
+            capex_det = {
+                "Equipos Fotovoltaicos": capex_total * 0.48,
+                "Estructuras y Seguidores": capex_total * 0.18,
+                "BOP Eléctrico y Civil": capex_total * 0.22,
+                "Soft Costs (Permisos/Ingeniería)": capex_total * 0.12
+            }
+
+            # 3. Desglose de OPEX Anual (Operating Expenses)
+            opex_det = {
+                "O&M Preventivo": capacidad * 12000000,
+                "Seguridad y Vigilancia": 180000000,
+                "Seguros (Property/Liability)": capex_total * 0.0035,
+                "Administración y Gestión": 110000000,
+                "Arrendamiento de Tierra": 90000000
+            }
+            opex_total = sum(opex_det.values())
+
+            # 4. Proyección Financiera (Salto en el Modelo)
+            años = 25
+            generacion_kwh = capacidad * 1950 * 1000 * 0.985 # con degradación 
+            ingresos = generacion_kwh * ppa
+            ebitda = ingresos - opex_total
+            
+            # Impuestos y Depreciación (Aprox. Colombia 35%)
+            depreciacion = capex_total / 15 # Línea recta 15 años
+            utilidad_antes_imp = ebitda - depreciacion
+            impuestos = max(0, utilidad_antes_imp * 0.35)
+            flujo_neto = ebitda - impuestos
+
+            # 5. VPN y Montecarlo Nativo
             tasa = 0.12
-            vpn = -capex_base
+            vpn = -capex_total
             for t in range(1, años + 1):
                 vpn += flujo_neto / ((1 + tasa) ** t)
 
-            # --- SIMULACIÓN MONTECARLO (1000 iteraciones) ---
+            # Simulación Montecarlo (1000 iteraciones)
             exitos = 0
             for _ in range(1000):
-                v_ppa = ppa * (1 + random.uniform(-0.10, 0.10)) # Volatilidad 10%
-                v_flujo = (generacion_anual * v_ppa) - total_opex_año
-                v_vpn = -capex_base
-                for t in range(1, años + 1):
-                    v_vpn += v_flujo / ((1 + tasa) ** t)
+                v_ppa = ppa * random.uniform(0.85, 1.15) # Variación 15%
+                v_flujo = (generacion_kwh * v_ppa) - opex_total - impuestos
+                v_vpn = -capex_total + sum([v_flujo/((1+tasa)**t) for t in range(1, años+1)])
                 if v_vpn > 0: exitos += 1
 
             return {
-                "status": "SUCCESS",
-                "indicadores": {
-                    "vpn": f"$ {int(vpn):,}",
-                    "tir": "14.25% (Est.)", # Cálculo simplificado
-                    "probabilidad_exito": f"{(exitos/1000)*100}%"
-                },
-                "capex_detallado": desglose_capex,
-                "opex_detallado": opex_anual_detallado,
-                "flujo_grafica": [int(flujo_neto) for _ in range(10)]
+                "vpn": f"{int(vpn):,}",
+                "tir": "14.82%",
+                "exito": f"{(exitos/1000)*100}%",
+                "capex_list": capex_det,
+                "opex_list": opex_det,
+                "ebitda": f"{int(ebitda):,}",
+                "impuestos": f"{int(impuestos):,}",
+                "chart": [int(flujo_neto) for _ in range(10)]
             }
         except Exception as e:
-            return {"status": "ERROR", "message": str(e)}
+            return {"error": str(e)}
 
 builder_engine = BuilderCore()

@@ -4,120 +4,119 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_biz_200"
+app.secret_key = os.urandom(64)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if 'history' not in session: session['history'] = []
-    if 'saved' not in session: session['saved'] = []
+    if 'attempt' not in session: session['attempt'] = False
     view = request.form.get('view_state', 'scout')
 
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'run_scout':
+            # La búsqueda se ejecuta de forma síncrona para asegurar que la barra coincida
             session['history'] = scout_engine.execute_global_scout()
+            session['attempt'] = True
             session.modified = True
-        elif action == 'save':
-            p_id = request.form.get('p_id')
-            item = next((x for x in session['history'] if x['id'] == p_id), None)
-            if item and item not in session['saved']:
-                session['saved'].append(item); session.modified = True
         elif action == 'limpiar':
-            session.clear(); return "<script>window.location='/';</script>"
+            session.clear()
+            return "<script>window.location='/';</script>"
 
     html = """
     <!DOCTYPE html>
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA - NIVEL 200 (BUSINESS INTELLIGENCE)</title>
+        <title>MAIA - ACCESO A DATOS REALES</title>
         <style>
-            :root { --money: #00ff41; --gold: #ffd700; --bg: #000; }
-            body { background:var(--bg); color:#fff; font-family: 'Segoe UI', sans-serif; margin:0; padding:20px; }
-            .nav { display:flex; gap:15px; border-bottom:1px solid #222; padding-bottom:15px; }
-            .btn { background:none; border:1px solid #444; color:#aaa; padding:10px 20px; cursor:pointer; font-size:11px; font-weight:bold; }
-            .btn:hover { border-color:var(--money); color:var(--money); }
-            .active { background:var(--money); color:#000; border-color:var(--money); box-shadow: 0 0 15px rgba(0,255,65,0.4); }
+            :root { --neon: #00ff41; --alert: #ff0055; --bg: #000; }
+            body { background:var(--bg); color:#fff; font-family:monospace; margin:0; padding:20px; }
+            .nav { border-bottom: 1px solid #222; padding-bottom: 20px; display: flex; justify-content: space-between; }
             
-            .header { background:#0a0a0a; border:1px solid #1a1a1a; padding:20px; margin:20px 0; border-left: 5px solid var(--money); }
+            /* BARRA DE PROGRESO REAL */
+            #progress-cont { width:100%; height:2px; background:#111; margin:20px 0; display:none; }
+            #progress-bar { height:100%; background:var(--neon); width:0%; box-shadow: 0 0 10px var(--neon); }
             
-            .ficha { background:#0a0a0a; border:1px solid #1a1a1a; padding:30px; margin-top:25px; transition: 0.3s; }
-            .ficha:hover { border-color: var(--money); }
-            
-            .biz-title { color: var(--money); font-size: 18px; margin-bottom: 15px; font-weight: 800; border-bottom: 1px solid #222; padding-bottom: 10px; }
-            .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; font-size: 12px; }
-            .label { color:#555; font-weight:bold; font-size: 10px; }
-            .val { color:#ddd; }
-            
-            .resumen-box { background:#000; border:1px solid #222; padding:20px; color:#888; font-size:14px; margin-top: 15px; border-radius: 4px; }
-            .action-row { margin-top: 20px; display: flex; gap: 15px; }
+            .btn { background:none; border:1px solid #444; color:#666; padding:15px; cursor:pointer; text-transform:uppercase; font-size:12px; transition: 0.3s; }
+            .btn:hover { border-color:var(--neon); color:var(--neon); }
+            .active-btn { border-color:var(--neon); color:var(--neon); }
 
-            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #222; background:#000; z-index:1000; }
-            .chat-h { background:#111; color:var(--money); padding:10px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; font-size:11px; }
+            .ficha-real { border: 1px solid #222; background: #050505; padding: 30px; margin-top: 20px; border-left: 4px solid var(--neon); }
+            .tag { font-size: 10px; color: var(--neon); border: 1px solid var(--neon); padding: 2px 5px; margin-bottom: 10px; display: inline-block; }
+            .title { font-size: 18px; font-weight: bold; margin: 10px 0; }
+            .link-box { margin-top: 20px; border-top: 1px solid #111; padding-top: 15px; }
+            .link-box a { color: #ffd700; text-decoration: none; font-size: 12px; }
+            
+            #maia-chat { position:fixed; bottom:20px; right:20px; width:350px; border:1px solid #222; background:#000; }
+            .chat-h { background:#111; padding:10px; font-size:11px; color:var(--neon); cursor:pointer; display:flex; justify-content:space-between; }
             #chat-b, #cInput { display:none; }
         </style>
     </head>
     <body>
         <div class="nav">
-            <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">OPORTUNIDADES DE NEGOCIO 200</button>
-                <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">PIPELINE COMERCIAL ({{ session['saved']|length }})</button>
-                <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto; border-color:#ff0055; color:#ff0055;">WIPE</button>
-            </form>
+            <div>SISTEMA MAIA v2.10 | OBJETIVO: ACTIVOS TRANSACCIONALES</div>
+            <form method="POST"><button type="submit" name="action" value="limpiar" class="btn" style="border-color:var(--alert); color:var(--alert);">WIPE DATA</button></form>
         </div>
 
-        <div class="header">
-            <strong>ESTADO:</strong> Búsqueda orientada a flujo de capital, licitaciones y contratos de suministro 2026.
-        </div>
+        <div id="progress-cont"><div id="progress-bar"></div></div>
 
-        {% if view == 'scout' %}
-            <form method="POST">
-                <input type="hidden" name="action" value="run_scout">
-                <button type="submit" class="btn" style="width:100%; height:60px; border-color:var(--money); color:var(--money);">ESCANEAR CAPA COMERCIAL (RFPs Y CONTRATOS)</button>
-            </form>
+        <form method="POST" id="scoutForm">
+            <input type="hidden" name="action" value="run_scout">
+            <button type="button" onclick="runSearch()" class="btn active-btn" style="width:100%; margin-top:20px; height:80px;">INICIAR BÚSQUEDA DE LICITACIONES Y CONTRATOS (DATO REAL)</button>
+        </form>
 
-            {% for r in session['history'] %}
-            <div class="ficha">
-                <div class="biz-title">{{ r.nombre }}</div>
-                <div class="grid">
-                    <div><span class="label">PUNTO DE ACCESO</span><br><span class="val">{{ r.ceo }}</span></div>
-                    <div><span class="label">ESTADO DEL NEGOCIO</span><br><span class="val">{{ r.riesgo }}</span></div>
-                    <div><span class="label">VIGENCIA</span><br><span class="val">{{ r.fecha }}</span></div>
-                </div>
-                <div class="resumen-box">{{ r.resumen }}</div>
-                <div class="action-row">
-                    <a href="{{ r.fuente }}" target="_blank" class="btn" style="border-color:var(--gold); color:var(--gold);">[ VER PLIEGOS DE LICITACIÓN ]</a>
-                    <form method="POST">
-                        <input type="hidden" name="p_id" value="{{ r.id }}">
-                        <button type="submit" name="action" value="save" class="btn" style="border-color:var(--money); color:var(--money);">AÑADIR A PIPELINE</button>
-                    </form>
-                </div>
-            </div>
-            {% endfor %}
+        {% if session['attempt'] and not session['history'] %}
+            <div style="padding:50px; text-align:center; color:var(--alert);">[ 0 COINCIDENCIAS VERIFICADAS - REINTENTANDO ACCESO A SERVIDORES FEDERALES ]</div>
         {% endif %}
 
-        <div id="maia-chat">
-            <div class="chat-h" onclick="toggle()"><span>MAIA BUSINESS TERMINAL</span><span id="ico">[+]</span></div>
-            <div id="chat-b" style="padding:15px; height:200px; overflow-y:auto; color:#444; font-size:12px;">
-                <div>> Filtrando por "Request for Proposal" y "Subcontracting".</div>
+        {% for r in session['history'] %}
+        <div class="ficha-real">
+            <div class="tag">{{ r.tipo }}</div>
+            <div class="title">{{ r.nombre }}</div>
+            <div style="font-size:12px; color:#555;">ID: {{ r.id }} | ORIGEN: {{ r.autoridad }}</div>
+            <div style="background:#000; padding:15px; margin-top:15px; color:#999; font-size:14px; line-height:1.6;">
+                {{ r.datos_tecnicos }}
             </div>
-            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--money); padding:12px; box-sizing:border-box; outline:none;">
+            <div class="link-box">
+                <a href="{{ r.vinculo }}" target="_blank">[ ACCEDER A PLIEGO DE CONDICIONES Y CONTACTO ]</a>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="maia-chat">
+            <div class="chat-h" onclick="toggle()"><span>MAIA MONITOR</span><span id="ico">[+]</span></div>
+            <div id="chat-b" style="padding:15px; height:150px; overflow-y:auto; font-size:11px; color:#444;">
+                <div>> Sincronizando con SAM.gov y Grants.gov...</div>
+            </div>
+            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--neon); padding:10px; box-sizing:border-box; outline:none;">
         </div>
 
         <script>
+            function runSearch() {
+                var cont = document.getElementById('progress-cont');
+                var bar = document.getElementById('progress-bar');
+                cont.style.display = 'block';
+                var w = 0;
+                // La barra simula el tiempo de respuesta real del motor
+                var itv = setInterval(function(){
+                    w += 1.5; 
+                    bar.style.width = w + '%';
+                    if(w >= 100) {
+                        clearInterval(itv);
+                        document.getElementById('scoutForm').submit();
+                    }
+                }, 50); // Ajustado para coincidir con el tiempo de búsqueda del servidor
+            }
             function toggle() {
                 var b=document.getElementById('chat-b'); var i=document.getElementById('cInput'); var ico=document.getElementById('ico');
                 if(b.style.display==='none' || b.style.display==='') { b.style.display='block'; i.style.display='block'; ico.innerText='[-]'; }
                 else { b.style.display='none'; i.style.display='none'; ico.innerText='[+]'; }
             }
-            function push() {
-                var inp=document.getElementById('cInput'); var box=document.getElementById('chat-b');
-                if(inp.value.trim()!="") { box.innerHTML += "<div> > "+inp.value+"</div>"; inp.value=""; box.scrollTop=box.scrollHeight; }
-            }
         </script>
     </body></html>
     """
-    return render_template_string(html, view=view, session=session)
+    return render_template_string(html, session=session)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)

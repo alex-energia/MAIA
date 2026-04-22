@@ -5,36 +5,35 @@ import time
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Definición Estricta de los 8 Pilares de Activos
+        # Pilares de Búsqueda Sensible Nivel 300
         asset_pillars = [
-            'Hydroelectric "Contract Award" 2026',
-            'Solar "Utility Scale" "Project Finance" 2026',
-            'SMR Nuclear "Site Selection" OR "Construction" 2026',
-            'Thermal Power Plant "EPC Contract" 2026',
-            'Geothermal "Drilling" OR "Award" 2026',
-            '"Neutrino Energy" production OR investment 2026',
-            'Hydrogen "FID" OR "Electrolyzer Order" 2026',
-            '"Technology Startup" Energy "Series A" OR "Series B" 2026'
+            'site:gov OR site:org "Hydroelectric" "procurement" 2026',
+            'site:reuters.com OR site:bloomberg.com "Solar" "Utility" "Agreement" 2026',
+            'site:world-nuclear-news.org "SMR" "Construction" OR "Contract" 2026',
+            '"Thermal Power" "EPC Award" 2026',
+            'site:thinkgeoenergy.com "Geothermal" "Drilling Contract" 2026',
+            '"Neutrino Energy" OR "Neutrinovoltaic" "Investment" 2026',
+            '"Hydrogen" "Final Investment Decision" 2026',
+            'site:crunchbase.com OR site:techcrunch.com "Startup" "Series A" OR "Series B" 2026'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in asset_pillars:
-                    # Delay síncrono para evitar el bloqueo que sufriste en la Capa 230
-                    time.sleep(3.0)
-                    data = list(ddgs.text(q, max_results=8))
-                    for hit in data:
-                        # Validación de relevancia estricta
-                        title_lower = hit['title'].lower()
-                        if any(p in title_lower for p in ['hydro', 'solar', 'smr', 'nuclear', 'thermal', 'geothermal', 'neutrino', 'hydrogen', 'startup']):
+                    try:
+                        # Rotación de tiempo para evitar detección de bot
+                        time.sleep(2.5) 
+                        data = list(ddgs.text(q, max_results=7))
+                        for hit in data:
                             results.append({
-                                "id": f"TARGET-250-{len(results)+1}",
+                                "id": f"DATA-300-{len(results)+1}",
                                 "nombre": hit['title'].upper(),
-                                "categoria": "ACTIVO VERIFICADO",
+                                "pilar": q.split('"')[1] if '"' in q else "TECH STARTUP",
                                 "vinculo": hit['href'],
-                                "datos": hit.get('body', 'Datos de licitación o inversión detectados. Consultar pliego oficial.')
+                                "datos": hit.get('body', 'Análisis de activo en curso...')
                             })
-        except: pass
+                    except: continue 
+        except Exception: pass
         return results
 
 scout_engine = ScoutCore()

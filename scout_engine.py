@@ -5,37 +5,30 @@ import datetime
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # FECHA: 21 de Abril de 2026
-        # BLOQUEO DE CONTENIDO NO RELACIONADO (Cine, Libros, Películas)
-        exclude = "-movie -film -netflix -pelicula -cast -director -actor -book -resumen"
+        # FECHA DE CORTE VIGENTE
+        # FOCO: Registros de fase temprana (Fase 1, Fase 2, Prefactibilidad)
+        sectores = '("SMR" OR "green hydrogen" OR "neutrinos" OR "solar" OR "wind")'
+        etapas = '("pre-factibilidad" OR "factibilidad" OR "fase 1" OR "fase 2" OR "promotor" OR "feasibility study")'
+        negocios = '("equity" OR "venta" OR "capital call" OR "shares" OR "partnership")'
         
-        # MATRIZ TÉCNICA PURA: Capital y Activos
-        sectores = '("SMR nuclear" OR "neutrino energy" OR "green hydrogen" OR "geothermal")'
-        negocios = '("equity sale" OR "asset sale" OR "series A" OR "series B" OR "funding" OR "investment")'
-        
-        # Búsqueda forzada en sectores de capital real
-        query = f'{sectores} {negocios} {exclude} after:2026-03-21'
+        # Filtro de Sitios Gubernamentales y Redes Profesionales
+        query = f'site:gov OR site:linkedin.com {sectores} {etapas} {negocios} after:2026-03-21'
         
         try:
             with DDGS() as ddgs:
-                # Rastreo profundo con filtrado de ruido
-                data = list(ddgs.text(query, max_results=20))
+                # Rastreo de alta fidelidad
+                data = list(ddgs.text(query, max_results=30))
                 for i, hit in enumerate(data):
-                    # Validación manual interna del resumen para evitar falsos positivos
-                    blacklist = ["película", "director", "sinopsis", "actor"]
-                    if any(word in hit['title'].lower() for word in blacklist):
-                        continue
-                        
                     results.append({
-                        "id": f"X-ASSET-{i+1}",
+                        "id": f"SIGILO-44-{i+1}",
                         "nombre": hit['title'].upper(),
-                        "ceo": "Consultar Registro de Capital / Crunchbase",
-                        "riesgo": "GRADO DE INVERSIÓN: ACTIVO REAL DETECTADO",
-                        "movil": "Disponible en Terminal de Negocios",
-                        "email": "investor.desk@maia-intelligence.net",
+                        "ceo": "Analizar Promotor en LinkedIn / Registro Mercantil",
+                        "riesgo": "FASE TEMPRANA: ALTO POTENCIAL DE ENTRADA",
+                        "movil": "Búsqueda en Base de Datos UPME / Homólogos",
+                        "email": "intelligence@maia-core.net",
                         "fecha": "21/04/2026",
                         "fuente": hit['href'],
-                        "resumen": f"INTELIGENCIA DE CAPITAL INDUSTRIAL: {hit['body']}"
+                        "resumen": f"DETECCIÓN EN FASE TÉCNICA: {hit['body']}"
                     })
         except: pass
         return results

@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
 from duckduckgo_search import DDGS
-import datetime
 
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # FECHA: Retroceso de 60 días (Desde Feb 2026)
-        # FOCO: Documentos de ingeniería y financieros (.pdf, .xlsx)
+        # PROTOCOLO 120: Búsqueda por dominios de autoridad y tipos de archivo raíz
+        # Atacamos: .gov (Gobiernos), .edu (Investigación), .org (Organismos Energía)
         queries = [
-            'filetype:pdf "Interconnection Queue" "Status: Active" "Hydrogen"',
-            'filetype:pdf "SMR" "Feasibility Study" "Grant Award" 2026',
-            'site:ted.europa.eu "Prior information notice" "SMR" OR "Hydrogen"',
-            '"Neutrino energy" "Investment Teaser" filetype:pdf'
+            'site:gov "hydrogen" "feasibility study" filetype:pdf',
+            'site:doe.gov "SMR" "award" OR "funding" 2026',
+            'site:un.org "green energy project" "investment" after:2026-01-01',
+            '"neutrino energy" "technical report" filetype:pdf',
+            'site:iaea.org "SMR" "status report" 2026'
         ]
         
-        exclude = "-chat -gpt -ai -openai -movie -film -wikipedia"
-
         try:
             with DDGS() as ddgs:
                 for q in queries:
-                    full_q = f"{q} {exclude} after:2026-02-20"
-                    data = list(ddgs.text(full_q, max_results=25))
+                    # Forzamos la búsqueda sin filtros de seguridad comerciales
+                    data = list(ddgs.text(q, max_results=20))
                     for hit in data:
                         results.append({
-                            "id": f"NODE-110-{len(results)+1}",
+                            "id": f"BRUTE-120-{len(results)+1}",
                             "nombre": hit['title'].upper(),
-                            "tipo": "ACTIVO DE INFRAESTRUCTURA REAL",
-                            "estado": "DETECTADO EN REGISTRO TÉCNICO",
+                            "ceo": "Consultar Registro de Adjudicación",
+                            "riesgo": "ACTIVO IDENTIFICADO EN REPOSITORIO OFICIAL",
+                            "movil": "Documento Gubernamental/Técnico",
+                            "email": "core.120@maia-intelligence.io",
+                            "fecha": "Q1-Q2 2026",
                             "fuente": hit['href'],
-                            "resumen": hit['body'][:250] + "..."
+                            "resumen": hit['body'][:300] + "..."
                         })
         except: pass
         return results

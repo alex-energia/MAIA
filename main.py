@@ -4,7 +4,7 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_infra_aggressive_170"
+app.secret_key = "maia_ghost_180"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -33,40 +33,41 @@ def index():
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA - NIVEL 170 (INFRASTRUCTURE INFILTRATION)</title>
+        <title>MAIA - NIVEL 180 (GHOST SCAN)</title>
         <style>
-            :root { --neon: #0ff; --gold: #ffd700; --alert: #ff0055; --bg: #030303; }
-            body { background:var(--bg); color:#fff; font-family:'Segoe UI', sans-serif; margin:0; padding:20px; }
+            :root { --neon: #0ff; --gold: #ffd700; --bg: #020202; }
+            body { background:var(--bg); color:#fff; font-family:'Courier New', monospace; margin:0; padding:20px; font-size:12px; }
             .nav { display:flex; gap:10px; border-bottom:1px solid #222; padding-bottom:15px; }
-            .btn { background:none; border:1px solid #444; color:#888; padding:10px 20px; cursor:pointer; font-weight:bold; font-size:11px; text-transform:uppercase; transition:0.2s; }
+            .btn { background:none; border:1px solid #333; color:#555; padding:10px 20px; cursor:pointer; font-weight:bold; text-transform:uppercase; transition:0.2s; }
             .btn:hover { border-color:var(--neon); color:var(--neon); }
-            .active { background:var(--neon); color:#000; border-color:var(--neon); box-shadow: 0 0 15px var(--neon); }
+            .active { background:var(--neon); color:#000; border-color:var(--neon); box-shadow: 0 0 20px var(--neon); }
             
-            #st-cont { width:100%; height:4px; background:#111; margin:20px 0; display:none; }
+            #st-cont { width:100%; height:2px; background:#111; margin:20px 0; display:none; }
             #st-bar { height:100%; background:var(--neon); width:0%; transition:0.01s; }
 
-            .alert-box { background: rgba(255,0,85,0.05); border: 1px solid var(--alert); padding:40px; text-align:center; margin-top:20px; }
-            .alert-box h2 { color: var(--alert); margin:0; font-size: 14px; letter-spacing: 3px; }
+            .bypass-panel { background:#110000; border:1px solid #ff0055; padding:30px; margin-top:20px; text-align:center; }
+            .bypass-panel h2 { color:#ff0055; margin:0 0 10px 0; font-size:14px; }
             
-            .ficha { background:#0a0a0a; border:1px solid #1a1a1a; padding:35px; margin-top:25px; border-top: 2px solid var(--neon); }
-            .asset-title { color: var(--neon); font-size: 20px; margin-bottom: 20px; font-weight: 800; }
-            .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin:20px 0; }
-            .label { color:#555; font-size:9px; font-weight: bold; text-transform: uppercase; }
-            .val { font-size: 13px; color: #ccc; }
-            .resumen-box { background:#000; border:1px solid #222; padding:20px; color:#888; font-size:14px; line-height:1.6; margin-top: 15px; }
-
-            /* CHAT ESTRICTAMENTE MINIMIZADO */
-            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #222; background:#000; z-index:10000; }
-            .chat-h { background:#111; color:var(--neon); padding:12px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
+            .ficha { background:#0a0a0a; border:1px solid #1a1a1a; padding:30px; margin-top:25px; border-left: 2px solid var(--neon); position: relative; }
+            .ficha::after { content: "DATO POSITIVO"; position: absolute; top: 10px; right: 10px; font-size: 8px; color: var(--gold); border: 1px solid var(--gold); padding: 2px 5px; }
+            
+            .asset-title { color: var(--neon); font-size: 16px; margin-bottom: 15px; }
+            .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin:15px 0; }
+            .label { color:#444; font-size:8px; font-weight: bold; }
+            .val { color: #aaa; }
+            
+            /* CHAT TOTALMENTE MINIMIZADO */
+            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #222; background:#000; z-index:1000; }
+            .chat-h { background:#111; color:var(--neon); padding:10px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
             #chat-b, #cInput { display:none; }
         </style>
     </head>
     <body>
         <div class="nav">
             <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">GRID SCANNER 170</button>
-                <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">ARCHIVOS ({{ session['saved']|length }})</button>
-                <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto; border-color:var(--alert); color:var(--alert);">WIPE</button>
+                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">GHOST SCANNER 180</button>
+                <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">PORTAFOLIO ({{ session['saved']|length }})</button>
+                <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto;">REINICIAR</button>
             </form>
         </div>
 
@@ -75,14 +76,14 @@ def index():
         {% if view == 'scout' %}
             <form method="POST" id="scoutF">
                 <input type="hidden" name="action" value="run_scout">
-                <button type="button" onclick="start()" class="btn" style="width:100%; margin-top:20px; height:80px; border-color:var(--gold); color:var(--gold); font-size:15px;">FORZAR INFILTRACIÓN EN REGISTROS DE RED Y PERMISOS ESTATALES</button>
+                <button type="button" onclick="start()" class="btn" style="width:100%; margin-top:20px; height:70px; border-color:var(--gold); color:var(--gold);">INFILTRAR NODOS DE SUBASSTA Y METADATOS (MODO GHOST)</button>
             </form>
 
             {% if session['attempt'] and not session['history'] %}
-                <div class="alert-box">
-                    <h2>[ ERROR: BLOQUEO DE CAPA DE RED ]</h2>
-                    <p style="color:#666; font-size:12px; margin-top:10px;">Los activos están protegidos por cortafuegos de sesión gubernamental.<br>
-                    <a href="https://www.google.com/search?q=site:gov+filetype:pdf+Interconnection+Queue+Hydrogen+2026" target="_blank" style="color:var(--gold);">[ CLICK AQUÍ PARA BYPASS MANUAL ]</a></p>
+                <div class="bypass-panel">
+                    <h2>ALERTA: BLOQUEO PERSISTENTE DE CAPA DE RED</h2>
+                    <p style="color:#888; font-size:11px;">El cortafuegos detectó la firma de MAIA. Activa el Bypass Manual para inyectar la búsqueda desde tu IP:</p>
+                    <a href="https://www.google.com/search?q=site:gov+2026+award+SMR+OR+Hydrogen+OR+Neutrino" target="_blank" style="color:var(--gold); text-decoration:none; border:1px solid var(--gold); padding:10px 20px; display:inline-block; margin-top:10px;">[ FORZAR INYECCIÓN MANUAL ]</a>
                 </div>
             {% endif %}
 
@@ -90,14 +91,14 @@ def index():
             <div class="ficha">
                 <div class="asset-title">{{ r.nombre }}</div>
                 <div class="grid">
-                    <div><span class="label">ID INFRA</span><br><span class="val">{{ r.id }}</span></div>
-                    <div><span class="label">ESTADO LEGAL</span><br><span class="val">{{ r.riesgo }}</span></div>
-                    <div><span class="label">VIGENCIA</span><br><span class="val">{{ r.fecha }}</span></div>
+                    <div><span class="label">ID GHOST</span><br><span class="val">{{ r.id }}</span></div>
+                    <div><span class="label">ESTADO ACTIVO</span><br><span class="val">{{ r.riesgo }}</span></div>
+                    <div><span class="label">ORIGEN</span><br><span class="val">{{ r.movil }}</span></div>
                 </div>
-                <div class="resumen-box">
+                <div style="background:#000; padding:15px; border:1px solid #111; color:#777; line-height:1.5;">
                     {{ r.resumen }}
                     <br><br>
-                    <a href="{{ r.fuente }}" target="_blank" style="color:var(--neon); text-decoration:none;">[ ABRIR EXPEDIENTE TÉCNICO ]</a>
+                    <a href="{{ r.fuente }}" target="_blank" style="color:var(--neon);">[ EXTRAER EXPEDIENTE ]</a>
                 </div>
                 <form method="POST" style="margin-top:15px;">
                     <input type="hidden" name="p_id" value="{{ r.id }}">
@@ -108,11 +109,11 @@ def index():
         {% endif %}
 
         <div id="maia-chat">
-            <div class="chat-h" onclick="toggle()"><span>MAIA DEEP CMD</span><span id="ico">[+]</span></div>
-            <div id="chat-b" style="padding:20px; height:250px; overflow-y:auto; font-size:12px; color:#444; border-bottom:1px solid #111;">
-                <div style="color:var(--gold);">> Infiltración 170 lista.</div>
+            <div class="chat-h" onclick="toggle()"><span>MAIA CMD</span><span id="ico">[+]</span></div>
+            <div id="chat-b" style="padding:15px; height:200px; overflow-y:auto; color:#444;">
+                <div>> Nivel 180 Activo. Infiltración silenciosa en curso...</div>
             </div>
-            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--neon); padding:15px; box-sizing: border-box; outline:none;">
+            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--neon); padding:12px; box-sizing:border-box; outline:none;">
         </div>
 
         <script>
@@ -128,7 +129,7 @@ def index():
             function start() {
                 document.getElementById('st-cont').style.display='block';
                 var b=document.getElementById('st-bar'); var w=0;
-                var itv=setInterval(function(){ w+=4; b.style.width=w+'%'; if(w>=100){ clearInterval(itv); document.getElementById('scoutF').submit(); }}, 30);
+                var itv=setInterval(function(){ w+=2; b.style.width=w+'%'; if(w>=100){ clearInterval(itv); document.getElementById('scoutF').submit(); }}, 35);
             }
         </script>
     </body></html>

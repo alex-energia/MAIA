@@ -5,32 +5,33 @@ import datetime
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # PROTOCOLO DE EXCLUSIÓN TOTAL DE RUIDO
-        exclude = "-movie -film -netflix -pelicula -cast -book -trailer"
+        # PROTOCOLO AGRESIVO: Búsqueda de documentos técnicos y financieros
+        # Buscamos archivos de oferta real: Teaser, Information Memorandum, Farm-out
+        doc_filters = 'filetype:pdf OR filetype:doc OR filetype:pptx'
+        terminos_agresivos = '("Investment Teaser" OR "Project for sale" OR "M&A Opportunity" OR "Information Memorandum")'
+        sectores_energia = '("SMR" OR "Neutrino" OR "Hydrogen" OR "Solar" OR "Wind")'
         
-        # MATRIZ DE CAPITAL Y FASES TÉCNICAS (UPME STYLE GLOBAL)
-        # Buscamos: Farm-out, Equity Partners, Prefactibilidad, Rondas de inversión
-        keywords = '("farm-out" OR "equity partner" OR "pre-feasibility" OR "factibilidad" OR "series A funding" OR "asset divestment")'
-        sectores = '("SMR nuclear" OR "green hydrogen" OR "neutrino energy" OR "solar utility" OR "wind offshore")'
+        # Filtro de exclusión total de ruido cultural/entretenimiento
+        exclude = "-movie -film -netflix -pelicula -cast -book -trailer -actor -song"
         
-        # Filtro de dominios de alta autoridad: Gobiernos, LinkedIn y Portales M&A
-        query = f'(site:gov OR site:linkedin.com OR site:reuters.com) {keywords} {sectores} {exclude} after:2026-03-21'
+        # Query nivel infiltración
+        query = f'{doc_filters} {terminos_agresivos} {sectores_energia} {exclude} after:2026-03-21'
         
         try:
             with DDGS() as ddgs:
-                # Profundidad máxima de 40 conexiones para asegurar un "hit" positivo
-                data = list(ddgs.text(query, max_results=40))
+                # Máxima profundidad: 50 resultados para encontrar la aguja en el pajar
+                data = list(ddgs.text(query, max_results=50))
                 for i, hit in enumerate(data):
                     results.append({
-                        "id": f"HUNTER-54-{i+1}",
+                        "id": f"ULTRA-64-{i+1}",
                         "nombre": hit['title'].upper(),
-                        "ceo": "Consultar Perfil de Inversión / LinkedIn",
-                        "riesgo": "ANÁLISIS DE CAPITAL SEMILLA / SERIE A",
-                        "movil": "Disponible en Registro Mercantil Regional",
-                        "email": "deals@maia-intelligence.io",
+                        "ceo": "Consultar Lead de M&A / Director Financiero",
+                        "riesgo": "ACTIVO ESTRATÉGICO DETECTADO",
+                        "movil": "Solicitar Acceso a Data Room",
+                        "email": "infiltrator@maia-intelligence.io",
                         "fecha": "21/04/2026",
                         "fuente": hit['href'],
-                        "resumen": f"DETECCIÓN DE ACTIVO: {hit['body']}"
+                        "resumen": f"DETECCIÓN AGRESIVA (DOCUMENTO TÉCNICO): {hit['body']}"
                     })
         except: pass
         return results

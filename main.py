@@ -46,6 +46,7 @@ def index():
             .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin:20px 0; border-bottom:1px solid #111; padding-bottom:20px; }
             .label { color:var(--neon); font-size:10px; display:block; margin-bottom:5px; font-weight:bold; }
             
+            /* CHAT - CERRADO POR DEFECTO */
             #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #222; background:#000; z-index:10000; }
             .chat-h { background:#111; color:#555; padding:12px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
             #chat-b { display:none; height:280px; padding:15px; overflow-y:auto; font-size:12px; color:var(--neon); }
@@ -55,7 +56,7 @@ def index():
     <body>
         <div class="nav">
             <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">SCANNER 94</button>
+                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">INFILTRACIÓN 94</button>
                 <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">ACTIVOS ({{ session['saved']|length }})</button>
                 <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto;">RESET</button>
             </form>
@@ -66,7 +67,7 @@ def index():
         {% if view == 'scout' %}
             <form method="POST" id="scoutF">
                 <input type="hidden" name="action" value="run_scout">
-                <button type="button" onclick="start()" class="btn" style="width:100%; margin-top:20px; height:80px; font-size:18px; border-color:var(--neon); color:var(--neon);">INICIAR INFILTRACIÓN DE SEÑALES DE CAPITAL</button>
+                <button type="button" onclick="start()" class="btn" style="width:100%; margin-top:20px; height:80px; font-size:18px; border-color:var(--neon); color:var(--neon);">Sincronizar Infiltración de Señales de Capital</button>
             </form>
 
             {% if session['attempt'] and not session['history'] %}
@@ -94,7 +95,7 @@ def index():
                 </div>
                 <form method="POST" style="margin-top:20px;">
                     <input type="hidden" name="p_id" value="{{ r.id }}">
-                    <button type="submit" name="action" value="save" class="btn" style="font-size:10px; border-color:var(--neon); color:var(--neon);">GURDAR ACTIVO</button>
+                    <button type="submit" name="action" value="save" class="btn" style="font-size:10px; border-color:var(--neon); color:var(--neon);">GUARDAR EN PORTAFOLIO</button>
                 </form>
             </div>
             {% endfor %}
@@ -103,7 +104,7 @@ def index():
         <div id="maia-chat">
             <div class="chat-h" onclick="toggle()"><span>MAIA DEEP CMD</span><span id="ico">[+]</span></div>
             <div id="chat-b"></div>
-            <input type="text" id="cInput" placeholder="Comando de infiltración..." onkeydown="if(event.key==='Enter') push()">
+            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()">
         </div>
 
         <script>

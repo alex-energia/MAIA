@@ -1,37 +1,47 @@
 # -*- coding: utf-8 -*-
 from duckduckgo_search import DDGS
+from datetime import datetime, timedelta
 
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # PROTOCOLO 120: Búsqueda por dominios de autoridad y tipos de archivo raíz
-        # Atacamos: .gov (Gobiernos), .edu (Investigación), .org (Organismos Energía)
+        # Retroceso de 60 días desde la fecha actual (Abril 2026)
+        fecha_limite = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
+        
+        # Filtros de exclusión para evitar ruido enciclopédico y de IA
+        exclude = "-wikipedia -britannica -dictionary -chatgpt -openai -ai -software -app -movie"
+        
+        # Consultas de infiltración en nodos de autoridad (Capital, Red y Licitaciones)
         queries = [
-            'site:gov "hydrogen" "feasibility study" filetype:pdf',
-            'site:doe.gov "SMR" "award" OR "funding" 2026',
-            'site:un.org "green energy project" "investment" after:2026-01-01',
-            '"neutrino energy" "technical report" filetype:pdf',
-            'site:iaea.org "SMR" "status report" 2026'
+            f'site:reuters.com "funding" OR "investment" ("SMR nuclear" OR "Green Hydrogen") {exclude} after:{fecha_limite}',
+            f'site:energy-storage.news "contract" OR "project finance" "neutrino" OR "storage" {exclude} after:{fecha_limite}',
+            f'site:world-nuclear-news.org "SMR" "construction" OR "permit" {exclude} after:{fecha_limite}',
+            f'filetype:pdf "Interconnection Queue" "Active" "Hydrogen" {exclude} after:{fecha_limite}',
+            f'site:ted.europa.eu "Prior information notice" "Energy" {exclude}'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in queries:
-                    # Forzamos la búsqueda sin filtros de seguridad comerciales
-                    data = list(ddgs.text(q, max_results=20))
+                    data = list(ddgs.text(q, max_results=15))
                     for hit in data:
+                        # Verificación de seguridad para asegurar que el resumen no esté vacío
+                        resumen_texto = hit.get('body', 'Sin detalle técnico disponible en la vista previa.')
+                        
                         results.append({
-                            "id": f"BRUTE-120-{len(results)+1}",
+                            "id": f"ASSET-130-{len(results)+1}",
                             "nombre": hit['title'].upper(),
-                            "ceo": "Consultar Registro de Adjudicación",
-                            "riesgo": "ACTIVO IDENTIFICADO EN REPOSITORIO OFICIAL",
-                            "movil": "Documento Gubernamental/Técnico",
-                            "email": "core.120@maia-intelligence.io",
-                            "fecha": "Q1-Q2 2026",
+                            "ceo": "Identificar vía Registro Mercantil / EPC Lead",
+                            "riesgo": "ALTA PRIORIDAD - ACTIVO DE INFRAESTRUCTURA",
+                            "movil": "Documento de Red / Terminal Financiera",
+                            "email": "intel.130@maia-intelligence.io",
+                            "fecha": f"Detectado: {fecha_limite} a Hoy",
                             "fuente": hit['href'],
-                            "resumen": hit['body'][:300] + "..."
+                            "resumen": resumen_texto
                         })
-        except: pass
+        except Exception as e:
+            print(f"Error en el motor: {e}")
+            
         return results
 
 scout_engine = ScoutCore()

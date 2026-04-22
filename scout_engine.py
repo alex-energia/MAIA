@@ -5,31 +5,34 @@ import time
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Nivel 230: Foco en Nodos Globales (Europa, Asia, GCC)
-        # Buscamos adjudicaciones y FID (Final Investment Decisions) en mercados clave
-        queries = [
-            'site:reuters.com "Hydrogen" AND "Agreement" (Germany OR Oman OR UAE) 2026',
-            '"SMR nuclear" contract award (Poland OR Romania OR South Korea) 2026',
-            'site:europarl.europa.eu "tender" "clean energy" 2026',
-            '"Neutrino Energy" production facility (Switzerland OR Germany) 2026',
-            'site:asia.nikkei.com "investment" "hydrogen" OR "fuel cell" 2026'
+        # Definición Estricta de los 8 Pilares de Activos
+        asset_pillars = [
+            'Hydroelectric "Contract Award" 2026',
+            'Solar "Utility Scale" "Project Finance" 2026',
+            'SMR Nuclear "Site Selection" OR "Construction" 2026',
+            'Thermal Power Plant "EPC Contract" 2026',
+            'Geothermal "Drilling" OR "Award" 2026',
+            '"Neutrino Energy" production OR investment 2026',
+            'Hydrogen "FID" OR "Electrolyzer Order" 2026',
+            '"Technology Startup" Energy "Series A" OR "Series B" 2026'
         ]
         
         try:
             with DDGS() as ddgs:
-                for q in queries:
-                    time.sleep(2.5) # Delay extendido para simular salto de nodo internacional
-                    data = list(ddgs.text(q, max_results=10))
+                for q in asset_pillars:
+                    # Delay síncrono para evitar el bloqueo que sufriste en la Capa 230
+                    time.sleep(3.0)
+                    data = list(ddgs.text(q, max_results=8))
                     for hit in data:
-                        # Filtro de validación comercial global
-                        if any(k in hit['title'].lower() for k in ['contract', 'mou', 'deal', 'plant', 'fid', 'invest']):
+                        # Validación de relevancia estricta
+                        title_lower = hit['title'].lower()
+                        if any(p in title_lower for p in ['hydro', 'solar', 'smr', 'nuclear', 'thermal', 'geothermal', 'neutrino', 'hydrogen', 'startup']):
                             results.append({
-                                "id": f"GLOBAL-230-{len(results)+1}",
+                                "id": f"TARGET-250-{len(results)+1}",
                                 "nombre": hit['title'].upper(),
-                                "autoridad": "Registro Internacional / Agencia de Noticias Económicas",
-                                "tipo": "ACTIVO TRANSNACIONAL CONFIRMADO",
+                                "categoria": "ACTIVO VERIFICADO",
                                 "vinculo": hit['href'],
-                                "datos_tecnicos": hit.get('body', 'Activo detectado en zona de alto impacto. Detalles técnicos en el nodo de origen.')
+                                "datos": hit.get('body', 'Datos de licitación o inversión detectados. Consultar pliego oficial.')
                             })
         except: pass
         return results

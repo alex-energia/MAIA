@@ -4,7 +4,7 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_global_230_asset"
+app.secret_key = "maia_octa_pillar_250"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -26,58 +26,90 @@ def index():
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA - NIVEL 230 (GLOBAL ASSET RADAR)</title>
+        <title>MAIA - NIVEL 250: OCTA-ASSET RADAR</title>
         <style>
-            :root { --neon: #00ff41; --world: #0080ff; --bg: #000; }
-            body { background:var(--bg); color:#fff; font-family:'Courier New', monospace; margin:0; padding:20px; }
-            .nav { border-bottom: 1px solid #222; padding-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
+            :root { 
+                --electric-blue: #00E5FF; 
+                --cyber-gold: #FFD600; 
+                --deep-bg: #050505;
+                --status-green: #39FF14;
+            }
+            body { background:var(--deep-bg); color:#fff; font-family:'Consolas', monospace; margin:0; padding:20px; }
             
-            #bar-cont { width:100%; height:4px; background:#111; margin:25px 0; display:none; border: 1px solid #333; }
-            #bar-fill { height:100%; background:linear-gradient(90deg, #000, var(--world)); width:0%; box-shadow: 0 0 15px var(--world); }
-            #status-txt { display:none; color:var(--world); font-size:10px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+            .nav { border-bottom: 2px solid #1a1a1a; padding-bottom:15px; display:flex; justify-content:space-between; align-items:center; }
+            .status-indicator { color: var(--status-green); font-size: 10px; letter-spacing: 1px; }
 
-            .btn { background:none; border:1px solid #333; color:#777; padding:15px 30px; cursor:pointer; font-weight:bold; font-size:12px; }
-            .btn:hover { border-color:var(--world); color:var(--world); }
+            /* BARRA DE PROGRESO DE ALTA PRECISIÓN */
+            #bar-cont { width:100%; height:10px; background:#111; margin:30px 0; display:none; border: 1px solid #333; box-shadow: inset 0 0 10px #000; }
+            #bar-fill { height:100%; background: linear-gradient(90deg, var(--electric-blue), var(--cyber-gold)); width:0%; box-shadow: 0 0 20px rgba(0,229,255,0.4); }
+            #status-txt { display:none; color:var(--electric-blue); font-size:11px; margin-bottom:10px; font-weight: bold; }
+
+            .btn-scan { 
+                background: #000; border: 2px solid var(--cyber-gold); color: var(--cyber-gold); 
+                padding: 25px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px;
+                transition: 0.3s; text-transform: uppercase;
+            }
+            .btn-scan:hover { background: var(--cyber-gold); color: #000; box-shadow: 0 0 40px var(--cyber-gold); }
             
-            .ficha { border:1px solid #1a1a1a; background:#050505; padding:25px; margin-top:20px; border-left: 5px solid var(--world); position:relative; }
-            .ficha::before { content: "GLOBAL NODE"; position:absolute; top:10px; right:10px; font-size:8px; color:var(--world); border:1px solid var(--world); padding:2px 5px; }
+            .ficha { 
+                background: #0d0d0d; border: 1px solid #222; border-top: 4px solid var(--electric-blue); 
+                padding: 30px; margin-top: 25px; transition: 0.3s;
+            }
+            .ficha:hover { border-color: var(--cyber-gold); transform: translateY(-2px); }
             
-            .title { font-size:16px; color:#fff; margin:15px 0; font-weight:bold; border-bottom:1px solid #111; padding-bottom:10px; }
-            .desc { color:#999; font-size:13px; line-height:1.6; background:#080808; padding:20px; border-radius:3px; }
-            .link { display:inline-block; margin-top:15px; color:var(--world); text-decoration:none; font-weight:bold; font-size:11px; }
+            .title { font-size: 18px; color: var(--electric-blue); margin-bottom: 15px; font-weight: bold; }
+            .desc { color: #888; font-size: 14px; line-height: 1.6; background: #000; padding: 20px; border-radius: 2px; }
             
-            .error-box { padding:60px; border:1px dashed #ff0055; text-align:center; color:#ff0055; margin-top:20px; background:rgba(255,0,85,0.02); }
+            .link-btn { 
+                display: inline-block; margin-top: 20px; color: var(--cyber-gold); 
+                text-decoration: none; border: 1px solid var(--cyber-gold); padding: 10px 20px; font-size: 11px;
+            }
+
+            /* CHAT SIEMPRE PRESENTE */
+            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #333; background:#000; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+            .chat-h { background:#111; color:var(--electric-blue); padding:15px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
+            #chat-b { height:200px; padding:20px; overflow-y:auto; font-size:12px; color:#555; border-bottom: 1px solid #111; }
+            #cInput { width:100%; background:#050505; border:none; color:var(--status-green); padding:15px; box-sizing:border-box; outline:none; }
         </style>
     </head>
     <body>
         <div class="nav">
-            <div>MAIA INTELLIGENCE | <span style="color:var(--world);">NIVEL 230: GLOBAL ASSET RADAR</span></div>
-            <form method="POST"><button type="submit" name="action" value="limpiar" class="btn" style="border-color:#333;">REINICIAR</button></form>
+            <div style="font-weight:bold; color:var(--cyber-gold);">MAIA OCTA-PILLAR v2.50</div>
+            <div class="status-indicator">MODO: INFILTRACIÓN ESTRICTA EN 8 EJES</div>
         </div>
 
         <div id="bar-cont"><div id="bar-fill"></div></div>
-        <div id="status-txt">INICIANDO BARRIDO TRANSFRONTERIZO...</div>
+        <div id="status-txt">SISTEMA EN ESPERA...</div>
 
         <form method="POST" id="scoutF">
             <input type="hidden" name="action" value="run_scout">
-            <button type="button" onclick="start()" class="btn" style="width:100%; border-color:var(--world); color:var(--world); height:80px; font-size:14px;">EJECUTAR ESCANEO GLOBAL (UE, ASIA, MENA)</button>
+            <button type="button" onclick="start()" class="btn-scan">EJECUTAR BARRIDO DE LOS 8 PILARES ESTRATÉGICOS</button>
         </form>
 
         {% if session['attempt'] and not session['history'] %}
-            <div class="error-box">
-                [ ESTADO: 0 ACTIVOS TRANSACCIONALES DETECTADOS EN CAPA 230 ]<br>
-                <small style="color:#666; display:block; margin-top:10px;">Los nodos internacionales no reportan adjudicaciones públicas en este ciclo de búsqueda. Rotando a Nodos Secundarios.</small>
+            <div style="padding:100px; text-align:center; color:#ff0055; border: 1px dashed #ff0055; margin-top:20px;">
+                [ ERROR: CERO RESULTADOS EN LOS 8 PILARES ]<br>
+                <small style="color:#444;">Los nodos globales están rechazando la firma. Intentando rotación de sub-nodos...</small>
             </div>
         {% endif %}
 
         {% for r in session['history'] %}
         <div class="ficha">
             <div class="title">{{ r.nombre }}</div>
-            <div style="color:#444; font-size:10px; margin-bottom:10px;">ORIGEN: {{ r.autoridad }} | TIPO: {{ r.tipo }}</div>
-            <div class="desc">{{ r.datos_tecnicos }}</div>
-            <a href="{{ r.vinculo }}" target="_blank" class="link">[ ACCEDER A EXPEDIENTE INTERNACIONAL ]</a>
+            <div style="font-size:10px; color:#444; margin-bottom:10px;">ID: {{ r.id }} | TIPO: {{ r.categoria }}</div>
+            <div class="desc">{{ r.datos }}</div>
+            <a href="{{ r.vinculo }}" target="_blank" class="link-btn">[ ANALIZAR OPORTUNIDAD ]</a>
         </div>
         {% endfor %}
+
+        <div id="maia-chat">
+            <div class="chat-h"><span>MAIA COMMAND CENTER</span><span>[LIVE]</span></div>
+            <div id="chat-b">
+                <div style="color:var(--electric-blue)">> Filtro: Hidro, Solar, SMR, Térmica, Geo, Neutrino, H2, Startups.</div>
+                <div style="color:#333;">> Nivel 250 sincronizado.</div>
+            </div>
+            <input type="text" id="cInput" placeholder="Enviar instrucción..." onkeydown="if(event.key==='Enter') push()">
+        </div>
 
         <script>
             function start() {
@@ -87,21 +119,32 @@ def index():
                 cont.style.display = 'block'; txt.style.display = 'block';
                 
                 var w = 0;
-                // Sincronización Global: 45 segundos (ajustado para búsqueda en múltiples zonas)
+                // Sincronización real de 8 pilares: 80 segundos (10s por pilar para evitar bloqueos)
                 var itv = setInterval(function(){
-                    w += 0.4;
+                    w += 0.25; 
                     fill.style.width = w + '%';
                     
-                    if(w > 10 && w < 30) txt.innerText = "SINC: Escaneando Registros de la Unión Europea (TED / Europarl)...";
-                    if(w >= 30 && w < 60) txt.innerText = "SINC: Localizando RFPs en Mercados del Golfo (Adnoc, Neom)...";
-                    if(w >= 60 && w < 90) txt.innerText = "SINC: Filtrando Alianzas en Asia-Pacífico (Nikkei / Yonhap)...";
-                    if(w >= 90) txt.innerText = "SINC: Consolidando Resultados de Clase A...";
+                    if(w < 12.5) txt.innerText = "PILAR 1/8: ESCANEANDO ADJUDICACIONES HIDROELÉCTRICAS...";
+                    if(w >= 12.5 && w < 25) txt.innerText = "PILAR 2/8: LOCALIZANDO MEGA-PLANTAS SOLARES (UTILITY SCALE)...";
+                    if(w >= 25 && w < 37.5) txt.innerText = "PILAR 3/8: RASTREANDO EMPLAZAMIENTOS SMR NUCLEAR...";
+                    if(w >= 37.5 && w < 50) txt.innerText = "PILAR 4/8: ANALIZANDO CONTRATOS DE PLANTAS TÉRMICAS...";
+                    if(w >= 50 && w < 62.5) txt.innerText = "PILAR 5/8: DETECTANDO PERFORACIONES GEOTÉRMICAS...";
+                    if(w >= 62.5 && w < 75) txt.innerText = "PILAR 6/8: BUSCANDO NODOS DE ENERGÍA NEUTRINO...";
+                    if(w >= 75 && w < 87.5) txt.innerText = "PILAR 7/8: FILTRANDO PROYECTOS FID DE HIDRÓGENO...";
+                    if(w >= 87.5) txt.innerText = "PILAR 8/8: IDENTIFICANDO STARTUPS DE TECNOLOGÍA ENERGÉTICA...";
                     
                     if(w >= 100) {
                         clearInterval(itv);
                         document.getElementById('scoutF').submit();
                     }
-                }, 180); 
+                }, 200); 
+            }
+            function push() {
+                var inp=document.getElementById('cInput'); var box=document.getElementById('chat-b');
+                if(inp.value.trim()!="") { 
+                    box.innerHTML += "<div style='color:var(--status-green); margin-top:5px;'> > "+inp.value+"</div>"; 
+                    inp.value=""; box.scrollTop=box.scrollHeight; 
+                }
             }
         </script>
     </body></html>

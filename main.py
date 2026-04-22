@@ -4,7 +4,7 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = "maia_target_locked_2026"
+app.secret_key = "maia_biz_200"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -30,73 +30,66 @@ def index():
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA - NIVEL 190 (REAL ASSETS CONFIRMED)</title>
+        <title>MAIA - NIVEL 200 (BUSINESS INTELLIGENCE)</title>
         <style>
-            :root { --neon: #0ff; --gold: #ffd700; --bg: #050505; --paper: #111; }
-            body { background:var(--bg); color:#eee; font-family: 'Consolas', monospace; margin:0; padding:20px; }
-            .nav { display:flex; gap:15px; border-bottom:1px solid #333; padding-bottom:20px; }
-            .btn { background:none; border:1px solid #444; color:#888; padding:12px 25px; cursor:pointer; font-weight:bold; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
-            .btn:hover { border-color:var(--neon); color:var(--neon); }
-            .active { background:var(--neon); color:#000; border-color:var(--neon); box-shadow: 0 0 20px rgba(0,255,255,0.2); }
+            :root { --money: #00ff41; --gold: #ffd700; --bg: #000; }
+            body { background:var(--bg); color:#fff; font-family: 'Segoe UI', sans-serif; margin:0; padding:20px; }
+            .nav { display:flex; gap:15px; border-bottom:1px solid #222; padding-bottom:15px; }
+            .btn { background:none; border:1px solid #444; color:#aaa; padding:10px 20px; cursor:pointer; font-size:11px; font-weight:bold; }
+            .btn:hover { border-color:var(--money); color:var(--money); }
+            .active { background:var(--money); color:#000; border-color:var(--money); box-shadow: 0 0 15px rgba(0,255,65,0.4); }
             
-            .header-banner { background: #1a1a00; border: 1px solid var(--gold); padding: 15px; margin: 20px 0; color: var(--gold); font-size: 11px; text-align: center; letter-spacing: 2px; }
+            .header { background:#0a0a0a; border:1px solid #1a1a1a; padding:20px; margin:20px 0; border-left: 5px solid var(--money); }
             
-            .ficha { background:var(--paper); border:1px solid #222; margin-top:30px; position:relative; overflow:hidden; }
-            .top-bar { background: #222; padding: 10px 20px; font-size: 10px; color: #aaa; display: flex; justify-content: space-between; border-bottom: 1px solid #333; }
-            .content { padding: 30px; }
+            .ficha { background:#0a0a0a; border:1px solid #1a1a1a; padding:30px; margin-top:25px; transition: 0.3s; }
+            .ficha:hover { border-color: var(--money); }
             
-            .asset-title { color: var(--neon); font-size: 22px; margin: 0 0 20px 0; font-weight: bold; }
-            .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom: 25px; }
-            .label { color: #555; font-size: 9px; font-weight: bold; margin-bottom: 5px; display: block; }
-            .val { color: #fff; font-size: 13px; }
+            .biz-title { color: var(--money); font-size: 18px; margin-bottom: 15px; font-weight: 800; border-bottom: 1px solid #222; padding-bottom: 10px; }
+            .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; font-size: 12px; }
+            .label { color:#555; font-weight:bold; font-size: 10px; }
+            .val { color:#ddd; }
             
-            .resumen-box { background:#000; border-left: 3px solid var(--gold); padding:20px; color:#bbb; line-height:1.6; font-size: 14px; }
-            
-            .source-btn { display: inline-block; margin-top: 20px; color: var(--gold); text-decoration: none; font-size: 11px; font-weight: bold; border: 1px solid var(--gold); padding: 8px 15px; }
-            .source-btn:hover { background: var(--gold); color: #000; }
+            .resumen-box { background:#000; border:1px solid #222; padding:20px; color:#888; font-size:14px; margin-top: 15px; border-radius: 4px; }
+            .action-row { margin-top: 20px; display: flex; gap: 15px; }
 
-            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #333; background:#000; z-index:1000; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-            .chat-h { background:#111; color:var(--neon); padding:12px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; font-size:11px; }
+            #maia-chat { position:fixed; bottom:20px; right:20px; width:400px; border:1px solid #222; background:#000; z-index:1000; }
+            .chat-h { background:#111; color:var(--money); padding:10px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; font-size:11px; }
             #chat-b, #cInput { display:none; }
         </style>
     </head>
     <body>
         <div class="nav">
             <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">ASSET VIEWER 190</button>
-                <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">PORTAFOLIO CONFIRMADO ({{ session['saved']|length }})</button>
-                <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto; border-color:#ff0055; color:#ff0055;">RESET SYSTEM</button>
+                <button type="submit" name="view_state" value="scout" class="btn {{ 'active' if view == 'scout' }}">OPORTUNIDADES DE NEGOCIO 200</button>
+                <button type="submit" name="view_state" value="memoria" class="btn {{ 'active' if view == 'memoria' }}">PIPELINE COMERCIAL ({{ session['saved']|length }})</button>
+                <button type="submit" name="action" value="limpiar" class="btn" style="margin-left:auto; border-color:#ff0055; color:#ff0055;">WIPE</button>
             </form>
         </div>
 
-        <div class="header-banner">SISTEMA SINCRONIZADO CON REPOSITORIOS .GOV | BYPASS MANUAL EXITOSO | ACTIVOS LOCALIZADOS</div>
+        <div class="header">
+            <strong>ESTADO:</strong> Búsqueda orientada a flujo de capital, licitaciones y contratos de suministro 2026.
+        </div>
 
         {% if view == 'scout' %}
             <form method="POST">
                 <input type="hidden" name="action" value="run_scout">
-                <button type="submit" class="btn active" style="width:100%; height:60px; font-size:14px;">MOSTRAR ACTIVOS EXTRAÍDOS DEL BYPASS</button>
+                <button type="submit" class="btn" style="width:100%; height:60px; border-color:var(--money); color:var(--money);">ESCANEAR CAPA COMERCIAL (RFPs Y CONTRATOS)</button>
             </form>
 
             {% for r in session['history'] %}
             <div class="ficha">
-                <div class="top-bar">
-                    <span>REGISTRO OFICIAL: {{ r.id }}</span>
-                    <span style="color:var(--gold);">ESTADO: VERIFICADO</span>
+                <div class="biz-title">{{ r.nombre }}</div>
+                <div class="grid">
+                    <div><span class="label">PUNTO DE ACCESO</span><br><span class="val">{{ r.ceo }}</span></div>
+                    <div><span class="label">ESTADO DEL NEGOCIO</span><br><span class="val">{{ r.riesgo }}</span></div>
+                    <div><span class="label">VIGENCIA</span><br><span class="val">{{ r.fecha }}</span></div>
                 </div>
-                <div class="content">
-                    <h1 class="asset-title">{{ r.nombre }}</h1>
-                    <div class="grid">
-                        <div><span class="label">AUTORIDAD</span><span class="val">{{ r.ceo }}</span></div>
-                        <div><span class="label">CATEGORÍA</span><span class="val">{{ r.riesgo }}</span></div>
-                        <div><span class="label">UBICACIÓN/CANAL</span><span class="val">{{ r.movil }}</span></div>
-                    </div>
-                    <div class="resumen-box">
-                        {{ r.resumen }}
-                    </div>
-                    <a href="{{ r.fuente }}" target="_blank" class="source-btn">[ ABRIR EXPEDIENTE GUBERNAMENTAL ]</a>
-                    <form method="POST" style="display:inline;">
+                <div class="resumen-box">{{ r.resumen }}</div>
+                <div class="action-row">
+                    <a href="{{ r.fuente }}" target="_blank" class="btn" style="border-color:var(--gold); color:var(--gold);">[ VER PLIEGOS DE LICITACIÓN ]</a>
+                    <form method="POST">
                         <input type="hidden" name="p_id" value="{{ r.id }}">
-                        <button type="submit" name="action" value="save" class="btn" style="border-color:var(--neon); color:var(--neon); margin-left:15px; padding: 7px 15px;">ARCHIVAR EN PORTAFOLIO</button>
+                        <button type="submit" name="action" value="save" class="btn" style="border-color:var(--money); color:var(--money);">AÑADIR A PIPELINE</button>
                     </form>
                 </div>
             </div>
@@ -104,13 +97,11 @@ def index():
         {% endif %}
 
         <div id="maia-chat">
-            <div class="chat-h" onclick="toggle()"><span>MAIA DEEP TERMINAL</span><span id="ico">[+]</span></div>
-            <div id="chat-b" style="padding:20px; height:250px; overflow-y:auto; color:#666; font-size:12px;">
-                <div style="color:var(--gold);">> Inyección manual detectada.</div>
-                <div>> Parseando resultados de Fermilab, Argonne y DOE...</div>
-                <div style="color:var(--neon);">> 4 Activos de Clase A identificados.</div>
+            <div class="chat-h" onclick="toggle()"><span>MAIA BUSINESS TERMINAL</span><span id="ico">[+]</span></div>
+            <div id="chat-b" style="padding:15px; height:200px; overflow-y:auto; color:#444; font-size:12px;">
+                <div>> Filtrando por "Request for Proposal" y "Subcontracting".</div>
             </div>
-            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--neon); padding:15px; box-sizing:border-box; outline:none;">
+            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--money); padding:12px; box-sizing:border-box; outline:none;">
         </div>
 
         <script>
@@ -121,7 +112,7 @@ def index():
             }
             function push() {
                 var inp=document.getElementById('cInput'); var box=document.getElementById('chat-b');
-                if(inp.value.trim()!="") { box.innerHTML += "<div style='color:var(--neon); margin-top:5px;'> > "+inp.value+"</div>"; inp.value=""; box.scrollTop=box.scrollHeight; }
+                if(inp.value.trim()!="") { box.innerHTML += "<div> > "+inp.value+"</div>"; inp.value=""; box.scrollTop=box.scrollHeight; }
             }
         </script>
     </body></html>

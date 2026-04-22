@@ -4,34 +4,34 @@ from duckduckgo_search import DDGS
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # PROTOCOLO DE EXCLUSIÓN TOTAL: Eliminamos ruido de IA y consumo
+        # EXCLUSIÓN TOTAL DE RUIDO (Software, IA, Media)
         exclude = "-chat -gpt -ai -openai -chatbot -movie -film -netflix -app -software -essay -wikipedia"
         
-        # FOCO: Dinero Real y Permisos de Ingeniería (UPME Global Style)
-        terminos_capital = '("Series A" OR "Series B" OR "funding round" OR "capital injection" OR "private placement")'
-        permisos_red = '("interconnection queue" OR "grid access permit" OR "feasibility study" OR "Fase 2")'
-        sectores = '("SMR nuclear" OR "Green Hydrogen" OR "Neutrino energy" OR "Long-duration storage")'
+        # FOCO: Eventos de Capital y Permisos de Red (Deep Infrastructure)
+        capital_signals = '("Series A" OR "Series B" OR "closed funding" OR "equity round")'
+        technical_permits = '("interconnection queue" OR "grid access" OR "feasibility study" OR "pre-factibilidad")'
+        sectors = '("SMR nuclear" OR "Green Hydrogen" OR "Neutrino energy" OR "Offshore solar")'
         
-        # Búsqueda en dominios de alta fidelidad: Registros gubernamentales y Reuters/Bloomberg
-        query = f'(site:gov OR site:reuters.com OR site:energy-storage.news) {sectores} ({terminos_capital} OR {permisos_red}) {exclude} after:2026-03-21'
+        # Búsqueda en silos de información de alta autoridad
+        query = f'(site:gov OR site:reuters.com OR site:bloomberg.com) {sectors} ({capital_signals} OR {technical_permits}) {exclude} after:2026-03-21'
         
         try:
             with DDGS() as ddgs:
-                data = list(ddgs.text(query, max_results=80))
+                data = list(ddgs.text(query, max_results=100))
                 for i, hit in enumerate(data):
-                    # Filtro de seguridad: Bloqueo de falsos positivos
-                    if any(x in hit['body'].lower() for x in ["openai", "chat", "gpt"]): continue
-                        
+                    # Hard-filter contra falsos positivos de IA
+                    if any(x in hit['body'].lower() for x in ["openai", "chatbot", "gpt"]): continue
+                    
                     results.append({
                         "id": f"INFILTRATOR-100-{i+1}",
                         "nombre": hit['title'].upper(),
-                        "ceo": "Identificar vía Registro Mercantil / Estructura de Capital",
-                        "riesgo": "ACTIVO EN FASE CRÍTICA DE CAPITAL",
-                        "movil": "Disponible en Terminal Financiera / Registro de Red",
-                        "email": "intel.100@maia-core.io",
+                        "ceo": "Consultar Lead de Inversión en LinkedIn",
+                        "riesgo": "ACTIVO ESTRATÉGICO / CAPITAL DETECTADO",
+                        "movil": "Requiere Acceso a Registro Mercantil",
+                        "email": "blackbox@maia-core.io",
                         "fecha": "21/04/2026",
                         "fuente": hit['href'],
-                        "resumen": f"SEÑAL DE ALTA PRIORIDAD: {hit['body']}"
+                        "resumen": f"INTELIGENCIA CRÍTICA: {hit['body']}"
                     })
         except: pass
         return results

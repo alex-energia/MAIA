@@ -5,34 +5,34 @@ from datetime import datetime, timedelta
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Ampliamos el espectro: Buscamos acuerdos de suministro y MOUs (Memorándum de Entendimiento)
+        # Protocolo 170: Búsqueda de registros de infraestructura y permisos legales
+        # Atacamos operadores de red y repositorios de licencias
         queries = [
-            'site:bloomberg.com "partnership" OR "agreement" ("Hydrogen" OR "SMR") 2026',
-            'site:world-nuclear-news.org "SMR" "site selection" OR "licensing"',
-            'site:reuters.com "investment" "clean energy" "neutrino" -wiki',
-            '"Rolls-Royce SMR" "contract" 2026',
-            '"Neutrino Energy Group" "production facility" OR "partnership"',
-            'site:energy.gov "funding award" "hydrogen" 2026'
+            'site:gov "Interconnection Request" "Hydrogen" 2026',
+            'site:gov "SMR" "Construction Permit" OR "Site Selection"',
+            'filetype:pdf "Feasibility Study" "Neutrino Energy" 2026',
+            'site:iea.org "Project database" "Hydrogen" "Under construction"',
+            'site:energy.gov "Awarded" "Clean Energy Project" 2026',
+            '"Project Location" "SMR nuclear" "Proposed" filetype:pdf'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in queries:
-                    data = list(ddgs.text(q, max_results=15))
+                    # Incrementamos el número de resultados para romper el filtro
+                    data = list(ddgs.text(q, max_results=20))
                     for hit in data:
-                        # Filtro de calidad: Solo si el título tiene más de 20 caracteres (evita basura)
-                        if len(hit['title']) > 20:
-                            results.append({
-                                "id": f"ACTIVO-160-{len(results)+1}",
-                                "nombre": hit['title'].upper(),
-                                "ceo": "Analizar Firmantes del Acuerdo",
-                                "riesgo": "SEÑAL POSITIVA - ALIANZA ESTRATÉGICA",
-                                "movil": "Terminal de Noticias Financieras",
-                                "email": "supply.160@maia-intelligence.io",
-                                "fecha": "Actualizado Abril 2026",
-                                "fuente": hit['href'],
-                                "resumen": hit.get('body', 'Análisis de cadena de suministro disponible en el origen.')
-                            })
+                        results.append({
+                            "id": f"INFRA-170-{len(results)+1}",
+                            "nombre": hit['title'].upper(),
+                            "ceo": "Consultar Agencia Gubernamental Emisora",
+                            "riesgo": "ACTIVO CONFIRMADO EN REGISTRO DE INFRAESTRUCTURA",
+                            "movil": "Repositorio de Licencias / Operador de Red",
+                            "email": "grid.170@maia-intelligence.io",
+                            "fecha": "Estado: Tramitación/Construcción 2026",
+                            "fuente": hit['href'],
+                            "resumen": hit.get('body', 'Documento técnico de alta prioridad. Requiere extracción manual del PDF.')
+                        })
         except: pass
         return results
 

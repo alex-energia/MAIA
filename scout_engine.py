@@ -17,21 +17,21 @@ class ScoutCore:
         
         try:
             with DDGS() as ddgs:
-                data = list(ddgs.text(query, max_results=70))
+                data = list(ddgs.text(query, max_results=80))
                 for i, hit in enumerate(data):
                     # Filtro de seguridad: Bloqueo de falsos positivos
                     if any(x in hit['body'].lower() for x in ["openai", "chat", "gpt"]): continue
                         
                     results.append({
-                        "id": f"DEEP-94-{i+1}",
+                        "id": f"INFILTRATOR-100-{i+1}",
                         "nombre": hit['title'].upper(),
-                        "ceo": "Identificar vía Registro Mercantil Regional",
-                        "riesgo": "SEÑAL DE CAPITAL / FASE TÉCNICA DETECTADA",
+                        "ceo": "Identificar vía Registro Mercantil / Estructura de Capital",
+                        "riesgo": "ACTIVO EN FASE CRÍTICA DE CAPITAL",
                         "movil": "Disponible en Terminal Financiera / Registro de Red",
-                        "email": "intel.94@maia-core.io",
+                        "email": "intel.100@maia-core.io",
                         "fecha": "21/04/2026",
                         "fuente": hit['href'],
-                        "resumen": f"DETECCIÓN DE SEÑAL CRÍTICA: {hit['body']}"
+                        "resumen": f"SEÑAL DE ALTA PRIORIDAD: {hit['body']}"
                     })
         except: pass
         return results

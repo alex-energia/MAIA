@@ -5,37 +5,34 @@ from datetime import datetime, timedelta
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Fecha de búsqueda: Últimos 60 días para detectar movimientos recientes
-        fecha_limite = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
-        
-        # Filtros de exclusión de ruido mediático
-        exclude = "-news -reuters -prnewswire -globenewswire -wikipedia -media -press"
-        
-        # Consultas de CAPA TÉCNICA (Patentes y Permisos)
+        # Ampliamos el espectro: Buscamos acuerdos de suministro y MOUs (Memorándum de Entendimiento)
         queries = [
-            f'site:patents.google.com "neutrino energy" OR "SMR nuclear" after:2025-12-31',
-            f'filetype:pdf "Environmental Impact Assessment" "Hydrogen" "2026"',
-            f'site:iaea.org "SMR" "Preliminary Safety Analysis Report"',
-            f'site:epo.org "neutrino" "energy conversion" "patent"',
-            f'filetype:pdf "Technical Specifications" "Green Hydrogen" "2026"'
+            'site:bloomberg.com "partnership" OR "agreement" ("Hydrogen" OR "SMR") 2026',
+            'site:world-nuclear-news.org "SMR" "site selection" OR "licensing"',
+            'site:reuters.com "investment" "clean energy" "neutrino" -wiki',
+            '"Rolls-Royce SMR" "contract" 2026',
+            '"Neutrino Energy Group" "production facility" OR "partnership"',
+            'site:energy.gov "funding award" "hydrogen" 2026'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in queries:
-                    data = list(ddgs.text(q, max_results=12))
+                    data = list(ddgs.text(q, max_results=15))
                     for hit in data:
-                        results.append({
-                            "id": f"TECH-150-{len(results)+1}",
-                            "nombre": hit['title'].upper(),
-                            "ceo": "Consultar Inventor / Titular de la Patente",
-                            "riesgo": "ACTIVO TÉCNICO REGISTRADO (CAPA RAÍZ)",
-                            "movil": "Registro de Propiedad Intelectual / Ambiental",
-                            "email": "blueprint.150@maia-intelligence.io",
-                            "fecha": "Documento Técnico 2026",
-                            "fuente": hit['href'],
-                            "resumen": hit.get('body', 'Documento de alta densidad técnica detectado en repositorio oficial.')
-                        })
+                        # Filtro de calidad: Solo si el título tiene más de 20 caracteres (evita basura)
+                        if len(hit['title']) > 20:
+                            results.append({
+                                "id": f"ACTIVO-160-{len(results)+1}",
+                                "nombre": hit['title'].upper(),
+                                "ceo": "Analizar Firmantes del Acuerdo",
+                                "riesgo": "SEÑAL POSITIVA - ALIANZA ESTRATÉGICA",
+                                "movil": "Terminal de Noticias Financieras",
+                                "email": "supply.160@maia-intelligence.io",
+                                "fecha": "Actualizado Abril 2026",
+                                "fuente": hit['href'],
+                                "resumen": hit.get('body', 'Análisis de cadena de suministro disponible en el origen.')
+                            })
         except: pass
         return results
 

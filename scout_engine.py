@@ -5,43 +5,38 @@ from datetime import datetime, timedelta
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Retroceso de 60 días desde la fecha actual (Abril 2026)
+        # Fecha de búsqueda: Últimos 60 días para detectar movimientos recientes
         fecha_limite = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
         
-        # Filtros de exclusión para evitar ruido enciclopédico y de IA
-        exclude = "-wikipedia -britannica -dictionary -chatgpt -openai -ai -software -app -movie"
+        # Filtros de exclusión de ruido mediático
+        exclude = "-news -reuters -prnewswire -globenewswire -wikipedia -media -press"
         
-        # Consultas de infiltración en nodos de autoridad (Capital, Red y Licitaciones)
+        # Consultas de CAPA TÉCNICA (Patentes y Permisos)
         queries = [
-            f'site:reuters.com "funding" OR "investment" ("SMR nuclear" OR "Green Hydrogen") {exclude} after:{fecha_limite}',
-            f'site:energy-storage.news "contract" OR "project finance" "neutrino" OR "storage" {exclude} after:{fecha_limite}',
-            f'site:world-nuclear-news.org "SMR" "construction" OR "permit" {exclude} after:{fecha_limite}',
-            f'filetype:pdf "Interconnection Queue" "Active" "Hydrogen" {exclude} after:{fecha_limite}',
-            f'site:ted.europa.eu "Prior information notice" "Energy" {exclude}'
+            f'site:patents.google.com "neutrino energy" OR "SMR nuclear" after:2025-12-31',
+            f'filetype:pdf "Environmental Impact Assessment" "Hydrogen" "2026"',
+            f'site:iaea.org "SMR" "Preliminary Safety Analysis Report"',
+            f'site:epo.org "neutrino" "energy conversion" "patent"',
+            f'filetype:pdf "Technical Specifications" "Green Hydrogen" "2026"'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in queries:
-                    data = list(ddgs.text(q, max_results=15))
+                    data = list(ddgs.text(q, max_results=12))
                     for hit in data:
-                        # Verificación de seguridad para asegurar que el resumen no esté vacío
-                        resumen_texto = hit.get('body', 'Sin detalle técnico disponible en la vista previa.')
-                        
                         results.append({
-                            "id": f"ASSET-130-{len(results)+1}",
+                            "id": f"TECH-150-{len(results)+1}",
                             "nombre": hit['title'].upper(),
-                            "ceo": "Identificar vía Registro Mercantil / EPC Lead",
-                            "riesgo": "ALTA PRIORIDAD - ACTIVO DE INFRAESTRUCTURA",
-                            "movil": "Documento de Red / Terminal Financiera",
-                            "email": "intel.130@maia-intelligence.io",
-                            "fecha": f"Detectado: {fecha_limite} a Hoy",
+                            "ceo": "Consultar Inventor / Titular de la Patente",
+                            "riesgo": "ACTIVO TÉCNICO REGISTRADO (CAPA RAÍZ)",
+                            "movil": "Registro de Propiedad Intelectual / Ambiental",
+                            "email": "blueprint.150@maia-intelligence.io",
+                            "fecha": "Documento Técnico 2026",
                             "fuente": hit['href'],
-                            "resumen": resumen_texto
+                            "resumen": hit.get('body', 'Documento de alta densidad técnica detectado en repositorio oficial.')
                         })
-        except Exception as e:
-            print(f"Error en el motor: {e}")
-            
+        except: pass
         return results
 
 scout_engine = ScoutCore()

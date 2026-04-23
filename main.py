@@ -4,7 +4,7 @@ from scout_engine import scout_engine
 import os
 
 app = Flask(__name__)
-app.secret_key = os.urandom(64)
+app.secret_key = os.urandom(128)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -16,6 +16,7 @@ def index():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'run_scout':
+            # Ejecución del motor nivel 400
             session['history'] = scout_engine.execute_global_scout()
             session['attempt'] = True
             session.modified = True
@@ -23,65 +24,76 @@ def index():
             p_id = request.form.get('p_id')
             item = next((x for x in session['history'] if x['id'] == p_id), None)
             if item and item not in session['saved']:
-                session['saved'].append(item); session.modified = True
+                session['saved'].append(item)
+                session.modified = True
         elif action == 'limpiar':
-            session.clear(); return "<script>window.location='/';</script>"
+            session.clear()
+            return "<script>window.location='/';</script>"
 
     html = """
     <!DOCTYPE html>
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA - INFILTRACIÓN 300</title>
+        <title>MAIA - NIVEL 400 (HIGH RESILIENCE)</title>
         <style>
-            :root { --cian: #00f2ff; --gold: #ffcc00; --red: #ff0044; --bg: #020202; }
-            body { background:var(--bg); color:#fff; font-family:monospace; margin:0; padding:20px; font-size:13px; }
+            :root { --cian: #00f2ff; --gold: #ffcc00; --alert: #ff0044; --bg: #010101; }
+            body { background:var(--bg); color:#fff; font-family:'Courier New', monospace; margin:0; padding:20px; font-size:13px; }
             
-            .nav { border-bottom: 2px solid #1a1a1a; padding-bottom:15px; display:flex; gap:15px; }
-            .btn-nav { background:none; border:1px solid #333; color:#555; padding:8px 15px; cursor:pointer; }
-            .active { border-color:var(--cian); color:var(--cian); box-shadow: 0 0 10px var(--cian); }
+            .header { border-bottom: 2px solid #1a1a1a; padding-bottom:15px; display:flex; gap:15px; align-items:center; }
+            .btn-nav { background:#111; border:1px solid #333; color:#666; padding:10px 20px; cursor:pointer; font-weight:bold; }
+            .active { border-color:var(--cian); color:var(--cian); box-shadow: 0 0 15px rgba(0,242,255,0.4); }
 
-            #bar-cont { width:100%; height:12px; background:#0a0a0a; margin:30px 0; display:none; border: 1px solid #333; }
-            #bar-fill { height:100%; background: linear-gradient(90deg, var(--red), var(--gold), var(--cian)); width:0%; }
-            #status-txt { display:none; color:var(--cian); font-size:10px; margin-bottom:10px; font-weight:bold; }
+            /* BARRA DE PROGRESO SINCRONIZADA */
+            #bar-cont { width:100%; height:14px; background:#000; margin:25px 0; display:none; border: 1px solid #222; }
+            #bar-fill { height:100%; background: linear-gradient(90deg, var(--alert), var(--gold), var(--cian)); width:0%; transition: 0.2s; }
+            #status-txt { display:none; color:var(--cian); font-size:10px; margin-bottom:10px; font-weight:bold; text-transform:uppercase; }
 
-            .btn-scan { background:#000; border:2px solid var(--cian); color:var(--cian); padding:25px; width:100%; cursor:pointer; font-weight:800; text-transform:uppercase; transition: 0.4s; }
-            .btn-scan:hover { background:var(--cian); color:#000; }
+            .btn-main { 
+                background: #000; border: 2px solid var(--cian); color: var(--cian); 
+                padding: 25px; width: 100%; cursor: pointer; font-weight: 900; font-size: 16px;
+                text-transform: uppercase; letter-spacing: 2px; transition: 0.5s;
+            }
+            .btn-main:hover { background: var(--cian); color: #000; box-shadow: 0 0 40px var(--cian); }
             
-            .ficha { background:#080808; border:1px solid #1a1a1a; border-left:4px solid var(--cian); padding:25px; margin-top:25px; }
-            .pilar-tag { font-size:9px; color:var(--gold); border:1px solid var(--gold); padding:2px 6px; }
+            .ficha { background: #050505; border: 1px solid #111; border-left: 5px solid var(--cian); padding:25px; margin-top:25px; }
+            .pilar-tag { font-size:10px; color:var(--gold); border:1px solid var(--gold); padding:3px 8px; font-weight:bold; }
+            .title { font-size:18px; color:#fff; margin:15px 0; font-weight:bold; }
+            .desc { color:#888; font-size:13px; line-height:1.6; background:rgba(0,0,0,0.8); padding:15px; border:1px solid #111; }
 
-            #maia-chat { position:fixed; bottom:20px; right:20px; width:380px; border:1px solid #222; background:#000; z-index:999; }
-            .chat-h { background:#111; color:var(--cian); padding:15px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; }
+            /* CHAT: MINIMIZADO Y VACÍO POR DEFECTO */
+            #maia-chat { position:fixed; bottom:20px; right:20px; width:380px; border:1px solid #222; background:#000; box-shadow: 0 0 30px rgba(0,0,0,1); z-index:9999; }
+            .chat-h { background:#0a0a0a; color:var(--cian); padding:15px; font-weight:bold; cursor:pointer; display:flex; justify-content:space-between; font-size:11px; border-bottom:1px solid #111; }
             #chat-b, #cInput { display:none; }
-            #chat-b { height:220px; padding:15px; overflow-y:auto; font-size:11px; }
+            #chat-b { height:220px; padding:15px; overflow-y:auto; font-size:11px; color:#444; }
         </style>
     </head>
     <body>
-        <div class="nav">
+        <div class="header">
             <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn-nav {{ 'active' if view == 'scout' }}">RADAR 300</button>
+                <button type="submit" name="view_state" value="scout" class="btn-nav {{ 'active' if view == 'scout' }}">BARRIDO 400</button>
                 <button type="submit" name="view_state" value="memoria" class="btn-nav {{ 'active' if view == 'memoria' }}">MEMORIA ({{ session['saved']|length }})</button>
-                <button type="submit" name="action" value="limpiar" class="btn-nav" style="margin-left:auto; border-color:var(--red); color:var(--red);">RESETEAR</button>
+                <button type="submit" name="action" value="limpiar" class="btn-nav" style="margin-left:auto; border-color:var(--alert); color:var(--alert);">WIPE DATA</button>
             </form>
         </div>
 
         <div id="bar-cont"><div id="bar-fill"></div></div>
-        <div id="status-txt">STANDBY...</div>
+        <div id="status-txt">SISTEMA NIVEL 400 INICIALIZADO...</div>
 
         {% if view == 'scout' %}
             <form method="POST" id="scoutF">
                 <input type="hidden" name="action" value="run_scout">
-                <button type="button" onclick="start()" class="btn-scan">INICIAR BARRIDO AGRESIVO</button>
+                <button type="button" onclick="start()" class="btn-main">INICIAR INFILTRACIÓN DE LOS 8 PILARES</button>
             </form>
+
             {% for r in session['history'] %}
             <div class="ficha">
                 <span class="pilar-tag">{{ r.pilar }}</span>
-                <div style="font-size:18px; margin:15px 0;">{{ r.nombre }}</div>
-                <div style="color:#777;">{{ r.datos }}</div>
+                <div class="title">{{ r.nombre }}</div>
+                <div class="desc">{{ r.datos }}</div>
                 <div style="margin-top:20px; display:flex; gap:15px;">
-                    <a href="{{ r.vinculo }}" target="_blank" style="color:var(--cian); text-decoration:none;">[ EXPEDIENTE ]</a>
-                    <form method="POST"><input type="hidden" name="p_id" value="{{ r.id }}"><button type="submit" name="action" value="save" style="background:none; border:none; color:var(--gold); cursor:pointer;">[ ARCHIVAR ]</button></form>
+                    <a href="{{ r.vinculo }}" target="_blank" style="color:var(--cian); text-decoration:none; font-weight:bold;">[ ACCEDER AL ACTIVO ]</a>
+                    <form method="POST"><input type="hidden" name="p_id" value="{{ r.id }}"><button type="submit" name="action" value="save" style="background:none; border:none; color:var(--gold); cursor:pointer; font-family:inherit; font-weight:bold;">[ ARCHIVAR ]</button></form>
                 </div>
             </div>
             {% endfor %}
@@ -89,16 +101,17 @@ def index():
             {% for s in session['saved'] %}
             <div class="ficha" style="border-left-color:var(--gold);">
                 <span class="pilar-tag">{{ s.pilar }}</span>
-                <div style="font-size:18px; margin:15px 0;">{{ s.nombre }}</div>
-                <div style="color:#777;">{{ s.datos }}</div>
+                <div class="title">{{ s.nombre }}</div>
+                <div class="desc">{{ s.datos }}</div>
+                <a href="{{ s.vinculo }}" target="_blank" style="color:var(--gold); text-decoration:none; font-weight:bold;">[ VER DOCUMENTO ]</a>
             </div>
             {% endfor %}
         {% endif %}
 
         <div id="maia-chat">
-            <div class="chat-h" onclick="toggle()"><span>MAIA CONSOLE</span><span id="ico">[+]</span></div>
+            <div class="chat-h" onclick="toggle()"><span>MAIA CONSOLE v4.0</span><span id="ico">[+]</span></div>
             <div id="chat-b"></div>
-            <input type="text" id="cInput" placeholder="Comando..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--cian); padding:15px; box-sizing:border-box; outline:none;">
+            <input type="text" id="cInput" placeholder="Comando de sistema..." onkeydown="if(event.key==='Enter') push()" style="width:100%; background:#000; border:none; color:var(--cian); padding:15px; box-sizing:border-box; outline:none;">
         </div>
 
         <script>
@@ -106,11 +119,21 @@ def index():
                 document.getElementById('bar-cont').style.display = 'block';
                 document.getElementById('status-txt').style.display = 'block';
                 var fill = document.getElementById('bar-fill');
+                var txt = document.getElementById('status-txt');
                 var w = 0;
                 var itv = setInterval(function(){
-                    w += 1; fill.style.width = w + '%';
+                    w += 0.5; fill.style.width = w + '%';
+                    if(w < 12) txt.innerText = "ACCEDIENDO PILAR 1: HIDROELÉCTRICAS...";
+                    else if(w < 25) txt.innerText = "ACCEDIENDO PILAR 2: SOLARES...";
+                    else if(w < 37) txt.innerText = "ACCEDIENDO PILAR 3: SMR NUCLEAR...";
+                    else if(w < 50) txt.innerText = "ACCEDIENDO PILAR 4: TÉRMICAS...";
+                    else if(w < 62) txt.innerText = "ACCEDIENDO PILAR 5: GEOTÉRMICAS...";
+                    else if(w < 75) txt.innerText = "ACCEDIENDO PILAR 6: NEUTRINOS...";
+                    else if(w < 87) txt.innerText = "ACCEDIENDO PILAR 7: HIDRÓGENO...";
+                    else txt.innerText = "ACCEDIENDO PILAR 8: STARTUPS TECNOLÓGICAS...";
+                    
                     if(w >= 100) { clearInterval(itv); document.getElementById('scoutF').submit(); }
-                }, 150); // 15 segundos de carga visual antes de la petición
+                }, 100); 
             }
             function toggle() {
                 var b=document.getElementById('chat-b'); var i=document.getElementById('cInput'); var ico=document.getElementById('ico');

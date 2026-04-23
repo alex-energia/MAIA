@@ -5,39 +5,36 @@ import time
 class ScoutCore:
     def execute_global_scout(self):
         results = []
-        # Protocolo 500: 8 Pilares con enfoque geográfico diversificado
-        # Se reducen resultados por pilar para garantizar que el servidor responda a tiempo
+        # Nivel 600: Enfoque 100% Negocios y Proyectos Reales (Excluye noticias)
+        # Operadores agresivos: "tender", "contract", "FID", "award"
         asset_pillars = [
-            'site:reuters.com OR site:worldbank.org "Hydroelectric" "contract" 2026',
-            'site:energy-storage.news OR site:pv-magazine.com "Solar" "deal" 2026',
-            'site:world-nuclear-news.org "SMR" OR "Micro-reactor" "construction" 2026',
-            'site:power-technology.com "Thermal Power" "EPC" 2026',
-            'site:thinkgeoenergy.com "Geothermal" "award" 2026',
-            '"Neutrino Energy" OR "Neutrinovoltaic" "investment" 2026',
-            'site:h2-view.com "Hydrogen" "FID" OR "project" 2026',
-            'site:techcrunch.com OR site:dealroom.co "Startup" "Series A" 2026'
+            'site:dgmarket.com "Hydroelectric" tender 2026',
+            'site:tendersinfo.com "Solar" project award 2026',
+            'site:iaea.org "SMR" construction contract 2026',
+            'site:power-technology.com "Thermal" EPC project 2026',
+            'site:geothermal-energy.org "Drilling" contract 2026',
+            '"Neutrino Energy" investment agreement 2026',
+            'site:hydrogen-central.com "FID" project 2026',
+            'site:crunchbase.com "Startup" Series A investment 2026'
         ]
         
         try:
             with DDGS() as ddgs:
                 for q in asset_pillars:
                     try:
-                        # Delay mínimo para maximizar velocidad sin ser bloqueado
-                        time.sleep(0.8) 
-                        # Pedimos solo 3 resultados por pilar (24 en total) para evitar el Timeout
-                        data = list(ddgs.text(q, max_results=3))
+                        time.sleep(0.5) # Velocidad máxima permitida
+                        # Limitamos a 2 resultados críticos por pilar para evitar el Timeout del servidor
+                        data = list(ddgs.text(q, max_results=2))
                         for hit in data:
                             results.append({
-                                "id": f"G500-{len(results)+1}",
+                                "id": f"BUS-600-{len(results)+1}",
                                 "nombre": hit['title'].upper(),
-                                "pilar": q.split('"')[1] if '"' in q else "STARTUP",
+                                "pilar": q.split('"')[1] if '"' in q else "NEGOCIO TECH",
                                 "vinculo": hit['href'],
-                                "datos": hit.get('body', 'Extrayendo metadatos del activo...')
+                                "datos": hit.get('body', 'Analizando viabilidad del proyecto...')
                             })
-                    except:
-                        continue 
-        except:
-            pass
+                    except: continue 
+        except: pass
         return results
 
 scout_engine = ScoutCore()

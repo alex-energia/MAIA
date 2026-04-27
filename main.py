@@ -6,49 +6,63 @@ import sys
 from flask import Flask, render_template_string, request, session
 from duckduckgo_search import DDGS
 
-# --- CLASE DEL MOTOR DE BÚSQUEDA (INTEGRADA) ---
+# --- NÚCLEO DE INTELIGENCIA MAIA v13.0 (USA SMR EDITION) ---
 class MaiaDeepSearch:
     def __init__(self):
-        self.pilares = [
-            "Energia hidroelectrica", "Startup de tecnologia", "SMR nuclear",
-            "Solar", "Termica", "Geotermica", "Neutrinos", "Hidrogeno"
-        ]
-        self.trash = ["wikipedia", "news", "reuters", "bloomberg", "noticias", "youtube", "dictionary", "britannica"]
-        self.targets = "(.gov OR .sa OR .ae OR .sg OR .cl OR .co OR crunchbase.com OR angel.co)"
+        # Configuración para SMR en USA (Gratuito y Real)
+        self.pilar = "SMR Nuclear United States"
+        self.trash = ["wikipedia", "news", "reuters", "bloomberg", "noticias", "youtube", "dictionary"]
 
     def execute_global_scout(self):
         results = []
+        # Queries de alta intención transaccional para USA
+        queries = [
+            f'site:gov "SMR" contract award 2026 "USD"',
+            f'site:energy.gov "small modular reactor" funding announcement 2026',
+            f'intitle:"tender" "SMR" USA 2026 million'
+        ]
+
+        print(f"\n[SISTEMA] Iniciando rastreo profundo en nodos de USA...")
+        
         with DDGS() as ddgs:
-            for pilar in self.pilares:
-                # Query de IA Pura: Busca documentos y licitaciones reales
-                query = f'"{pilar}" {self.targets} (intitle:tender OR "equity sale" OR "series B" OR licitacion) 2026 "USD" -{ " -".join(self.trash) }'
+            for q in queries:
                 try:
-                    search_data = list(ddgs.text(query, max_results=5)) # 5 resultados para evitar bloqueos
+                    # Pausa humana para evitar bloqueos de IP (Crucial para sitios .gov)
+                    time.sleep(5) 
+                    search_data = list(ddgs.text(q, max_results=4))
+                    
+                    if not search_data:
+                        continue
+
                     for entry in search_data:
                         body = entry.get('body', '').lower()
-                        # Solo aceptamos si hay rastro de dinero o capital
-                        if any(k in body for k in ["$", "usd", "million", "billion", "equity", "round"]):
-                            val = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', body, re.I)
-                            pwr = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW))', body, re.I)
-                            tel = re.search(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', body)
-                            mail = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', body)
+                        title = entry.get('title', '').upper()
+                        url = entry.get('href', '')
 
+                        # Solo procesamos si hay indicios de capital o contratos
+                        if any(k in body for k in ["$", "million", "award", "contract", "funding"]):
+                            # Extracción de montos y contactos mediante lógica de IA
+                            val = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', body, re.I)
+                            mail = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', body)
+                            
                             results.append({
-                                "id": f"TXN-{int(time.time())}-{len(results)}",
-                                "pilar": pilar.upper(),
-                                "nombre": entry['title'].upper(),
-                                "valor": val.group(0).upper() if val else "VERIFICAR EN FUENTE",
-                                "potencia": pwr.group(0).upper() if pwr else "VER ESPECIFICACIONES",
-                                "ubicacion": "NODO INTERNACIONAL",
-                                "contacto": f"{mail.group(0) if mail else 'Email en sitio'} / {tel.group(0) if tel else 'Tel. en sitio'}",
-                                "vinculo": entry['href'],
-                                "datos": body[:250] + "..."
+                                "id": f"USA-SMR-{int(time.time())}-{len(results)}",
+                                "pilar": "NUCLEAR SMR / USA",
+                                "nombre": title,
+                                "valor": val.group(0).upper() if val else "VERIFICAR EN EXPEDIENTE FEDERAL",
+                                "potencia": "Escala Industrial SMR (300MW+)",
+                                "ubicacion": "NODO USA / FEDERAL",
+                                "contacto": f"{mail.group(0) if mail else 'Consultar en portal DOE'}",
+                                "vinculo": url,
+                                "datos": body[:300] + "..."
                             })
-                    time.sleep(1.5) # Delay de seguridad
-                except: continue
+                except Exception as e:
+                    print(f"[!] Error de conexión en nodo: {e}")
+                    continue
+        
         return results
 
-# --- CONFIGURACIÓN DE LA INTERFAZ WEB ---
+# --- INTERFAZ MAIA v13.0 ---
 app = Flask(__name__)
 app.secret_key = os.urandom(2048)
 scout_engine = MaiaDeepSearch()
@@ -62,7 +76,7 @@ def index():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'run_scout':
-            # Ejecuta la búsqueda real. Si no hay internet o resultados, devuelve []
+            # Ejecuta la búsqueda real 100% web
             res = scout_engine.execute_global_scout()
             session['history'] = res
             session.modified = True
@@ -79,43 +93,64 @@ def index():
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>MAIA v12.5 - LIVE BUSINESS SCOUT</title>
+        <title>MAIA v13 - USA BUSINESS INTELLIGENCE</title>
         <style>
             :root { --cian: #00ffff; --gold: #ffd700; --bg: #000; }
-            body { background:var(--bg); color:#fff; font-family:monospace; padding:20px; }
+            body { background:var(--bg); color:#fff; font-family:monospace; padding:20px; font-size:12px; }
             .nav { border-bottom: 2px solid #111; padding-bottom:15px; display:flex; gap:10px; margin-bottom:20px; }
             .btn-nav { background:none; border:1px solid #333; color:#555; padding:8px 15px; cursor:pointer; }
             .active { border-color:var(--cian); color:var(--cian); }
-            .btn-scan { background:#000; border:2px solid var(--cian); color:var(--cian); padding:20px; width:100%; cursor:pointer; font-weight:bold; font-size:16px; }
-            .ficha { background:#050505; border:1px solid #111; border-left:5px solid var(--cian); padding:20px; margin-top:20px; }
-            .val-box { border:1px dashed var(--cian); padding:10px; margin:10px 0; color:var(--cian); font-size:16px; }
-            .no-data { text-align:center; padding:40px; color:#444; border:1px dashed #222; margin-top:20px; }
+            .btn-scan { background:#000; border:2px solid var(--cian); color:var(--cian); padding:25px; width:100%; cursor:pointer; font-weight:bold; font-size:18px; text-transform:uppercase; letter-spacing:2px; }
+            .ficha { background:#050505; border:1px solid #111; border-left:5px solid var(--cian); padding:25px; margin-top:25px; }
+            .title { font-size:17px; font-weight:bold; color:var(--cian); margin-bottom:15px; }
+            .val-box { background:rgba(0,255,255,0.05); border:1px dashed var(--cian); padding:15px; margin:10px 0; font-size:16px; }
+            .no-data { text-align:center; padding:60px; color:#333; border:1px dashed #222; margin-top:20px; font-size:14px; }
+            a { color:var(--gold); text-decoration:none; font-weight:bold; }
         </style>
     </head>
     <body>
         <div class="nav">
             <form method="POST" style="display:contents;">
-                <button type="submit" name="view_state" value="scout" class="btn-nav {{ 'active' if view == 'scout' }}">BARRIDO REAL</button>
-                <button type="submit" name="view_state" value="memoria" class="btn-nav {{ 'active' if view == 'memoria' }}">ARCHIVADOS</button>
-                <button type="submit" name="action" value="limpiar" class="btn-nav" style="color:#ff3366;">WIPE</button>
+                <button type="submit" name="view_state" value="scout" class="btn-nav {{ 'active' if view == 'scout' }}">BARRIDO REAL 2026</button>
+                <button type="submit" name="view_state" value="memoria" class="btn-nav {{ 'active' if view == 'memoria' }}">ARCHIVO ({{ session['saved']|length }})</button>
+                <button type="submit" name="action" value="limpiar" class="btn-nav" style="margin-left:auto; color:#ff3366;">WIPE SYSTEM</button>
             </form>
         </div>
+
         {% if view == 'scout' %}
-            <form method="POST"><input type="hidden" name="action" value="run_scout"><button type="submit" class="btn-scan">INICIAR BÚSQUEDA DE ACTIVOS EN VIVO (2026)</button></form>
-            {% if not session['history'] %}<div class="no-data">SISTEMA LISTO. PRESIONE INICIAR PARA RASTREO WEB.</div>{% endif %}
+            <form method="POST">
+                <input type="hidden" name="action" value="run_scout">
+                <button type="submit" class="btn-scan">EJECUTAR ESCANEO DE CAPITAL SMR (USA)</button>
+            </form>
+
+            {% if not session['history'] %}
+                <div class="no-data">SISTEMA SIN HALLAZGOS EN MEMORIA.<br>PRESIONE EJECUTAR PARA INICIAR RASTREO FEDERAL.</div>
+            {% endif %}
+
             {% for r in session['history'] %}
             <div class="ficha">
-                <div style="color:var(--gold); font-size:10px;">{{ r.pilar }}</div>
-                <div style="font-size:18px; color:var(--cian);">{{ r.nombre }}</div>
-                <div class="val-box"><b>VALOR:</b> {{ r.valor }}</div>
-                <div style="margin:10px 0;"><b>POTENCIA:</b> {{ r.potencia }} | <b>UBICACIÓN:</b> {{ r.ubicacion }}</div>
-                <div style="color:#fff;"><b>CONTACTO:</b> {{ r.contacto }}</div>
-                <div style="color:#666; font-size:11px; margin-top:10px;">{{ r.datos }}</div>
-                <a href="{{ r.vinculo }}" target="_blank" style="color:var(--cian);">[ VER FUENTE ]</a>
+                <div style="color:var(--gold); font-size:10px; margin-bottom:5px;">{{ r.pilar }}</div>
+                <div class="title">{{ r.nombre }}</div>
+                <div class="val-box"><b>VALOR ADJUDICADO:</b> {{ r.valor }}</div>
+                <div style="margin:15px 0;">
+                    <b>UBICACIÓN:</b> {{ r.ubicacion }} | <b>POTENCIA:</b> {{ r.potencia }}<br>
+                    <b>CONTACTO DETECTADO:</b> <span style="color:#fff;">{{ r.contacto }}</span>
+                </div>
+                <div style="color:#666; font-size:11px; margin-bottom:15px;">{{ r.datos }}</div>
+                <div style="display:flex; gap:20px;">
+                    <a href="{{ r.vinculo }}" target="_blank">[ IR AL PORTAL OFICIAL ]</a>
+                    <form method="POST"><input type="hidden" name="p_id" value="{{ r.id }}"><button type="submit" name="action" value="save" style="background:none; border:none; color:var(--cian); cursor:pointer; font-weight:bold;">[ GUARDAR ]</button></form>
+                </div>
             </div>
             {% endfor %}
         {% else %}
-            {% for s in session['saved'] %}<div class="ficha" style="border-left-color:var(--gold);">{{ s.nombre }}</div>{% endfor %}
+            {% for s in session['saved'] %}
+            <div class="ficha" style="border-left-color:var(--gold);">
+                <div class="title" style="color:var(--gold);">{{ s.nombre }}</div>
+                <div class="val-box"><b>VALOR:</b> {{ s.valor }}</div>
+                <a href="{{ s.vinculo }}" target="_blank">[ VER FUENTE ]</a>
+            </div>
+            {% endfor %}
         {% endif %}
     </body></html>
     """

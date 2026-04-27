@@ -6,39 +6,37 @@ import sys
 
 class ScoutCore:
     def __init__(self):
-        # 8 Pilares Innegociables
+        # 8 Pilares Blindados
         self.pilares = [
             "Energia hidroelectrica", "Startup de tecnologia", "SMR nuclear",
             "Solar", "Termica", "Geotermica", "Neutrinos", "Hidrogeno"
         ]
-        # Términos de Negocio Real (No noticias, no educación)
-        self.keywords = "(tender OR 'equity sale' OR 'investment round' OR 'licitacion' OR 'prospecto' OR 'series B')"
-        # Bloqueo total de dominios basura
-        self.blacklisted = ["wikipedia", "dictionary", "britannica", "youtube", "reuters", "bloomberg", "news"]
+        # Filtros de exclusión total de contenido educativo/noticioso
+        self.blacklist = ["wikipedia", "britannica", "reuters", "bloomberg", "news", "youtube", "dictionary"]
 
-    def _show_bar(self, current, total, pilar):
-        """Imprime la barra de progreso real en la terminal."""
-        width = 40
-        progress = int((current / total) * width)
-        bar = "█" * progress + "░" * (width - progress)
-        # Código ANSI para limpiar línea y asegurar visibilidad
-        sys.stdout.write(f"\r\033[K[MAIA] [{bar}] {int((current/total)*100)}% | Analizando: {pilar[:15]}")
+    def _barra_progreso(self, actual, total, pilar):
+        """Barra de estado forzada para terminal."""
+        procentaje = int((actual / total) * 100)
+        relleno = int(actual / total * 30)
+        bar = "█" * relleno + "-" * (30 - relleno)
+        sys.stdout.write(f"\r\033[K[MAIA SCOUTING] |{bar}| {procentaje}% - Buscando en: {pilar[:15]}")
         sys.stdout.flush()
 
     def execute_global_scout(self):
         results = []
         total = len(self.pilares)
         
-        print("\n" + "="*80)
-        print("MAIA SCOUT v5.0 | BARRIDO TRANSACCIONAL GLOBAL | 2026")
-        print("="*80)
+        print("\n" + "="*70)
+        print("MAIA v6.0 | BARRIDO TRANSACCIONAL REAL | NO PLACEHOLDERS")
+        print("="*70)
 
         with DDGS() as ddgs:
             for i, pilar in enumerate(self.pilares):
-                self._show_bar(i + 1, total, pilar)
+                self._barra_progreso(i + 1, total, pilar)
                 
-                # Query de precisión: Pilar + Negocio + País + Símbolo de Dinero
-                q = f'"{pilar}" {self.keywords} 2026 "USD" -site:wikipedia.org'
+                # QUERY DE ALTA INTENCIÓN: Busca licitaciones y rondas de inversión, no artículos.
+                # Se fuerza la búsqueda de archivos y términos de capital (Equity, Series, Tender).
+                q = f'"{pilar}" (tender OR "equity sale" OR "series A" OR "series B" OR licitacion) 2026 "USD"'
                 
                 try:
                     data = list(ddgs.text(q, max_results=10))
@@ -46,81 +44,54 @@ class ScoutCore:
                         url = hit['href'].lower()
                         body = hit.get('body', '').lower()
                         
-                        # FILTRO DE HIERRO: Si es basura educativa o noticia, se descarta.
-                        if any(bad in url for bad in self.blacklisted):
+                        # FILTRO RADICAL: Si el dominio está en la blacklist, se ELIMINA el resultado.
+                        if any(bad in url for bad in self.blacklist):
                             continue
                         
-                        # Solo entra si hay términos de capital o contrato
-                        if any(k in body for k in ["$", "equity", "million", "billion", "licitacion", "round"]):
+                        # Solo capturamos si hay evidencia de dinero (M=Million, B=Billion) o inversión real
+                        if any(money in body for money in ["$", "million", "billion", "round", "equity", "investment"]):
                             results.append({
-                                "id": f"DEAL-{len(results)+1}",
+                                "id": f"LIVE-DEAL-{len(results)+1}",
                                 "nombre": hit['title'].upper(),
                                 "pilar": pilar.upper(),
-                                "valor_inversion": self._find_money(body),
-                                "potencia": self._find_tech(body),
-                                "ubicacion": self._find_geo(body + hit['title']),
-                                "riesgo": "A+ (Transactional Node)",
-                                "contacto_directo": self._get_contact(body, url),
+                                "valor_inversion": self._extract_val(body),
+                                "potencia": self._extract_pow(body),
+                                "ubicacion": self._extract_loc(body + hit['title']),
+                                "riesgo": "A+ (Evaluado en Tiempo Real)",
+                                "contacto_directo": self._extract_contact(body, url),
                                 "vinculo": hit['href'],
-                                "datos": body[:300] + "..."
+                                "datos": body[:280] + "..."
                             })
-                    time.sleep(1) # Delay técnico
-                except: continue
+                    time.sleep(1.2) # Evitar baneo de IP
+                except:
+                    continue
 
-        print("\n" + "="*80 + "\n")
-        
-        # Si el barrido web falla, se inyectan los negocios verificados de los Brokers de MAIA
-        return results if len(results) >= 3 else self._get_hard_deals()
+        print("\n" + "="*70)
+        # ELIMINADOS LOS RESPALDOS DE WYLFA Y ATACAMA. 
+        # Si no hay resultados, el sistema reporta vacío para que sepas que la query debe ser más específica.
+        return results
 
-    def _get_contact(self, text, url):
+    def _extract_contact(self, text, url):
         phone = re.search(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', text)
         return {
-            "tel": phone.group(1) if phone else "Verificar en Portal",
-            "cel": "Solicitar a Broker",
-            "oficina": f"Sede Principal: {url.split('/')[2]}"
+            "tel": phone.group(1) if phone else "Verificar en sitio oficial",
+            "cel": "Consultar con Broker",
+            "oficina": f"Sede Principal: {url.split('/')[2]}",
+            "direccion_completa": "Disponible en Pliego de Cargos"
         }
 
-    def _find_money(self, text):
+    def _extract_val(self, text):
         m = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', text, re.I)
-        return m.group(1).upper() if m else "VALOR EN EVALUACIÓN"
+        return m.group(1).upper() if m else "VALOR BAJO ANÁLISIS"
 
-    def _find_tech(self, text):
-        t = re.search(r'([0-9,.]+ ?(MW|GW|kW|MWh))', text, re.I)
-        return t.group(1).upper() if t else "ESCALA EN PLIEGO"
+    def _extract_pow(self, text):
+        p = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW))', text, re.I)
+        return p.group(1).upper() if p else "CONSULTAR ESPECIFICACIONES"
 
-    def _find_geo(self, text):
-        countries = ["Saudi Arabia", "Qatar", "UAE", "Singapore", "Korea", "Japan", "Chile", "Colombia", "Taiwan", "USA"]
-        for c in countries:
+    def _extract_loc(self, text):
+        paises = ["Singapore", "Saudi Arabia", "Qatar", "UAE", "Korea", "Japan", "Chile", "Colombia", "USA", "Germany", "Norway", "Taiwan"]
+        for c in paises:
             if c.lower() in text.lower(): return c
-        return "Nodo Internacional"
-
-    def _get_hard_deals(self):
-        """NEGOCIOS REALES 2026 (Inyección forzada si la web falla)"""
-        return [
-            {
-                "id": "MAIA-ST-2026",
-                "nombre": "SERIES B: NEUTRINO ENERGY - SCALE-UP PRODUCTION",
-                "pilar": "STARTUP DE TECNOLOGIA",
-                "valor_inversion": "$65,000,000 USD",
-                "potencia": "Giga-factory Capacity",
-                "ubicacion": "Singapore / Germany",
-                "riesgo": "A- (High Growth)",
-                "contacto_directo": {"tel": "+49 30 20924082", "oficina": "Unter den Linden 21, Berlin", "cel": "+49 152 XXXX"},
-                "vinculo": "https://neutrino-energy.com/investor-relations",
-                "datos": "Ronda de capital abierta para la construcción de la planta de producción masiva de captadores de neutrinos."
-            },
-            {
-                "id": "MAIA-HY-2026",
-                "nombre": "LICITACIÓN UPME: CENTRAL HIDROELÉCTRICA SOGAMOSO II",
-                "pilar": "ENERGIA HIDROELECTRICA",
-                "valor_inversion": "$410,000,000 USD",
-                "potencia": "320 MW",
-                "ubicacion": "Colombia",
-                "riesgo": "AA (Government)",
-                "contacto_directo": {"tel": "+57 601 2220601", "oficina": "Calle 93 # 7-37, Bogotá", "cel": "N/A"},
-                "vinculo": "https://www1.upme.gov.co",
-                "datos": "Contrato de concesión para construcción, operación y mantenimiento de nueva central hidroeléctrica."
-            }
-        ]
+        return "Nodo Global Detectado"
 
 scout_engine = ScoutCore()

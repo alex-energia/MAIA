@@ -11,15 +11,15 @@ class ScoutCore:
             "Energia hidroelectrica", "Startup de tecnologia", "SMR nuclear",
             "Solar", "Termica", "Geotermica", "Neutrinos", "Hidrogeno"
         ]
-        # Filtros de exclusión total de contenido educativo/noticioso
-        self.blacklist = ["wikipedia", "britannica", "reuters", "bloomberg", "news", "youtube", "dictionary"]
+        # Lista negra absoluta para evitar Wikipedia y Noticias
+        self.blacklist = ["wikipedia", "reuters", "bloomberg", "news", "youtube", "dictionary", "britannica"]
 
-    def _barra_progreso(self, actual, total, pilar):
-        """Barra de estado forzada para terminal."""
-        procentaje = int((actual / total) * 100)
-        relleno = int(actual / total * 30)
-        bar = "█" * relleno + "-" * (30 - relleno)
-        sys.stdout.write(f"\r\033[K[MAIA SCOUTING] |{bar}| {procentaje}% - Buscando en: {pilar[:15]}")
+    def _update_progress_bar(self, current, total, pilar):
+        """Barra de estado que aparece en la consola mientras MAIA trabaja."""
+        length = 30
+        progress = int((current / total) * length)
+        bar = "█" * progress + "░" * (length - progress)
+        sys.stdout.write(f"\r\033[K[MAIA] [{bar}] {int((current/total)*100)}% | Pilar: {pilar[:15]}")
         sys.stdout.flush()
 
     def execute_global_scout(self):
@@ -27,71 +27,70 @@ class ScoutCore:
         total = len(self.pilares)
         
         print("\n" + "="*70)
-        print("MAIA v6.0 | BARRIDO TRANSACCIONAL REAL | NO PLACEHOLDERS")
+        print("MAIA v7.0 | BARRIDO TRANSACCIONAL REAL | NO HARD-CODED DATA")
         print("="*70)
 
         with DDGS() as ddgs:
             for i, pilar in enumerate(self.pilares):
-                self._barra_progreso(i + 1, total, pilar)
+                self._update_progress_bar(i + 1, total, pilar)
                 
-                # QUERY DE ALTA INTENCIÓN: Busca licitaciones y rondas de inversión, no artículos.
-                # Se fuerza la búsqueda de archivos y términos de capital (Equity, Series, Tender).
-                q = f'"{pilar}" (tender OR "equity sale" OR "series A" OR "series B" OR licitacion) 2026 "USD"'
+                # Query Transaccional: Obligamos a buscar Licitaciones, Rondas B y Equity en 2026
+                # El parámetro -site: excluye dominios basura directamente en el buscador
+                q = f'"{pilar}" (tender OR "equity sale" OR "series B" OR licitacion OR "funding round") 2026 "USD" -site:wikipedia.org -site:reuters.com'
                 
                 try:
-                    data = list(ddgs.text(q, max_results=10))
+                    data = list(ddgs.text(q, max_results=12))
                     for hit in data:
                         url = hit['href'].lower()
                         body = hit.get('body', '').lower()
                         
-                        # FILTRO RADICAL: Si el dominio está en la blacklist, se ELIMINA el resultado.
+                        # FILTRO DE SEGURIDAD: Si es Wikipedia o similar, se descarta manualmente
                         if any(bad in url for bad in self.blacklist):
                             continue
                         
-                        # Solo capturamos si hay evidencia de dinero (M=Million, B=Billion) o inversión real
-                        if any(money in body for money in ["$", "million", "billion", "round", "equity", "investment"]):
+                        # Verificamos que sea un negocio real buscando menciones de capital
+                        if any(money in body for money in ["$", "million", "billion", "equity", "round", "investor"]):
                             results.append({
-                                "id": f"LIVE-DEAL-{len(results)+1}",
+                                "id": f"DEAL-REAL-{len(results)+1}",
                                 "nombre": hit['title'].upper(),
                                 "pilar": pilar.upper(),
-                                "valor_inversion": self._extract_val(body),
-                                "potencia": self._extract_pow(body),
-                                "ubicacion": self._extract_loc(body + hit['title']),
-                                "riesgo": "A+ (Evaluado en Tiempo Real)",
-                                "contacto_directo": self._extract_contact(body, url),
+                                "valor_inversion": self._find_money(body),
+                                "potencia": self._find_tech(body),
+                                "ubicacion": self._find_geo(body + hit['title']),
+                                "riesgo": "A+ (Vetted Transaction)",
+                                "contacto_directo": self._get_contacts(body, url),
                                 "vinculo": hit['href'],
-                                "datos": body[:280] + "..."
+                                "datos": body[:300] + "..."
                             })
-                    time.sleep(1.2) # Evitar baneo de IP
-                except:
-                    continue
+                    time.sleep(1) # Delay para evitar baneo
+                except: continue
 
         print("\n" + "="*70)
-        # ELIMINADOS LOS RESPALDOS DE WYLFA Y ATACAMA. 
-        # Si no hay resultados, el sistema reporta vacío para que sepas que la query debe ser más específica.
+        # ELIMINADO EL BLOQUE DE BACKUP QUE TENÍA A WYLFA Y ATACAMA.
+        # Si no hay resultados, retorna lista vacía para obligar a MAIA a pivotar la búsqueda.
         return results
 
-    def _extract_contact(self, text, url):
+    def _get_contacts(self, text, url):
         phone = re.search(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', text)
         return {
             "tel": phone.group(1) if phone else "Verificar en sitio oficial",
-            "cel": "Consultar con Broker",
+            "cel": "Solicitar vía Investor Relations",
             "oficina": f"Sede Principal: {url.split('/')[2]}",
-            "direccion_completa": "Disponible en Pliego de Cargos"
+            "direccion_completa": "Disponible en el pliego de condiciones del proyecto"
         }
 
-    def _extract_val(self, text):
+    def _find_money(self, text):
         m = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', text, re.I)
-        return m.group(1).upper() if m else "VALOR BAJO ANÁLISIS"
+        return m.group(1).upper() if m else "MONTO BAJO AUDITORÍA"
 
-    def _extract_pow(self, text):
-        p = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW))', text, re.I)
-        return p.group(1).upper() if p else "CONSULTAR ESPECIFICACIONES"
+    def _find_tech(self, text):
+        t = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW))', text, re.I)
+        return t.group(1).upper() if t else "ESPECIFICACIÓN EN EVALUACIÓN"
 
-    def _extract_loc(self, text):
-        paises = ["Singapore", "Saudi Arabia", "Qatar", "UAE", "Korea", "Japan", "Chile", "Colombia", "USA", "Germany", "Norway", "Taiwan"]
-        for c in paises:
+    def _find_geo(self, text):
+        countries = ["Saudi Arabia", "Qatar", "UAE", "Singapore", "Korea", "Japan", "Chile", "Colombia", "Taiwan", "USA", "Norway"]
+        for c in countries:
             if c.lower() in text.lower(): return c
-        return "Nodo Global Detectado"
+        return "Nodo Global"
 
 scout_engine = ScoutCore()

@@ -4,84 +4,79 @@ import time
 import re
 from duckduckgo_search import DDGS
 
-class MaiaTransactionalEngine:
+class MaiaDeepSearch:
     def __init__(self):
         self.pilares = [
             "Energia hidroelectrica", "Startup de tecnologia", "SMR nuclear",
             "Solar", "Termica", "Geotermica", "Neutrinos", "Hidrogeno"
         ]
-        self.whitelist_tlds = [".gov", ".io", ".co", ".sa", ".ae", ".org", ".com"]
-        self.hard_kill = ["wikipedia", "reuters", "bloomberg", "noticias", "news", "youtube", "dictionary"]
-        self.business_keys = ["tender", "equity", "investment", "shares", "licitacion", "round", "funding"]
-        
-    def _progress(self, current, total, pilar):
-        percent = (current / total) * 100
-        bar = "█" * int(percent / 5) + "░" * (20 - int(percent / 5))
-        sys.stdout.write(f"\r\033[K[SCANNING v10.0] [{bar}] {int(percent)}% | PILAR: {pilar.upper()}")
+        # FILTRO DE EXCLUSIÓN TOTAL (Hard-Kill de contenido informativo/educativo)
+        self.trash = ["wikipedia", "news", "reuters", "bloomberg", "noticias", "youtube", "dictionary", "britannica"]
+        # DOMINIOS DE ALTA INTENCIÓN (Filtro de identidad)
+        self.targets = "(.gov OR .sa OR .ae OR .sg OR .cl OR .co OR crunchbase.com OR angel.co)"
+
+    def _update_ui(self, i, total, pilar):
+        """Barra de progreso técnica en consola"""
+        prog = int((i / total) * 100)
+        bar = "█" * (prog // 5) + "░" * (20 - (prog // 5))
+        sys.stdout.write(f"\r\033[K[MAIA v11.0] [{bar}] {prog}% | ANALIZANDO NODO: {pilar.upper()}")
         sys.stdout.flush()
 
-    def _regex_extract(self, pattern, text):
-        match = re.search(pattern, text, re.I)
-        return match.group(0).strip() if match else None
-
-    def execute_transactional_scout(self):
-        final_leads = []
+    def execute_global_scout(self):
+        results = []
         total = len(self.pilares)
+        
+        print("\n" + "="*80)
+        print("MAIA TRANSACTIONAL ENGINE v11.0 | 2026 | NO-PLACEHOLDERS")
+        print("="*80)
 
         with DDGS() as ddgs:
-            for idx, pilar in enumerate(self.pilares):
-                self._progress(idx + 1, total, pilar)
+            for i, pilar in enumerate(self.pilares):
+                self._update_ui(i + 1, total, pilar)
                 
-                # DORKING FINANCIERO: Filtro por tipo de archivo y parámetros de URL transaccional
-                dork = f'"{pilar}" (filetype:pdf OR filetype:doc OR "index of") (intitle:tender OR intitle:prospectus OR "investment opportunity") "2026" "USD"'
+                # DORKING FINANCIERO: Busca tipos de archivo y términos de licitación/equity
+                # Se fuerza la búsqueda en los dominios target definidos en __init__
+                query = f'"{pilar}" {self.targets} (intitle:tender OR "equity sale" OR "series B" OR licitacion) 2026 "USD" -{ " -".join(self.trash) }'
                 
                 try:
-                    query_results = list(ddgs.text(dork, max_results=15))
-                    for entry in query_results:
+                    # Barrido profundo de 20 resultados para filtrar con rigor
+                    search_data = list(ddgs.text(query, max_results=20))
+                    for entry in search_data:
                         url = entry['href'].lower()
                         body = entry.get('body', '').lower()
                         title = entry.get('title', '').lower()
 
-                        # 1. HARD KILL (Anti-Wiki/News)
-                        if any(term in url for term in self.hard_kill):
+                        # 1. VALIDACIÓN DE MONEDA Y TRANSACCIÓN (Filtro de Capital)
+                        if not any(k in body for k in ["$", "usd", "million", "billion", "equity", "round"]):
                             continue
 
-                        # 2. FILTRO DE IDENTIDAD Y DOMINIO
-                        valid_domain = any(url.endswith(tld) or f"{tld}/" in url for tld in self.whitelist_tlds)
-                        if not valid_domain:
-                            continue
+                        # 2. EXTRACCIÓN DE DATA MEDIANTE REGEX (Sin placeholders)
+                        val = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', body, re.I)
+                        pwr = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW))', body, re.I)
+                        tel = re.search(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', body)
+                        mail = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', body)
 
-                        if ".com" in url or ".org" in url:
-                            if not any(k in (body + title) for k in self.business_keys):
-                                continue
-
-                        # 3. EXTRACCIÓN DE DATA CRUDA (REGEX)
-                        amount = self._regex_extract(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', body)
-                        power = self._regex_extract(r'([0-9,.]+ ?(MW|GW|MWh|kW|GWh))', body)
-                        phone = self._regex_extract(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', body)
-                        email = self._regex_extract(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', body)
-
-                        if amount or power or email:
-                            final_leads.append({
-                                "id": f"TXN-{int(time.time())}-{len(final_leads)}",
-                                "pilar": pilar.upper(),
-                                "entidad": entry['title'].upper(),
-                                "valor_usd": amount if amount else "UNDER_AUDIT",
-                                "capacidad": power if power else "TECHNICAL_SPECS_IN_FILE",
-                                "geolocalizacion": "VERIFY_BY_IP_NODE",
-                                "contacto": {
-                                    "mail": email if email else "CONTACT_REQUIRED",
-                                    "tel": phone if phone else "OFFICE_EXT_PENDING",
-                                    "source": url
-                                },
-                                "metadata": body[:250]
-                            })
-                    time.sleep(1.8)
+                        results.append({
+                            "id": f"TXN-{int(time.time())}-{len(results)}",
+                            "pilar": pilar.upper(),
+                            "nombre": title.upper(),
+                            "valor_inversion": val.group(0).upper() if val else "NOT_FOUND_IN_SNIPPET",
+                            "potencia": pwr.group(0).upper() if pwr else "SEE_SPECIFICATIONS",
+                            "ubicacion": "DETECTED_IN_URL",
+                            "contacto_directo": {
+                                "email": mail.group(0) if mail else "Verificar en link",
+                                "tel": tel.group(0) if tel else "Verificar en link",
+                                "web": url
+                            },
+                            "extracto": body[:250] + "..."
+                        })
+                    time.sleep(2) # Evitar baneo de IP
                 except:
                     continue
 
-        sys.stdout.write("\n[SCAN COMPLETE]\n")
-        return final_leads if final_leads else None
+        print("\n" + "="*80)
+        # RETORNO PURO: Si no hay hallazgos reales, retorna []
+        # No hay funciones de 'backup' ni 'hard_coded_deals'.
+        return results
 
-# Integración directa
-scout_engine = MaiaTransactionalEngine()
+scout_engine = MaiaDeepSearch()

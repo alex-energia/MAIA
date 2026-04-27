@@ -1,105 +1,87 @@
 # -*- coding: utf-8 -*-
-from duckduckgo_search import DDGS
+import sys
 import time
 import re
-import sys
+from duckduckgo_search import DDGS
 
-class ScoutCore:
+class MaiaTransactionalEngine:
     def __init__(self):
-        # 8 Pilares Blindados (Filtro Estricto)
         self.pilares = [
             "Energia hidroelectrica", "Startup de tecnologia", "SMR nuclear",
             "Solar", "Termica", "Geotermica", "Neutrinos", "Hidrogeno"
         ]
-        # Lista Negra de Dominios (Bloqueo Total de Ruido Educativo/Noticioso)
-        self.blacklist = ["wikipedia", "reuters", "bloomberg", "news", "youtube", "dictionary", "britannica", "investopedia"]
+        self.whitelist_tlds = [".gov", ".io", ".co", ".sa", ".ae", ".org", ".com"]
+        self.hard_kill = ["wikipedia", "reuters", "bloomberg", "noticias", "news", "youtube", "dictionary"]
+        self.business_keys = ["tender", "equity", "investment", "shares", "licitacion", "round", "funding"]
         
-    def _imprimir_barra(self, actual, total, pilar):
-        """Muestra el progreso real en la consola de comandos."""
-        ancho = 30
-        progreso = int((actual / total) * ancho)
-        barra = "█" * progreso + "░" * (ancho - progreso)
-        # Código ANSI para limpiar línea y asegurar visibilidad en tiempo real
-        sys.stdout.write(f"\r\033[K[MAIA SCOUTING] [{barra}] {int((actual/total)*100)}% | Pilar: {pilar[:15]}")
+    def _progress(self, current, total, pilar):
+        percent = (current / total) * 100
+        bar = "█" * int(percent / 5) + "░" * (20 - int(percent / 5))
+        sys.stdout.write(f"\r\033[K[SCANNING v10.0] [{bar}] {int(percent)}% | PILAR: {pilar.upper()}")
         sys.stdout.flush()
 
-    def execute_global_scout(self):
-        results = []
+    def _regex_extract(self, pattern, text):
+        match = re.search(pattern, text, re.I)
+        return match.group(0).strip() if match else None
+
+    def execute_transactional_scout(self):
+        final_leads = []
         total = len(self.pilares)
-        
-        print("\n" + "="*80)
-        print("MAIA v9.0 | BARRIDO TRANSACCIONAL REAL | ZERO PLACEHOLDERS")
-        print("="*80)
 
         with DDGS() as ddgs:
-            for i, pilar in enumerate(self.pilares):
-                self._imprimir_barra(i + 1, total, pilar)
+            for idx, pilar in enumerate(self.pilares):
+                self._progress(idx + 1, total, pilar)
                 
-                # QUERY DE ALTA PRECISIÓN:
-                # Busca documentos de licitación, rondas de inversión y prospectos 2026.
-                # Se excluyen sitios educativos directamente desde el buscador.
-                query = f'"{pilar}" (tender OR "equity sale" OR "series B" OR licitacion OR "funding round") 2026 "USD" -site:wikipedia.org -site:reuters.com'
+                # DORKING FINANCIERO: Filtro por tipo de archivo y parámetros de URL transaccional
+                dork = f'"{pilar}" (filetype:pdf OR filetype:doc OR "index of") (intitle:tender OR intitle:prospectus OR "investment opportunity") "2026" "USD"'
                 
                 try:
-                    # Buscamos hasta 15 resultados para filtrar profundamente
-                    data = list(ddgs.text(query, max_results=15))
-                    for hit in data:
-                        url = hit['href'].lower()
-                        body = hit.get('body', '').lower()
-                        
-                        # 1. FILTRO DE DOMINIO: Si es Wikipedia o Noticias, se descarta.
-                        if any(bad in url for bad in self.blacklist):
+                    query_results = list(ddgs.text(dork, max_results=15))
+                    for entry in query_results:
+                        url = entry['href'].lower()
+                        body = entry.get('body', '').lower()
+                        title = entry.get('title', '').lower()
+
+                        # 1. HARD KILL (Anti-Wiki/News)
+                        if any(term in url for term in self.hard_kill):
                             continue
-                        
-                        # 2. FILTRO DE TRANSACCIÓN: Debe contener indicios de capital o contrato.
-                        if any(k in body for k in ["$", "equity", "million", "billion", "round", "investor", "share sale", "adjudicado"]):
-                            
-                            results.append({
-                                "id": f"LIVE-DATA-{len(results)+1}",
-                                "nombre": hit['title'].upper(),
+
+                        # 2. FILTRO DE IDENTIDAD Y DOMINIO
+                        valid_domain = any(url.endswith(tld) or f"{tld}/" in url for tld in self.whitelist_tlds)
+                        if not valid_domain:
+                            continue
+
+                        if ".com" in url or ".org" in url:
+                            if not any(k in (body + title) for k in self.business_keys):
+                                continue
+
+                        # 3. EXTRACCIÓN DE DATA CRUDA (REGEX)
+                        amount = self._regex_extract(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', body)
+                        power = self._regex_extract(r'([0-9,.]+ ?(MW|GW|MWh|kW|GWh))', body)
+                        phone = self._regex_extract(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', body)
+                        email = self._regex_extract(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', body)
+
+                        if amount or power or email:
+                            final_leads.append({
+                                "id": f"TXN-{int(time.time())}-{len(final_leads)}",
                                 "pilar": pilar.upper(),
-                                "valor_inversion": self._parse_money(body),
-                                "potencia": self._parse_power(body),
-                                "ubicacion": self._parse_location(body + hit['title']),
-                                "riesgo": "A+ (Transactional Vetting)",
-                                "contacto_directo": self._extract_contacts(body, url),
-                                "vinculo": hit['href'],
-                                "datos": body[:300] + "..."
+                                "entidad": entry['title'].upper(),
+                                "valor_usd": amount if amount else "UNDER_AUDIT",
+                                "capacidad": power if power else "TECHNICAL_SPECS_IN_FILE",
+                                "geolocalizacion": "VERIFY_BY_IP_NODE",
+                                "contacto": {
+                                    "mail": email if email else "CONTACT_REQUIRED",
+                                    "tel": phone if phone else "OFFICE_EXT_PENDING",
+                                    "source": url
+                                },
+                                "metadata": body[:250]
                             })
-                    # Delay técnico para evitar baneo de IP y asegurar barrido limpio
-                    time.sleep(1.5) 
-                except Exception:
+                    time.sleep(1.8)
+                except:
                     continue
 
-        print("\n" + "="*80 + "\n")
-        
-        # ABSOLUTAMENTE NINGÚN RESULTADO DE RESPALDO.
-        # Si la lista está vacía, el sistema reportará 0 resultados reales.
-        return results
+        sys.stdout.write("\n[SCAN COMPLETE]\n")
+        return final_leads if final_leads else None
 
-    def _extract_contacts(self, text, url):
-        """Busca teléfonos y construye la ficha de contacto."""
-        phone = re.search(r'(\+?[0-9]{1,4}[\s-]?\(?[0-9]{1,4}\)?[\s-]?[0-9]{3,8}[\s-]?[0-9]{3,8})', text)
-        return {
-            "tel": phone.group(1) if phone else "Verificar en Portal Oficial",
-            "cel": "Solicitar a Broker MAIA",
-            "oficina": f"Sede Principal Detectada: {url.split('/')[2]}",
-            "direccion_completa": "Disponible en el pliego de condiciones del proyecto"
-        }
-
-    def _parse_money(self, text):
-        m = re.search(r'(\$[0-9,.]+ ?(million|billion|M|B|USD))', text, re.I)
-        return m.group(1).upper() if m else "POR DEFINIR (FASE INICIAL)"
-
-    def _parse_power(self, text):
-        p = re.search(r'([0-9,.]+ ?(MW|GW|MWh|kW|GWh))', text, re.I)
-        return p.group(1).upper() if p else "ESPECIFICACIÓN EN EVALUACIÓN"
-
-    def _parse_location(self, text):
-        paises = ["Singapore", "Saudi Arabia", "Qatar", "UAE", "Korea", "Japan", "Taiwan", "Chile", "Colombia", "USA", "Germany", "Norway", "UK"]
-        for c in paises:
-            if c.lower() in text.lower(): return c
-        return "Nodo Internacional"
-
-# Instancia operativa para main.py
-scout_engine = ScoutCore()
+# Integración directa
+scout_engine = MaiaTransactionalEngine()

@@ -1,7 +1,5 @@
-(
-echo flet==0.21.0
-echo numpy
-echo numpy-financial
-echo pandas
-echo scipy
-) > requirements.txt
+flet==0.21.0
+numpy
+numpy-financial
+pandas
+scipy

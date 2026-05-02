@@ -1,0 +1,9 @@
+(
+echo flet==0.21.0
+echo numpy
+echo numpy-financial
+echo pandas
+echo requests
+echo yfinance
+echo scipy
+) > requirements.txt
